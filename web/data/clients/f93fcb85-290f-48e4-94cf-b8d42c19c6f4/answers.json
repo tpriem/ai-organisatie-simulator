@@ -1,0 +1,17 @@
+{
+  "sector": "professional_services",
+  "impact": {
+    "omzet_automatisering": 4,
+    "data_afhankelijkheid": 3,
+    "menselijk_contact": 2,
+    "overstapdrempel": 3,
+    "ai_native_concurrentie": 4
+  },
+  "readiness": {
+    "regelgeving": 2,
+    "veranderingsvermogen_org": 3,
+    "veranderingsvermogen_mensen": 3,
+    "budget": 4,
+    "menselijke_beslissingen": 2
+  }
+}

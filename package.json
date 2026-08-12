@@ -1,0 +1,18 @@
+{
+  "name": "ai-organisatie-simulator",
+  "version": "0.1.0",
+  "description": "Fase 1 MVP: CLI die org-roster + functieprofielen analyseert en een AI-transformatiescenario berekent",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.5",
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1",
+    "xlsx": "^0.18.5"
+  }
+}
