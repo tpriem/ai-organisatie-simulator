@@ -1,0 +1,19 @@
+Functieprofiel: Software developer
+
+Doel van de functie:
+Ontwerpt, bouwt en onderhoudt software-componenten voor het productplatform van het bedrijf.
+
+Kerntaken:
+- Schrijven en onderhouden van code voor nieuwe features (ca. 40%)
+- Debuggen en oplossen van gemelde bugs en incidenten
+- Schrijven en onderhouden van geautomatiseerde tests
+- Code reviews uitvoeren voor collega's
+- Deelnemen aan sprintplanning en technische ontwerpsessies
+- Schrijven van technische documentatie
+- Onderzoeken van nieuwe technologieën en bibliotheken voor mogelijke toepassing
+- Overleg met product owners over requirements en scope
+
+Vereiste competenties:
+- Sterke programmeervaardigheden
+- Analytisch en gestructureerd denkvermogen
+- Ervaring met geautomatiseerd testen

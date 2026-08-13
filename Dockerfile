@@ -25,6 +25,10 @@ RUN npm --prefix web ci
 COPY src ./src
 COPY web ./web
 
+# Demo content baked into the image. web/data (local working data) is
+# dockerignored; a volume mounted over /app/web/data hides these files.
+COPY demo-data ./web/data
+
 RUN npm --prefix web run build
 
 ENV NODE_ENV=production
