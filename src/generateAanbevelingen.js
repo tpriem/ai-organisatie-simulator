@@ -92,7 +92,7 @@ function summarizeRoles(roleResults) {
         .map((t) => t.categorieLabel)
         .join(", ");
       return (
-        `- ${r.rolnaam}: ${r.fte} FTE, reductie realistisch ${(r.scenarios.realistisch.reductiePercentage * 100).toFixed(
+        `- ${r.roleLabel ?? r.rolnaam}: ${r.fte} FTE, reductie realistisch ${(r.scenarios.realistisch.reductiePercentage * 100).toFixed(
           0
         )}% (${r.fte} → ${r.scenarios.realistisch.fteOver.toFixed(2)} FTE), agressief ${(
           r.scenarios.agressief.reductiePercentage * 100

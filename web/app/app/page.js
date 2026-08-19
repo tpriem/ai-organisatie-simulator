@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { getSector } from "@/lib/sectors";
 
 function initials(naam) {
@@ -62,7 +63,7 @@ export default function HomePage() {
         throw new Error(body.error ?? "Aanmaken mislukt");
       }
       const client = await res.json();
-      router.push(`/klant/${client.id}`);
+      router.push(`/app/klant/${client.id}`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -78,9 +79,22 @@ export default function HomePage() {
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
             Intern tool
           </span>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
-            AI Organisatie Transformatie Simulator
-          </h1>
+          <div className="flex items-start justify-between">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+              AI Organisatie Transformatie Simulator
+            </h1>
+            <div className="shrink-0 flex items-center gap-3 mt-1.5">
+              <a href="/app/gebruikers" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors">
+                Gebruikers
+              </a>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="text-xs text-slate-400 hover:text-indigo-600 transition-colors"
+              >
+                Uitloggen
+              </button>
+            </div>
+          </div>
           <p className="text-slate-500">Kies een klant om verder te gaan, of maak een nieuwe aan.</p>
         </div>
 
@@ -119,7 +133,7 @@ export default function HomePage() {
               return (
                 <li key={c.id}>
                   <a
-                    href={`/klant/${c.id}`}
+                    href={`/app/klant/${c.id}`}
                     className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
                   >
                     <span
@@ -130,7 +144,14 @@ export default function HomePage() {
                       {initials(c.naam)}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block font-medium text-slate-900 truncate">{c.naam}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900 truncate">{c.naam}</span>
+                        {c.scope === "afdeling" && c.scopeLabel && (
+                          <span className="shrink-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium px-2 py-0.5">
+                            {c.scopeLabel}
+                          </span>
+                        )}
+                      </span>
                       <span className="block text-xs text-slate-400">
                         {sector ? sector.sector : "Geen sector ingesteld"}
                       </span>

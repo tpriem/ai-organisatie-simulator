@@ -24,4 +24,18 @@ export function getCategory(id) {
 
 export const SCENARIOS = ["realistisch", "agressief"];
 
+// Hoe vrijgekomen capaciteit voor deze rol het beste te lezen is — gebaseerd op hoe
+// grote onderzoeken (McKinsey, BCG, WEF) automatisering framen: niet uniform als
+// kostenbesparing, maar afhankelijk van of de rol waarde-creërend of ondersteunend is.
+export const WAARDETYPES = [
+  { id: "kostenreductie", label: "Kostenreductie", icon: "💰" },
+  { id: "capaciteitsgroei", label: "Capaciteitsgroei", icon: "📈" },
+  { id: "kwaliteitsverbetering", label: "Kwaliteitsverbetering", icon: "✨" },
+];
+export const WAARDETYPE_IDS = WAARDETYPES.map((w) => w.id);
+
+export function getWaardetype(id) {
+  return WAARDETYPES.find((w) => w.id === id) ?? null;
+}
+
 export const CLAUDE_MODEL = "claude-sonnet-5";

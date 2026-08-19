@@ -11,9 +11,17 @@ const nextConfig = {
   turbopack: {
     root: path.join(__dirname, ".."),
   },
-  // Puppeteer spawnt een Chrome-subproces en leest diens stdout voor het
-  // WS-endpoint — als Turbopack het bundelt, breekt die stdio-detectie.
-  serverExternalPackages: ["puppeteer"],
+  // Puppeteer/chromium spawnen een Chrome-subproces en lezen diens stdout voor het
+  // WS-endpoint — als Turbopack/webpack het bundelt, breekt die stdio-detectie.
+  serverExternalPackages: ["puppeteer", "puppeteer-core", "@sparticuz/chromium"],
+  // serverExternalPackages voorkomt bundelen, maar Vercel's file tracing pikt het
+  // binaire chromium-bestand van @sparticuz/chromium daardoor niet altijd vanzelf op
+  // in de output van de serverless functie — expliciet meenemen. Let op: "*" i.p.v.
+  // het letterlijke "[id]" — vierkante haken worden door de glob-matcher gezien als
+  // een bracket-expressie, niet als route-segment, dus "[id]" matcht nooit.
+  outputFileTracingIncludes: {
+    "/api/clients/*/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
 };
 
 export default nextConfig;

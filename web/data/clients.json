@@ -3,7 +3,9 @@
     "id": "f93fcb85-290f-48e4-94cf-b8d42c19c6f4",
     "naam": "Voorbeeld BV",
     "sector": "professional_services",
-    "createdAt": "2026-08-07T13:18:27.099Z"
+    "createdAt": "2026-08-07T13:18:27.099Z",
+    "scope": "afdeling",
+    "scopeLabel": "Klantenservice NL"
   },
   {
     "id": "7c0e05e1-eaba-4a06-888e-4c7f33e635d4",

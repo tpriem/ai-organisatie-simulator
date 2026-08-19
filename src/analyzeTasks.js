@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { TASK_CATEGORY_IDS, TASK_CATEGORIES, CLAUDE_MODEL } from "./config.js";
+import { TASK_CATEGORY_IDS, TASK_CATEGORIES, WAARDETYPE_IDS, CLAUDE_MODEL } from "./config.js";
 
 const CATEGORY_LIST = TASK_CATEGORIES.map((c) => `- ${c.id}: ${c.label}`).join("\n");
 
@@ -30,8 +30,21 @@ const TOOL_SCHEMA = {
           additionalProperties: false,
         },
       },
+      waardetype: {
+        type: "string",
+        enum: WAARDETYPE_IDS,
+        description:
+          "Hoe de vrijgekomen capaciteit door automatisering voor déze rol het beste te lezen is: 'kostenreductie' voor " +
+          "ondersteunende/cost-center rollen (minder FTE nodig), 'capaciteitsgroei' voor waarde-creërende/omzet-gedreven " +
+          "rollen zoals sales of accountmanagement (dezelfde mensen genereren meer output), of 'kwaliteitsverbetering' " +
+          "wanneer vooral routinewerk wegvalt en het overblijvende werk merkbaar hoogwaardiger wordt.",
+      },
+      waardetypeToelichting: {
+        type: "string",
+        description: "Eén korte zin die het gekozen waardetype voor deze rol onderbouwt.",
+      },
     },
-    required: ["taken"],
+    required: ["taken", "waardetype", "waardetypeToelichting"],
     additionalProperties: false,
   },
 };
@@ -74,6 +87,10 @@ Instructies:
 2. Wijs elke taak toe aan precies één van bovenstaande categorieën (kies de best passende, ook als het niet perfect past).
 3. Schat per taak welk aandeel (fractie 0-1) van de totale functie die taak beslaat. Alle aandelen samen moeten ongeveer optellen tot 1.0.
 4. Wees specifiek: gebruik meerdere taken per categorie als het profiel dat rechtvaardigt, in plaats van alles in één categorie te proppen.
+5. Bepaal daarnaast het waardetype van deze rol: is het primair een ondersteunende/cost-center rol (kostenreductie), een
+   waarde-creërende/omzet-gedreven rol zoals sales, accountmanagement of business development (capaciteitsgroei), of een
+   rol waar vooral routinewerk wegvalt en het overblijvende werk merkbaar hoogwaardiger wordt (kwaliteitsverbetering)?
+   Baseer dit op de aard van de rol zoals die uit het functieprofiel blijkt, niet op de taakcategorieën alleen.
 
 Functieprofiel:
 """
@@ -103,5 +120,9 @@ ${profileText}
     aandeel: totaalAandeel > 0 ? t.aandeel / totaalAandeel : 0,
   }));
 
-  return genormaliseerd;
+  return {
+    taken: genormaliseerd,
+    waardetype: toolUse.input.waardetype,
+    waardetypeToelichting: toolUse.input.waardetypeToelichting,
+  };
 }

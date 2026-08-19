@@ -1,5 +1,30 @@
-import puppeteer from "puppeteer";
 import { buildOrgChartData } from "./orgChartData.js";
+import { WAARDETYPES, getWaardetype } from "../../src/config.js";
+
+/**
+ * Vercel's serverless functions kunnen geen volledige, lokaal-geïnstalleerde Chromium
+ * draaien (te groot, verkeerd platform). Daar gebruiken we puppeteer-core met de
+ * kleine, Linux-serverless-compatibele @sparticuz/chromium build. Lokaal (Windows/Mac/
+ * Linux dev) gebruiken we gewoon de volledige puppeteer-package met bijbehorende
+ * lokale Chromium-download.
+ */
+async function launchBrowser() {
+  if (process.env.VERCEL) {
+    const [{ default: chromium }, { default: puppeteerCore }] = await Promise.all([
+      import("@sparticuz/chromium"),
+      import("puppeteer-core"),
+    ]);
+    return puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+
+  const { default: puppeteer } = await import("puppeteer");
+  return puppeteer.launch({ headless: true });
+}
 
 function esc(str) {
   return String(str ?? "")
@@ -15,6 +40,24 @@ function eur(n) {
 
 function pct(n) {
   return `${Math.round(n * 100)}%`;
+}
+
+function waardetypeSummarySentence(rollen) {
+  const parts = WAARDETYPES.map((w) => ({
+    ...w,
+    count: rollen.filter((r) => r.waardetype === w.id).length,
+  })).filter((w) => w.count > 0);
+  if (parts.length === 0) return null;
+  const clauses = parts.map((w) => `${w.count} rol${w.count === 1 ? "" : "len"} ${w.label.toLowerCase()}`);
+  return `Van de vrijgekomen capaciteit is de meest passende lezing: ${clauses.join(", ")}.`;
+}
+
+function waardetypeLine(rol) {
+  const w = getWaardetype(rol.waardetype);
+  if (!w) return "";
+  return `<p><strong>${w.icon} ${esc(w.label)}</strong>${
+    rol.waardetypeToelichting ? ` — ${esc(rol.waardetypeToelichting)}` : ""
+  }</p>`;
 }
 
 function bar(label, value, maxValue, colorClass) {
@@ -42,20 +85,20 @@ function taakRows(rol) {
     .join("");
 }
 
-function competentieRows(rol) {
-  return (rol.competenties ?? [])
-    .map((c) => {
-      const delta = c.belangNa - c.belangNu;
-      const trendClass = delta > 0 ? "trend-up" : delta < 0 ? "trend-down" : "trend-flat";
-      const trendIcon = delta > 0 ? "▲" : delta < 0 ? "▼" : "＝";
-      return `<tr>
-        <td>${esc(c.naam)}</td>
-        <td>${c.belangNu}/5</td>
-        <td class="${trendClass}">${trendIcon} ${c.belangNa}/5</td>
-        <td>${esc(c.toelichting)}</td>
-      </tr>`;
-    })
-    .join("");
+function competentieTop5Block(title, items) {
+  if (!items?.length) return "";
+  return `
+    <p style="font-weight:bold;font-size:12px;margin:10px 0 4px;">${esc(title)}</p>
+    ${items
+      .map(
+        (c) => `
+      <div class="bar-row">
+        <span class="bar-label">${esc(c.naam)}</span>
+        <div class="bar-track"><div class="bar-fill c-indigo" style="width:${Math.max(c.relatiefPct, 2)}%"></div></div>
+        <span class="bar-value">${c.relatiefPct}%</span>
+      </div>`
+      )
+      .join("")}`;
 }
 
 function listBlock(title, items, colorClass) {
@@ -74,9 +117,21 @@ function listBlock(title, items, colorClass) {
  * @param {object} results - het resultaat-object zoals opgeslagen in results.json
  */
 export async function generateReportPdf(results) {
-  const { bedrijfsnaam, gegenereerdOp, missingProfiles, organisatieTotaal, rollen, sectorAnalyse, aanbevelingen } = results;
+  const {
+    bedrijfsnaam,
+    scope,
+    scopeLabel,
+    gegenereerdOp,
+    missingProfiles,
+    organisatieTotaal,
+    subtotalenPerAfdeling,
+    rollen,
+    sectorAnalyse,
+    aanbevelingen,
+  } = results;
   const datum = new Date(gegenereerdOp).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" });
   const { maxFte, rollen: chartRollen } = buildOrgChartData(rollen);
+  const scopeSuffix = scope === "afdeling" && scopeLabel ? ` — ${esc(scopeLabel)}` : "";
 
   const html = `<!doctype html>
 <html lang="nl">
@@ -123,7 +178,12 @@ export async function generateReportPdf(results) {
 </head>
 <body>
   <h1>AI Organisatie Transformatie Simulator</h1>
-  <p class="subtitle">${esc(bedrijfsnaam)}</p>
+  <p class="subtitle">${esc(bedrijfsnaam)}${scopeSuffix}</p>
+  ${
+    scope === "afdeling" && scopeLabel
+      ? `<p class="meta" style="color:#b45309;font-style:italic;">Dit rapport betreft de business unit/afdeling "${esc(scopeLabel)}", niet de volledige organisatie.</p>`
+      : ""
+  }
   <p class="meta">Gegenereerd op ${esc(datum)}</p>
   <p class="disclaimer">Dit rapport is een strategisch gespreksondersteunend instrument, gebaseerd op huidig onderzoek en technologie. Het is geen exacte voorspelling en vervangt geen diepgaand consultancytraject of individuele functieanalyse.</p>
 
@@ -135,6 +195,7 @@ export async function generateReportPdf(results) {
     <div class="stat-card"><div class="stat-label">Automatiseerbaar</div><div class="stat-value">${pct(organisatieTotaal.realistisch.reductiePercentageOrganisatie)}–${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)}</div></div>
     <div class="stat-card"><div class="stat-label">Besparing/jaar</div><div class="stat-value">${eur(organisatieTotaal.realistisch.totaalKostenBesparingPerJaar)}–${eur(organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}</div></div>
   </div>
+  ${waardetypeSummarySentence(rollen) ? `<p>${esc(waardetypeSummarySentence(rollen))}</p>` : ""}
   ${
     sectorAnalyse
       ? `<div class="urgency-banner urgency-${sectorAnalyse.urgentie.startsWith("Hoog") ? "hoog" : sectorAnalyse.urgentie.startsWith("Gemiddeld") ? "gemiddeld" : "laag"}">
@@ -150,7 +211,7 @@ export async function generateReportPdf(results) {
       ${rollen
         .map(
           (r) => `<tr>
-        <td>${esc(r.rolnaam)}</td><td>${r.fte}</td><td>${r.urenPerWeek}</td><td>${eur(r.kostenPerUur)}</td>
+        <td>${esc(r.roleLabel ?? r.rolnaam)}</td><td>${r.fte}</td><td>${r.urenPerWeek}</td><td>${eur(r.kostenPerUur)}</td>
         <td>${pct(r.scenarios.realistisch.reductiePercentage)} – ${pct(r.scenarios.agressief.reductiePercentage)}</td>
         <td>${eur(r.scenarios.realistisch.kostenBesparingPerJaar)} – ${eur(r.scenarios.agressief.kostenBesparingPerJaar)}</td>
       </tr>`
@@ -162,6 +223,28 @@ export async function generateReportPdf(results) {
   ${
     missingProfiles?.length
       ? `<p style="color:#b45309;font-style:italic;">Let op: voor de volgende rollen ontbrak een functieprofiel: ${esc(missingProfiles.join(", "))}.</p>`
+      : ""
+  }
+
+  ${
+    subtotalenPerAfdeling?.length
+      ? `<h3>Subtotalen per afdeling</h3>
+    <table>
+      <thead><tr><th>Afdeling</th><th>Rollen</th><th>FTE huidig</th><th>FTE realist.</th><th>FTE agress.</th><th>Besparing/jaar (R–A)</th></tr></thead>
+      <tbody>
+        ${subtotalenPerAfdeling
+          .map(
+            (s) => `<tr>
+          <td>${esc(s.afdeling)}</td><td>${s.aantalRollen}</td>
+          <td>${s.scenarios.realistisch.totaalFteHuidig.toFixed(1)}</td>
+          <td>${s.scenarios.realistisch.totaalFteOver.toFixed(2)}</td>
+          <td>${s.scenarios.agressief.totaalFteOver.toFixed(2)}</td>
+          <td>${eur(s.scenarios.realistisch.totaalKostenBesparingPerJaar)} – ${eur(s.scenarios.agressief.totaalKostenBesparingPerJaar)}</td>
+        </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>`
       : ""
   }
 
@@ -182,19 +265,14 @@ export async function generateReportPdf(results) {
   ${rollen
     .map(
       (r) => `<div class="role-block">
-      <h3>${esc(r.rolnaam)} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(2)} agressief)</h3>
+      <h3>${esc(r.roleLabel ?? r.rolnaam)} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(2)} agressief)</h3>
+      ${waardetypeLine(r)}
       <table>
         <thead><tr><th>Taak</th><th>Categorie</th><th>Aandeel</th><th>Realistisch %</th><th>Agressief %</th></tr></thead>
         <tbody>${taakRows(r)}</tbody>
       </table>
-      ${
-        r.competenties?.length
-          ? `<table>
-        <thead><tr><th>Competentie</th><th>Nu</th><th>Na</th><th>Toelichting</th></tr></thead>
-        <tbody>${competentieRows(r)}</tbody>
-      </table>`
-          : ""
-      }
+      ${competentieTop5Block("De functie vóór de transformatie — top 5 competenties", r.competentieTop5?.top5Nu)}
+      ${competentieTop5Block("De functie ná de transformatie — top 5 competenties", r.competentieTop5?.top5Na)}
     </div>`
     )
     .join("")}
@@ -235,7 +313,7 @@ export async function generateReportPdf(results) {
 </body>
 </html>`;
 
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "load" });

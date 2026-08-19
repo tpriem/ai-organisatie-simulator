@@ -13,6 +13,7 @@ import {
   BorderStyle,
   HeightRule,
 } from "docx";
+import { WAARDETYPES, getWaardetype } from "../../src/config.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -23,6 +24,16 @@ function eur(n) {
 
 function pct(n) {
   return `${Math.round(n * 100)}%`;
+}
+
+function waardetypeSummarySentence(rollen) {
+  const parts = WAARDETYPES.map((w) => ({
+    ...w,
+    count: rollen.filter((r) => r.waardetype === w.id).length,
+  })).filter((w) => w.count > 0);
+  if (parts.length === 0) return null;
+  const clauses = parts.map((w) => `${w.count} rol${w.count === 1 ? "" : "len"} ${w.label.toLowerCase()}`);
+  return `Van de vrijgekomen capaciteit is de meest passende lezing: ${clauses.join(", ")}.`;
 }
 
 function cell(text, { width, header = false, shaded = false, bold = false } = {}) {
@@ -87,7 +98,7 @@ function rolSummaryTable(rollen) {
     const shaded = i % 2 === 1;
     return new TableRow({
       children: [
-        cell(r.rolnaam, { width: widths[0], shaded }),
+        cell(r.roleLabel ?? r.rolnaam, { width: widths[0], shaded }),
         cell(String(r.fte), { width: widths[1], shaded }),
         cell(String(r.urenPerWeek), { width: widths[2], shaded }),
         cell(eur(r.kostenPerUur), { width: widths[3], shaded }),
@@ -97,6 +108,45 @@ function rolSummaryTable(rollen) {
         }),
         cell(
           `${eur(r.scenarios.realistisch.kostenBesparingPerJaar)} – ${eur(r.scenarios.agressief.kostenBesparingPerJaar)}`,
+          { width: widths[5], shaded }
+        ),
+      ],
+    });
+  });
+
+  return new Table({
+    width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
+    columnWidths: widths,
+    borders: tableBorders(),
+    rows: [headerRow, ...rows],
+  });
+}
+
+function subtotalenTable(subtotalenPerAfdeling) {
+  const widths = [2600, 1200, 1600, 1600, 1600, 2350];
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: [
+      cell("Afdeling", { width: widths[0], header: true }),
+      cell("Rollen", { width: widths[1], header: true }),
+      cell("FTE huidig", { width: widths[2], header: true }),
+      cell("FTE realist.", { width: widths[3], header: true }),
+      cell("FTE agress.", { width: widths[4], header: true }),
+      cell("Besparing/jaar (R–A)", { width: widths[5], header: true }),
+    ],
+  });
+
+  const rows = subtotalenPerAfdeling.map((s, i) => {
+    const shaded = i % 2 === 1;
+    return new TableRow({
+      children: [
+        cell(s.afdeling, { width: widths[0], shaded }),
+        cell(String(s.aantalRollen), { width: widths[1], shaded }),
+        cell(s.scenarios.realistisch.totaalFteHuidig.toFixed(1), { width: widths[2], shaded }),
+        cell(s.scenarios.realistisch.totaalFteOver.toFixed(2), { width: widths[3], shaded }),
+        cell(s.scenarios.agressief.totaalFteOver.toFixed(2), { width: widths[4], shaded }),
+        cell(
+          `${eur(s.scenarios.realistisch.totaalKostenBesparingPerJaar)} – ${eur(s.scenarios.agressief.totaalKostenBesparingPerJaar)}`,
           { width: widths[5], shaded }
         ),
       ],
@@ -196,7 +246,7 @@ function organogramSection(rollen) {
     out.push(
       new Paragraph({
         spacing: { before: 200, after: 60 },
-        children: [new TextRun({ text: r.rolnaam, bold: true, size: 22 })],
+        children: [new TextRun({ text: r.roleLabel ?? r.rolnaam, bold: true, size: 22 })],
       })
     );
     out.push(paragraph(`Huidig — ${r.fte.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
@@ -210,28 +260,24 @@ function organogramSection(rollen) {
   return out;
 }
 
-function competentieTable(rol) {
-  const widths = [2200, 900, 900, 4700];
+function competentieTop5Table(items) {
+  const widths = [900, 5300, 1500];
   const headerRow = new TableRow({
     tableHeader: true,
     children: [
-      cell("Competentie", { width: widths[0], header: true }),
-      cell("Nu", { width: widths[1], header: true }),
-      cell("Na", { width: widths[2], header: true }),
-      cell("Toelichting", { width: widths[3], header: true }),
+      cell("#", { width: widths[0], header: true }),
+      cell("Competentie", { width: widths[1], header: true }),
+      cell("Relatief gewicht", { width: widths[2], header: true }),
     ],
   });
 
-  const rows = (rol.competenties ?? []).map((c, i) => {
+  const rows = items.map((c, i) => {
     const shaded = i % 2 === 1;
-    const delta = c.belangNa - c.belangNu;
-    const trend = delta > 0 ? "↑ " : delta < 0 ? "↓ " : "= ";
     return new TableRow({
       children: [
-        cell(c.naam, { width: widths[0], shaded }),
-        cell(`${c.belangNu}/5`, { width: widths[1], shaded }),
-        cell(`${trend}${c.belangNa}/5`, { width: widths[2], shaded }),
-        cell(c.toelichting, { width: widths[3], shaded }),
+        cell(String(i + 1), { width: widths[0], shaded }),
+        cell(c.naam, { width: widths[1], shaded }),
+        cell(`${c.relatiefPct}%`, { width: widths[2], shaded }),
       ],
     });
   });
@@ -249,8 +295,20 @@ function competentieTable(rol) {
  * @param {object} results - het resultaat-object zoals opgeslagen in results.json
  */
 export async function generateReportDocx(results) {
-  const { bedrijfsnaam, gegenereerdOp, missingProfiles, organisatieTotaal, rollen, sectorAnalyse, aanbevelingen } = results;
+  const {
+    bedrijfsnaam,
+    scope,
+    scopeLabel,
+    gegenereerdOp,
+    missingProfiles,
+    organisatieTotaal,
+    subtotalenPerAfdeling,
+    rollen,
+    sectorAnalyse,
+    aanbevelingen,
+  } = results;
   const datum = new Date(gegenereerdOp).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" });
+  const scopeSuffix = scope === "afdeling" && scopeLabel ? ` — ${scopeLabel}` : "";
 
   const children = [
     new Paragraph({
@@ -261,8 +319,24 @@ export async function generateReportDocx(results) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 40 },
-      children: [new TextRun({ text: bedrijfsnaam ?? "", size: 28, color: "475569" })],
+      children: [new TextRun({ text: `${bedrijfsnaam ?? ""}${scopeSuffix}`, size: 28, color: "475569" })],
     }),
+    ...(scope === "afdeling" && scopeLabel
+      ? [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 40 },
+            children: [
+              new TextRun({
+                text: `Dit rapport betreft de business unit/afdeling "${scopeLabel}", niet de volledige organisatie.`,
+                size: 18,
+                italics: true,
+                color: "B45309",
+              }),
+            ],
+          }),
+        ]
+      : []),
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 },
@@ -284,6 +358,7 @@ export async function generateReportDocx(results) {
           organisatieTotaal.realistisch.totaalKostenBesparingPerJaar
         )} tot ${eur(organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}.`
     ),
+    ...(waardetypeSummarySentence(rollen) ? [paragraph(waardetypeSummarySentence(rollen))] : []),
     ...(sectorAnalyse
       ? [
           paragraph(
@@ -296,6 +371,10 @@ export async function generateReportDocx(results) {
 
     heading("Interne transformatie — overzicht per rol"),
     rolSummaryTable(rollen),
+
+    ...(subtotalenPerAfdeling?.length
+      ? [heading("Subtotalen per afdeling", HeadingLevel.HEADING_2), subtotalenTable(subtotalenPerAfdeling)]
+      : []),
 
     heading("Organogram — voor & na"),
     ...organogramSection(rollen),
@@ -314,16 +393,38 @@ export async function generateReportDocx(results) {
     heading("Detail per rol — taakverdeling & competenties"),
     ...rollen.flatMap((r) => [
       heading(
-        `${r.rolnaam} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(
+        `${r.roleLabel ?? r.rolnaam} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(
           2
         )} agressief)`,
         HeadingLevel.HEADING_2
       ),
-      taakTable(r),
-      ...(r.competenties?.length
+      ...(getWaardetype(r.waardetype)
         ? [
-            new Paragraph({ spacing: { before: 150, after: 80 }, children: [new TextRun({ text: "Competentieverschuiving", bold: true, size: 20 })] }),
-            competentieTable(r),
+            paragraph(
+              `${getWaardetype(r.waardetype).icon} ${getWaardetype(r.waardetype).label}${
+                r.waardetypeToelichting ? ` — ${r.waardetypeToelichting}` : ""
+              }`,
+              { bold: true, size: 18 }
+            ),
+          ]
+        : []),
+      taakTable(r),
+      ...(r.competentieTop5?.top5Nu?.length
+        ? [
+            new Paragraph({
+              spacing: { before: 150, after: 80 },
+              children: [new TextRun({ text: "De functie vóór de transformatie — top 5 competenties", bold: true, size: 20 })],
+            }),
+            competentieTop5Table(r.competentieTop5.top5Nu),
+          ]
+        : []),
+      ...(r.competentieTop5?.top5Na?.length
+        ? [
+            new Paragraph({
+              spacing: { before: 150, after: 80 },
+              children: [new TextRun({ text: "De functie ná de transformatie — top 5 competenties", bold: true, size: 20 })],
+            }),
+            competentieTop5Table(r.competentieTop5.top5Na),
           ]
         : []),
       new Paragraph({ spacing: { after: 200 }, children: [] }),

@@ -1,109 +1,196 @@
-import fs from "node:fs";
-import path from "node:path";
-import crypto from "node:crypto";
+import { getSupabase, FILES_BUCKET } from "./supabase";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const CLIENTS_INDEX = path.join(DATA_DIR, "clients.json");
+function rowToClient(row) {
+  return {
+    id: row.id,
+    naam: row.naam,
+    sector: row.sector,
+    scope: row.scope,
+    scopeLabel: row.scope_label,
+    createdAt: row.created_at,
+  };
+}
 
-function ensureDataDir() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(CLIENTS_INDEX)) {
-    fs.writeFileSync(CLIENTS_INDEX, "[]", "utf-8");
+export async function listClients() {
+  const { data, error } = await getSupabase()
+    .from("clients")
+    .select("id, naam, sector, scope, scope_label, created_at")
+    .order("naam");
+  if (error) throw error;
+  return data.map(rowToClient);
+}
+
+export async function createClient(naam) {
+  const { data, error } = await getSupabase()
+    .from("clients")
+    .insert({ naam })
+    .select("id, naam, sector, scope, scope_label, created_at")
+    .single();
+  if (error) throw error;
+  return rowToClient(data);
+}
+
+export async function getClientMeta(id) {
+  const { data, error } = await getSupabase()
+    .from("clients")
+    .select("id, naam, sector, scope, scope_label, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToClient(data) : null;
+}
+
+export async function updateClientMeta(id, patch) {
+  const dbPatch = {};
+  if ("naam" in patch) dbPatch.naam = patch.naam;
+  if ("sector" in patch) dbPatch.sector = patch.sector;
+  if ("impact" in patch) dbPatch.impact = patch.impact;
+  if ("readiness" in patch) dbPatch.readiness = patch.readiness;
+  if ("scope" in patch) dbPatch.scope = patch.scope;
+  if ("scopeLabel" in patch) dbPatch.scope_label = patch.scopeLabel;
+
+  const { data, error } = await getSupabase()
+    .from("clients")
+    .update(dbPatch)
+    .eq("id", id)
+    .select("id, naam, sector, scope, scope_label, created_at")
+    .maybeSingle();
+  if (error) throw error;
+  return data ? rowToClient(data) : null;
+}
+
+async function removeAllUnderPrefix(supabase, prefix) {
+  const { data: rootFiles } = await supabase.storage.from(FILES_BUCKET).list(prefix, { limit: 1000 });
+  const paths = [];
+  for (const entry of rootFiles ?? []) {
+    if (entry.id === null) continue; // subfolder placeholder, handled below
+    paths.push(`${prefix}/${entry.name}`);
+  }
+  const { data: profileFiles } = await supabase.storage.from(FILES_BUCKET).list(`${prefix}/profiles`, { limit: 1000 });
+  for (const entry of profileFiles ?? []) {
+    paths.push(`${prefix}/profiles/${entry.name}`);
+  }
+  if (paths.length > 0) {
+    await supabase.storage.from(FILES_BUCKET).remove(paths);
   }
 }
 
-function readIndex() {
-  ensureDataDir();
-  return JSON.parse(fs.readFileSync(CLIENTS_INDEX, "utf-8"));
+export async function deleteClient(id) {
+  const supabase = getSupabase();
+  await removeAllUnderPrefix(supabase, id);
+  const { error } = await supabase.from("clients").delete().eq("id", id);
+  if (error) throw error;
 }
 
-function writeIndex(clients) {
-  fs.writeFileSync(CLIENTS_INDEX, JSON.stringify(clients, null, 2), "utf-8");
+export async function readAnswers(id) {
+  const { data, error } = await getSupabase()
+    .from("clients")
+    .select("sector, impact, readiness, scope, scope_label")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return { sector: null, impact: {}, readiness: {}, scope: "bedrijf", scopeLabel: "" };
+  return {
+    sector: data.sector,
+    impact: data.impact ?? {},
+    readiness: data.readiness ?? {},
+    scope: data.scope ?? "bedrijf",
+    scopeLabel: data.scope_label ?? "",
+  };
 }
 
-export function clientDir(id) {
-  return path.join(DATA_DIR, "clients", id);
+export async function readResults(id) {
+  const { data, error } = await getSupabase().from("clients").select("results").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data?.results ?? null;
 }
 
-export function profilesDir(id) {
-  return path.join(clientDir(id), "profiles");
+export async function writeResults(id, results) {
+  const { error } = await getSupabase().from("clients").update({ results }).eq("id", id);
+  if (error) throw error;
 }
 
-export function listClients() {
-  return readIndex().sort((a, b) => a.naam.localeCompare(b.naam));
+const CONTENT_TYPES = {
+  ".csv": "text/csv",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".xls": "application/vnd.ms-excel",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".pdf": "application/pdf",
+  ".txt": "text/plain",
+  ".md": "text/markdown",
+};
+
+function contentTypeFor(fileName) {
+  const ext = fileName.slice(fileName.lastIndexOf(".")).toLowerCase();
+  return CONTENT_TYPES[ext] ?? "application/octet-stream";
 }
 
-export function createClient(naam) {
-  const clients = readIndex();
-  const id = crypto.randomUUID();
-  const client = { id, naam, sector: null, createdAt: new Date().toISOString() };
-  clients.push(client);
-  writeIndex(clients);
+export async function uploadRoster(id, fileName, buffer) {
+  const supabase = getSupabase();
+  const { data: existing } = await supabase.storage.from(FILES_BUCKET).list(id, { limit: 1000 });
+  const oldRosterFiles = (existing ?? []).filter((f) => f.id !== null && f.name.startsWith("roster.")).map((f) => `${id}/${f.name}`);
+  if (oldRosterFiles.length > 0) {
+    await supabase.storage.from(FILES_BUCKET).remove(oldRosterFiles);
+  }
 
-  fs.mkdirSync(profilesDir(id), { recursive: true });
-  writeAnswers(id, { sector: null, impact: {}, readiness: {} });
-
-  return client;
+  const storedName = `roster${fileName.slice(fileName.lastIndexOf("."))}`;
+  const { error } = await supabase.storage
+    .from(FILES_BUCKET)
+    .upload(`${id}/${storedName}`, buffer, { contentType: contentTypeFor(storedName), upsert: true });
+  if (error) throw error;
+  return storedName;
 }
 
-export function getClientMeta(id) {
-  return readIndex().find((c) => c.id === id) ?? null;
+export async function getRosterInfo(id) {
+  const supabase = getSupabase();
+  const { data } = await supabase.storage.from(FILES_BUCKET).list(id, { limit: 1000 });
+  const rosterFile = (data ?? []).find((f) => f.id !== null && f.name.startsWith("roster."));
+  return rosterFile ? { fileName: rosterFile.name } : null;
 }
 
-export function updateClientMeta(id, patch) {
-  const clients = readIndex();
-  const idx = clients.findIndex((c) => c.id === id);
-  if (idx === -1) return null;
-  clients[idx] = { ...clients[idx], ...patch };
-  writeIndex(clients);
-  return clients[idx];
+export async function getRosterBuffer(id) {
+  const info = await getRosterInfo(id);
+  if (!info) return null;
+  const supabase = getSupabase();
+  const { data, error } = await supabase.storage.from(FILES_BUCKET).download(`${id}/${info.fileName}`);
+  if (error) throw error;
+  const buffer = Buffer.from(await data.arrayBuffer());
+  return { fileName: info.fileName, buffer };
 }
 
-export function deleteClient(id) {
-  const clients = readIndex().filter((c) => c.id !== id);
-  writeIndex(clients);
-  fs.rmSync(clientDir(id), { recursive: true, force: true });
+export async function uploadProfiles(id, files) {
+  const supabase = getSupabase();
+  const saved = [];
+  for (const { fileName, buffer } of files) {
+    const { error } = await supabase.storage
+      .from(FILES_BUCKET)
+      .upload(`${id}/profiles/${fileName}`, buffer, { contentType: contentTypeFor(fileName), upsert: true });
+    if (error) throw error;
+    saved.push(fileName);
+  }
+  return saved;
 }
 
-function answersPath(id) {
-  return path.join(clientDir(id), "answers.json");
+export async function listProfileFiles(id) {
+  const supabase = getSupabase();
+  const { data } = await supabase.storage.from(FILES_BUCKET).list(`${id}/profiles`, { limit: 1000 });
+  return (data ?? []).filter((f) => f.id !== null).map((f) => f.name);
 }
 
-export function readAnswers(id) {
-  const p = answersPath(id);
-  if (!fs.existsSync(p)) return { sector: null, impact: {}, readiness: {} };
-  return JSON.parse(fs.readFileSync(p, "utf-8"));
+export async function deleteProfileFile(id, fileName) {
+  const supabase = getSupabase();
+  const { error } = await supabase.storage.from(FILES_BUCKET).remove([`${id}/profiles/${fileName}`]);
+  if (error) throw error;
 }
 
-export function writeAnswers(id, answers) {
-  fs.mkdirSync(clientDir(id), { recursive: true });
-  fs.writeFileSync(answersPath(id), JSON.stringify(answers, null, 2), "utf-8");
-}
-
-export function rosterPath(id) {
-  const dir = clientDir(id);
-  if (!fs.existsSync(dir)) return null;
-  const files = fs.readdirSync(dir).filter((f) => f.startsWith("roster."));
-  return files.length > 0 ? path.join(dir, files[0]) : null;
-}
-
-export function listProfileFiles(id) {
-  const dir = profilesDir(id);
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir);
-}
-
-export function resultsPath(id) {
-  return path.join(clientDir(id), "results.json");
-}
-
-export function readResults(id) {
-  const p = resultsPath(id);
-  if (!fs.existsSync(p)) return null;
-  return JSON.parse(fs.readFileSync(p, "utf-8"));
-}
-
-export function writeResults(id, results) {
-  fs.mkdirSync(clientDir(id), { recursive: true });
-  fs.writeFileSync(resultsPath(id), JSON.stringify(results, null, 2), "utf-8");
+export async function getProfileBuffers(id) {
+  const fileNames = await listProfileFiles(id);
+  const supabase = getSupabase();
+  const files = [];
+  for (const fileName of fileNames) {
+    const { data, error } = await supabase.storage.from(FILES_BUCKET).download(`${id}/profiles/${fileName}`);
+    if (error) throw error;
+    files.push({ fileName, buffer: Buffer.from(await data.arrayBuffer()) });
+  }
+  return files;
 }

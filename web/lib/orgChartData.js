@@ -9,7 +9,8 @@ export function buildOrgChartData(rollen) {
   return {
     maxFte,
     rollen: rollen.map((r) => ({
-      rolnaam: r.rolnaam,
+      roleId: r.roleId ?? r.rolnaam,
+      rolnaam: r.roleLabel ?? r.rolnaam,
       fteHuidig: r.fte,
       fteRealistisch: r.scenarios.realistisch.fteOver,
       fteAgressief: r.scenarios.agressief.fteOver,

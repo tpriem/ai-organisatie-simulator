@@ -1,75 +1,78 @@
-import fs from "node:fs";
 import path from "node:path";
 import mammoth from "mammoth";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { slugify, roleLabel, roleId } from "./roleIdentity.js";
 
 const SUPPORTED_EXT = [".docx", ".pdf", ".txt", ".md"];
 
-function slugify(name) {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
+export { SUPPORTED_EXT, slugify, roleLabel, roleId };
 
-async function readProfileFile(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
+async function readProfileBuffer(buffer, fileName) {
+  const ext = path.extname(fileName).toLowerCase();
   if (ext === ".docx") {
-    const { value } = await mammoth.extractRawText({ path: filePath });
+    const { value } = await mammoth.extractRawText({ buffer });
     return value;
   }
   if (ext === ".pdf") {
-    const buffer = fs.readFileSync(filePath);
     const { text } = await pdfParse(buffer);
     return text;
   }
   if (ext === ".txt" || ext === ".md") {
-    return fs.readFileSync(filePath, "utf-8");
+    return buffer.toString("utf-8");
   }
   throw new Error(`Onbekend bestandstype voor functieprofiel: ${ext}`);
 }
 
 /**
- * Leest alle functieprofielen uit een map en geeft { slug -> { fileName, text } } terug.
+ * Leest een set functieprofielen (bestandsnaam + buffer) en geeft { slug -> { fileName, text } } terug.
+ * @param {{ fileName: string, buffer: Buffer }[]} files
  */
-export async function parseProfilesDir(dirPath) {
-  const files = fs
-    .readdirSync(dirPath)
-    .filter((f) => SUPPORTED_EXT.includes(path.extname(f).toLowerCase()));
+export async function parseProfileFiles(files) {
+  const supported = files.filter((f) => SUPPORTED_EXT.includes(path.extname(f.fileName).toLowerCase()));
 
-  if (files.length === 0) {
-    throw new Error(`Geen functieprofielen gevonden in ${dirPath} (verwacht .docx, .pdf, .txt of .md).`);
+  if (supported.length === 0) {
+    throw new Error(`Geen functieprofielen gevonden (verwacht .docx, .pdf, .txt of .md).`);
   }
 
   const profiles = {};
-  for (const file of files) {
-    const fullPath = path.join(dirPath, file);
-    const text = (await readProfileFile(fullPath)).trim();
-    const baseName = path.basename(file, path.extname(file));
-    profiles[slugify(baseName)] = { fileName: file, roleNameGuess: baseName, text };
+  for (const { fileName, buffer } of supported) {
+    const text = (await readProfileBuffer(buffer, fileName)).trim();
+    const baseName = path.basename(fileName, path.extname(fileName));
+    profiles[slugify(baseName)] = { fileName, roleNameGuess: baseName, text };
   }
   return profiles;
 }
 
-export { slugify };
-
 /**
- * Matcht roster-rollen aan functieprofielen op basis van geslugificeerde naam.
- * Geeft { matched: [{rolnaam, profile}], missing: [rolnaam] } terug.
+ * Matcht roster-rollen aan functieprofielen.
+ *
+ * Zonder afdeling: matcht op geslugificeerde rolnaam (ongewijzigd gedrag).
+ * Met afdeling: zoekt eerst een afdeling-specifiek profiel ("<afdeling>_<rolnaam>" of
+ * "<rolnaam>_<afdeling>" als bestandsnaam), en valt terug op een gedeeld profiel op
+ * rolnaam alleen als dat niet bestaat — zo kan dezelfde rolnaam in twee afdelingen naar
+ * twee verschillende profielen wijzen wanneer de taken echt verschillen.
+ *
+ * Geeft { matched: [{...row, profile}], missing: [roleLabel] } terug.
  */
 export function matchRosterToProfiles(rosterRows, profiles) {
   const matched = [];
   const missing = [];
 
   for (const row of rosterRows) {
-    const slug = slugify(row.rolnaam);
-    const profile = profiles[slug];
+    const rolSlug = slugify(row.rolnaam);
+    let profile = null;
+
+    if (row.afdeling) {
+      const afdSlug = slugify(row.afdeling);
+      profile = profiles[`${afdSlug}_${rolSlug}`] ?? profiles[`${rolSlug}_${afdSlug}`] ?? profiles[rolSlug] ?? null;
+    } else {
+      profile = profiles[rolSlug] ?? null;
+    }
+
     if (profile) {
       matched.push({ ...row, profile });
     } else {
-      missing.push(row.rolnaam);
+      missing.push(roleLabel(row));
     }
   }
 

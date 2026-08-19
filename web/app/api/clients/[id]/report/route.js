@@ -7,10 +7,10 @@ function safeFileSegment(name) {
 
 export async function GET(request, { params }) {
   const { id } = await params;
-  const meta = getClientMeta(id);
+  const meta = await getClientMeta(id);
   if (!meta) return new Response(JSON.stringify({ error: "Klant niet gevonden" }), { status: 404 });
 
-  const results = readResults(id);
+  const results = await readResults(id);
   if (!results) {
     return new Response(JSON.stringify({ error: "Nog geen analyse uitgevoerd voor deze klant" }), { status: 400 });
   }

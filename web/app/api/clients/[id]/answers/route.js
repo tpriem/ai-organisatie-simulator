@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
-import { getClientMeta, updateClientMeta, writeAnswers } from "@/lib/clientStore";
+import { getClientMeta, updateClientMeta } from "@/lib/clientStore";
 
 export async function POST(request, { params }) {
   const { id } = await params;
-  if (!getClientMeta(id)) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
+  if (!(await getClientMeta(id))) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
 
-  const { sector, impact, readiness } = await request.json();
-  writeAnswers(id, { sector: sector ?? null, impact: impact ?? {}, readiness: readiness ?? {} });
-  updateClientMeta(id, { sector: sector ?? null });
+  const { sector, impact, readiness, scope, scopeLabel } = await request.json();
+  await updateClientMeta(id, {
+    sector: sector ?? null,
+    impact: impact ?? {},
+    readiness: readiness ?? {},
+    scope: scope ?? "bedrijf",
+    scopeLabel: scopeLabel ?? "",
+  });
 
   return NextResponse.json({ ok: true });
 }
