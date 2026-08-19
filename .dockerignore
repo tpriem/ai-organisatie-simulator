@@ -1,0 +1,11 @@
+.git
+node_modules
+web/node_modules
+web/.next
+web/data
+test-data
+output
+.env
+.env.*
+web/.env*
+*.md

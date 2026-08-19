@@ -1,0 +1,980 @@
+{
+  "bedrijfsnaam": "Voorbeeld BV",
+  "gegenereerdOp": "2026-08-07T14:21:31.845Z",
+  "missingProfiles": [],
+  "organisatieTotaal": {
+    "realistisch": {
+      "totaalFteHuidig": 10,
+      "totaalFteWeg": 5.710681818181818,
+      "totaalFteOver": 4.289318181818182,
+      "reductiePercentageOrganisatie": 0.5674232488822654,
+      "totaalKostenBesparingPerJaar": 412133.49745454546
+    },
+    "agressief": {
+      "totaalFteHuidig": 10,
+      "totaalFteWeg": 7.529681818181819,
+      "totaalFteOver": 2.4703181818181816,
+      "reductiePercentageOrganisatie": 0.7500243417784401,
+      "totaalKostenBesparingPerJaar": 555854.2174545455
+    }
+  },
+  "rollen": [
+    {
+      "rolnaam": "Klantenservice medewerker",
+      "fte": 4,
+      "urenPerWeek": 36,
+      "kostenPerUur": 28,
+      "totaalUrenPerWeek": 144,
+      "scenarios": {
+        "realistisch": {
+          "automatiseerbareUrenPerWeek": 96.264,
+          "overgeblevenUrenPerWeek": 47.736000000000004,
+          "fteWeg": 2.674,
+          "fteOver": 1.326,
+          "reductiePercentage": 0.6685,
+          "kostenBesparingPerWeek": 2695.392,
+          "kostenBesparingPerJaar": 140160.384,
+          "outputgroeiPercentage": 2.0165912518853695,
+          "taken": [
+            {
+              "omschrijving": "Beantwoorden van inkomende telefoontjes, e-mails en chatberichten van klanten",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.5,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 72,
+              "urenAutomatiseerbaarPerWeek": 50.4
+            },
+            {
+              "omschrijving": "Registreren van klantvragen en -klachten in het CRM-systeem",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.15,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 21.599999999999998,
+              "urenAutomatiseerbaarPerWeek": 16.2
+            },
+            {
+              "omschrijving": "Doorverwijzen van complexe of gevoelige zaken naar een specialist of teamleider",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.05,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 7.2,
+              "urenAutomatiseerbaarPerWeek": 5.04
+            },
+            {
+              "omschrijving": "Actief meedenken met klanten over passende oplossingen bij twijfelgevallen",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.15,
+              "automatiseringspercentage": 0.55,
+              "urenPerWeek": 21.599999999999998,
+              "urenAutomatiseerbaarPerWeek": 11.879999999999999
+            },
+            {
+              "omschrijving": "Bijhouden en up-to-date houden van standaard FAQ-documentatie",
+              "categorie": "schrijven",
+              "categorieLabel": "Schrijven & documentatie",
+              "aandeel": 0.08,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 11.52,
+              "urenAutomatiseerbaarPerWeek": 8.064
+            },
+            {
+              "omschrijving": "Opstellen van dagelijkse rapportages over volumes en veelvoorkomende vragen",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.05,
+              "automatiseringspercentage": 0.55,
+              "urenPerWeek": 7.2,
+              "urenAutomatiseerbaarPerWeek": 3.9600000000000004
+            },
+            {
+              "omschrijving": "Incidenteel meewerken aan verbetertrajecten voor klantprocessen",
+              "categorie": "strategisch",
+              "categorieLabel": "Strategisch denkwerk",
+              "aandeel": 0.02,
+              "automatiseringspercentage": 0.25,
+              "urenPerWeek": 2.88,
+              "urenAutomatiseerbaarPerWeek": 0.72
+            }
+          ]
+        },
+        "agressief": {
+          "automatiseerbareUrenPerWeek": 119.44800000000001,
+          "overgeblevenUrenPerWeek": 24.551999999999992,
+          "fteWeg": 3.318,
+          "fteOver": 0.6819999999999999,
+          "reductiePercentage": 0.8295,
+          "kostenBesparingPerWeek": 3344.5440000000003,
+          "kostenBesparingPerJaar": 173916.28800000003,
+          "outputgroeiPercentage": 4.86510263929619,
+          "taken": [
+            {
+              "omschrijving": "Beantwoorden van inkomende telefoontjes, e-mails en chatberichten van klanten",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.5,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 72,
+              "urenAutomatiseerbaarPerWeek": 61.199999999999996
+            },
+            {
+              "omschrijving": "Registreren van klantvragen en -klachten in het CRM-systeem",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.15,
+              "automatiseringspercentage": 0.9,
+              "urenPerWeek": 21.599999999999998,
+              "urenAutomatiseerbaarPerWeek": 19.439999999999998
+            },
+            {
+              "omschrijving": "Doorverwijzen van complexe of gevoelige zaken naar een specialist of teamleider",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.05,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 7.2,
+              "urenAutomatiseerbaarPerWeek": 6.12
+            },
+            {
+              "omschrijving": "Actief meedenken met klanten over passende oplossingen bij twijfelgevallen",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.15,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 21.599999999999998,
+              "urenAutomatiseerbaarPerWeek": 16.2
+            },
+            {
+              "omschrijving": "Bijhouden en up-to-date houden van standaard FAQ-documentatie",
+              "categorie": "schrijven",
+              "categorieLabel": "Schrijven & documentatie",
+              "aandeel": 0.08,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 11.52,
+              "urenAutomatiseerbaarPerWeek": 9.792
+            },
+            {
+              "omschrijving": "Opstellen van dagelijkse rapportages over volumes en veelvoorkomende vragen",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.05,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 7.2,
+              "urenAutomatiseerbaarPerWeek": 5.4
+            },
+            {
+              "omschrijving": "Incidenteel meewerken aan verbetertrajecten voor klantprocessen",
+              "categorie": "strategisch",
+              "categorieLabel": "Strategisch denkwerk",
+              "aandeel": 0.02,
+              "automatiseringspercentage": 0.45,
+              "urenPerWeek": 2.88,
+              "urenAutomatiseerbaarPerWeek": 1.296
+            }
+          ]
+        }
+      },
+      "competenties": [
+        {
+          "naam": "Routinematig klantcontact afhandelen",
+          "belangNu": 5,
+          "belangNa": 2,
+          "toelichting": "70% van eenvoudige telefoon-, e-mail- en chatvragen wordt door AI-chatbots en voice-bots afgehandeld."
+        },
+        {
+          "naam": "Data-invoer & administratie in CRM",
+          "belangNu": 4,
+          "belangNa": 1,
+          "toelichting": "75% van de registratie van klantvragen wordt automatisch gelogd en gecategoriseerd door AI-systemen."
+        },
+        {
+          "naam": "Kwaliteitscontrole van AI-output",
+          "belangNu": 1,
+          "belangNa": 5,
+          "toelichting": "Medewerkers moeten AI-gegenereerde antwoorden en CRM-registraties controleren op juistheid en klanttoon voordat ze de klant bereiken."
+        },
+        {
+          "naam": "Complex klachtenmanagement & empathie",
+          "belangNu": 3,
+          "belangNa": 5,
+          "toelichting": "De overgebleven, niet-geautomatiseerde 30% van gesprekken betreft juist de gevoelige en complexe zaken die meer empathisch en oplossingsgericht handelen vereisen."
+        },
+        {
+          "naam": "Analytisch denken bij twijfelgevallen",
+          "belangNu": 3,
+          "belangNa": 4,
+          "toelichting": "Bij 55% automatisering van meedenktaken blijft er een kern van complexe casussen over die menselijk beoordelingsvermogen vergt, ondersteund door AI-inzichten."
+        },
+        {
+          "naam": "AI-prompting en tool-samenwerking",
+          "belangNu": 1,
+          "belangNa": 4,
+          "toelichting": "Medewerkers moeten AI-systemen effectief aansturen en bijstellen voor klantcontact, documentatie en rapportages."
+        },
+        {
+          "naam": "Schrijven & documentatiebeheer (FAQ)",
+          "belangNu": 3,
+          "belangNa": 2,
+          "toelichting": "70% van het FAQ-onderhoud kan door AI worden gegenereerd, maar menselijke redactie en validatie blijven nodig."
+        },
+        {
+          "naam": "Procesverbetering & strategisch meedenken",
+          "belangNu": 2,
+          "belangNa": 4,
+          "toelichting": "Doordat routinetaken wegvallen, krijgt de medewerker meer ruimte en verantwoordelijkheid om bij te dragen aan het verbeteren van klantprocessen met AI-inzichten."
+        }
+      ]
+    },
+    {
+      "rolnaam": "Financieel administratief medewerker",
+      "fte": 1,
+      "urenPerWeek": 32,
+      "kostenPerUur": 32,
+      "totaalUrenPerWeek": 32,
+      "scenarios": {
+        "realistisch": {
+          "automatiseerbareUrenPerWeek": 21.232,
+          "overgeblevenUrenPerWeek": 10.768,
+          "fteWeg": 0.6635,
+          "fteOver": 0.3365,
+          "reductiePercentage": 0.6635,
+          "kostenBesparingPerWeek": 679.424,
+          "kostenBesparingPerJaar": 35330.047999999995,
+          "outputgroeiPercentage": 1.9717682020802376,
+          "taken": [
+            {
+              "omschrijving": "Verwerken en controleren van inkomende en uitgaande facturen",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.35,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 11.2,
+              "urenAutomatiseerbaarPerWeek": 8.399999999999999
+            },
+            {
+              "omschrijving": "Invoeren van boekingen in het boekhoudsysteem",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.2,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 6.4,
+              "urenAutomatiseerbaarPerWeek": 4.800000000000001
+            },
+            {
+              "omschrijving": "Bijhouden van debiteuren- en crediteurenadministratie, inclusief betalingsherinneringen",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.12,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 3.84,
+              "urenAutomatiseerbaarPerWeek": 2.6879999999999997
+            },
+            {
+              "omschrijving": "Voorbereiden van de maandelijkse en kwartaalafsluiting",
+              "categorie": "plannen",
+              "categorieLabel": "Plannen & coördineren",
+              "aandeel": 0.1,
+              "automatiseringspercentage": 0.45,
+              "urenPerWeek": 3.2,
+              "urenAutomatiseerbaarPerWeek": 1.4400000000000002
+            },
+            {
+              "omschrijving": "Analyseren van afwijkingen in kostenposten en hierover rapporteren aan de controller",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.12,
+              "automatiseringspercentage": 0.55,
+              "urenPerWeek": 3.84,
+              "urenAutomatiseerbaarPerWeek": 2.112
+            },
+            {
+              "omschrijving": "Ondersteunen bij de jaarrekening en contact met de accountant",
+              "categorie": "compliance",
+              "categorieLabel": "Compliance & juridisch werk",
+              "aandeel": 0.06,
+              "automatiseringspercentage": 0.35,
+              "urenPerWeek": 1.92,
+              "urenAutomatiseerbaarPerWeek": 0.6719999999999999
+            },
+            {
+              "omschrijving": "Beantwoorden van financiële vragen van interne collega's",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.05,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 1.6,
+              "urenAutomatiseerbaarPerWeek": 1.1199999999999999
+            }
+          ]
+        },
+        "agressief": {
+          "automatiseerbareUrenPerWeek": 26.575999999999997,
+          "overgeblevenUrenPerWeek": 5.424000000000003,
+          "fteWeg": 0.8304999999999999,
+          "fteOver": 0.1695000000000001,
+          "reductiePercentage": 0.8304999999999999,
+          "kostenBesparingPerWeek": 850.4319999999999,
+          "kostenBesparingPerJaar": 44222.46399999999,
+          "outputgroeiPercentage": 4.89970501474926,
+          "taken": [
+            {
+              "omschrijving": "Verwerken en controleren van inkomende en uitgaande facturen",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.35,
+              "automatiseringspercentage": 0.9,
+              "urenPerWeek": 11.2,
+              "urenAutomatiseerbaarPerWeek": 10.08
+            },
+            {
+              "omschrijving": "Invoeren van boekingen in het boekhoudsysteem",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.2,
+              "automatiseringspercentage": 0.9,
+              "urenPerWeek": 6.4,
+              "urenAutomatiseerbaarPerWeek": 5.760000000000001
+            },
+            {
+              "omschrijving": "Bijhouden van debiteuren- en crediteurenadministratie, inclusief betalingsherinneringen",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.12,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 3.84,
+              "urenAutomatiseerbaarPerWeek": 3.264
+            },
+            {
+              "omschrijving": "Voorbereiden van de maandelijkse en kwartaalafsluiting",
+              "categorie": "plannen",
+              "categorieLabel": "Plannen & coördineren",
+              "aandeel": 0.1,
+              "automatiseringspercentage": 0.65,
+              "urenPerWeek": 3.2,
+              "urenAutomatiseerbaarPerWeek": 2.08
+            },
+            {
+              "omschrijving": "Analyseren van afwijkingen in kostenposten en hierover rapporteren aan de controller",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.12,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 3.84,
+              "urenAutomatiseerbaarPerWeek": 2.88
+            },
+            {
+              "omschrijving": "Ondersteunen bij de jaarrekening en contact met de accountant",
+              "categorie": "compliance",
+              "categorieLabel": "Compliance & juridisch werk",
+              "aandeel": 0.06,
+              "automatiseringspercentage": 0.6,
+              "urenPerWeek": 1.92,
+              "urenAutomatiseerbaarPerWeek": 1.152
+            },
+            {
+              "omschrijving": "Beantwoorden van financiële vragen van interne collega's",
+              "categorie": "klantcontact",
+              "categorieLabel": "Eenvoudig klantcontact & 1e lijns support",
+              "aandeel": 0.05,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 1.6,
+              "urenAutomatiseerbaarPerWeek": 1.36
+            }
+          ]
+        }
+      },
+      "competenties": [
+        {
+          "naam": "Handmatige data-invoer & factuurverwerking",
+          "belangNu": 5,
+          "belangNa": 1,
+          "toelichting": "Facturatie en boekingen worden voor 75% geautomatiseerd door AI-herkenning en koppelingen met boekhoudsoftware."
+        },
+        {
+          "naam": "Kwaliteitscontrole van AI-output",
+          "belangNu": 1,
+          "belangNa": 5,
+          "toelichting": "Nu ligt de nadruk op zelf invoeren, straks op het controleren en corrigeren van automatisch verwerkte facturen en boekingen."
+        },
+        {
+          "naam": "Cijfermatig inzicht & analytisch vermogen",
+          "belangNu": 4,
+          "belangNa": 5,
+          "toelichting": "Bij afwijkingenanalyse blijft mensinzicht nodig om AI-gegenereerde signalen te interpreteren en te duiden richting de controller."
+        },
+        {
+          "naam": "Basiskennis fiscale en compliance-regelgeving",
+          "belangNu": 3,
+          "belangNa": 4,
+          "toelichting": "Bij jaarrekening en accountantscontact (slechts 35% automatiseerbaar) blijft juridisch-fiscale kennis cruciaal voor correcte interpretatie."
+        },
+        {
+          "naam": "Klantgericht communiceren (debiteuren/interne vragen)",
+          "belangNu": 3,
+          "belangNa": 2,
+          "toelichting": "Standaard betalingsherinneringen en eenvoudige vragen worden grotendeels overgenomen door chatbots of geautomatiseerde workflows (70% automatiseerbaar)."
+        },
+        {
+          "naam": "AI-prompting & tooling boekhoudsystemen",
+          "belangNu": 1,
+          "belangNa": 4,
+          "toelichting": "Werken met AI-gestuurde boekhoudsoftware vereist nieuwe vaardigheden om systemen goed aan te sturen en uitkomsten te valideren."
+        },
+        {
+          "naam": "Plannen & coördineren van afsluitprocessen",
+          "belangNu": 3,
+          "belangNa": 3,
+          "toelichting": "Maand- en kwartaalafsluiting blijft deels mensenwerk (slechts 45% automatiseerbaar) en vraagt overzicht en regie."
+        },
+        {
+          "naam": "Kritisch denken bij uitzonderingen en escalaties",
+          "belangNu": 2,
+          "belangNa": 5,
+          "toelichting": "Nu AI routinegevallen afhandelt, verschuift de rol naar het beoordelen van complexe of afwijkende gevallen die uitzondering vormen."
+        }
+      ]
+    },
+    {
+      "rolnaam": "Accountmanager",
+      "fte": 2,
+      "urenPerWeek": 38,
+      "kostenPerUur": 42,
+      "totaalUrenPerWeek": 76,
+      "scenarios": {
+        "realistisch": {
+          "automatiseerbareUrenPerWeek": 31.47090909090909,
+          "overgeblevenUrenPerWeek": 44.52909090909091,
+          "fteWeg": 0.8281818181818181,
+          "fteOver": 1.1718181818181819,
+          "reductiePercentage": 0.41409090909090907,
+          "kostenBesparingPerWeek": 1321.7781818181818,
+          "kostenBesparingPerJaar": 68732.46545454545,
+          "outputgroeiPercentage": 0.7067494181536074,
+          "taken": [
+            {
+              "omschrijving": "Onderhouden van persoonlijk contact met bestaande klanten, inclusief periodieke bezoeken",
+              "categorie": "accountmanagement",
+              "categorieLabel": "Accountmanagement & relatiebeheer",
+              "aandeel": 0.2727272727272727,
+              "automatiseringspercentage": 0.2,
+              "urenPerWeek": 20.727272727272727,
+              "urenAutomatiseerbaarPerWeek": 4.1454545454545455
+            },
+            {
+              "omschrijving": "Opstellen van offertes en voorstellen op maat",
+              "categorie": "schrijven",
+              "categorieLabel": "Schrijven & documentatie",
+              "aandeel": 0.10909090909090907,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 8.29090909090909,
+              "urenAutomatiseerbaarPerWeek": 5.803636363636362
+            },
+            {
+              "omschrijving": "Signaleren en opvolgen van upsell- en cross-sellkansen",
+              "categorie": "accountmanagement",
+              "categorieLabel": "Accountmanagement & relatiebeheer",
+              "aandeel": 0.11818181818181818,
+              "automatiseringspercentage": 0.2,
+              "urenPerWeek": 8.981818181818182,
+              "urenAutomatiseerbaarPerWeek": 1.7963636363636366
+            },
+            {
+              "omschrijving": "Voeren van onderhandelingen over contractvoorwaarden en prijzen",
+              "categorie": "accountmanagement",
+              "categorieLabel": "Accountmanagement & relatiebeheer",
+              "aandeel": 0.10909090909090907,
+              "automatiseringspercentage": 0.2,
+              "urenPerWeek": 8.29090909090909,
+              "urenAutomatiseerbaarPerWeek": 1.658181818181818
+            },
+            {
+              "omschrijving": "Bijhouden van klantgegevens en verkoopkansen in het CRM",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.09090909090909091,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 6.909090909090909,
+              "urenAutomatiseerbaarPerWeek": 5.181818181818182
+            },
+            {
+              "omschrijving": "Opstellen van periodieke verkooprapportages voor het management",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.07272727272727272,
+              "automatiseringspercentage": 0.55,
+              "urenPerWeek": 5.527272727272727,
+              "urenAutomatiseerbaarPerWeek": 3.0400000000000005
+            },
+            {
+              "omschrijving": "Actief zoeken naar nieuwe leads via eigen netwerk en beurzen",
+              "categorie": "sourcing",
+              "categorieLabel": "Sourcing & leadgeneratie",
+              "aandeel": 0.13636363636363635,
+              "automatiseringspercentage": 0.65,
+              "urenPerWeek": 10.363636363636363,
+              "urenAutomatiseerbaarPerWeek": 6.736363636363636
+            },
+            {
+              "omschrijving": "Samenwerken met marketing en klantenservice om klanttevredenheid te waarborgen",
+              "categorie": "plannen",
+              "categorieLabel": "Plannen & coördineren",
+              "aandeel": 0.09090909090909091,
+              "automatiseringspercentage": 0.45,
+              "urenPerWeek": 6.909090909090909,
+              "urenAutomatiseerbaarPerWeek": 3.1090909090909093
+            }
+          ]
+        },
+        "agressief": {
+          "automatiseerbareUrenPerWeek": 44.01090909090909,
+          "overgeblevenUrenPerWeek": 31.989090909090912,
+          "fteWeg": 1.1581818181818182,
+          "fteOver": 0.8418181818181818,
+          "reductiePercentage": 0.5790909090909091,
+          "kostenBesparingPerWeek": 1848.4581818181816,
+          "kostenBesparingPerJaar": 96119.82545454544,
+          "outputgroeiPercentage": 1.3758099352051834,
+          "taken": [
+            {
+              "omschrijving": "Onderhouden van persoonlijk contact met bestaande klanten, inclusief periodieke bezoeken",
+              "categorie": "accountmanagement",
+              "categorieLabel": "Accountmanagement & relatiebeheer",
+              "aandeel": 0.2727272727272727,
+              "automatiseringspercentage": 0.35,
+              "urenPerWeek": 20.727272727272727,
+              "urenAutomatiseerbaarPerWeek": 7.254545454545454
+            },
+            {
+              "omschrijving": "Opstellen van offertes en voorstellen op maat",
+              "categorie": "schrijven",
+              "categorieLabel": "Schrijven & documentatie",
+              "aandeel": 0.10909090909090907,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 8.29090909090909,
+              "urenAutomatiseerbaarPerWeek": 7.047272727272726
+            },
+            {
+              "omschrijving": "Signaleren en opvolgen van upsell- en cross-sellkansen",
+              "categorie": "accountmanagement",
+              "categorieLabel": "Accountmanagement & relatiebeheer",
+              "aandeel": 0.11818181818181818,
+              "automatiseringspercentage": 0.35,
+              "urenPerWeek": 8.981818181818182,
+              "urenAutomatiseerbaarPerWeek": 3.1436363636363636
+            },
+            {
+              "omschrijving": "Voeren van onderhandelingen over contractvoorwaarden en prijzen",
+              "categorie": "accountmanagement",
+              "categorieLabel": "Accountmanagement & relatiebeheer",
+              "aandeel": 0.10909090909090907,
+              "automatiseringspercentage": 0.35,
+              "urenPerWeek": 8.29090909090909,
+              "urenAutomatiseerbaarPerWeek": 2.901818181818181
+            },
+            {
+              "omschrijving": "Bijhouden van klantgegevens en verkoopkansen in het CRM",
+              "categorie": "data_entry",
+              "categorieLabel": "Data entry & administratie",
+              "aandeel": 0.09090909090909091,
+              "automatiseringspercentage": 0.9,
+              "urenPerWeek": 6.909090909090909,
+              "urenAutomatiseerbaarPerWeek": 6.218181818181819
+            },
+            {
+              "omschrijving": "Opstellen van periodieke verkooprapportages voor het management",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.07272727272727272,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 5.527272727272727,
+              "urenAutomatiseerbaarPerWeek": 4.1454545454545455
+            },
+            {
+              "omschrijving": "Actief zoeken naar nieuwe leads via eigen netwerk en beurzen",
+              "categorie": "sourcing",
+              "categorieLabel": "Sourcing & leadgeneratie",
+              "aandeel": 0.13636363636363635,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 10.363636363636363,
+              "urenAutomatiseerbaarPerWeek": 8.809090909090909
+            },
+            {
+              "omschrijving": "Samenwerken met marketing en klantenservice om klanttevredenheid te waarborgen",
+              "categorie": "plannen",
+              "categorieLabel": "Plannen & coördineren",
+              "aandeel": 0.09090909090909091,
+              "automatiseringspercentage": 0.65,
+              "urenPerWeek": 6.909090909090909,
+              "urenAutomatiseerbaarPerWeek": 4.490909090909091
+            }
+          ]
+        }
+      },
+      "competenties": [
+        {
+          "naam": "Relatiebeheer & persoonlijk contact",
+          "belangNu": 5,
+          "belangNa": 5,
+          "toelichting": "Persoonlijk contact blijft grotendeels mensenwerk (slechts 20% automatiseerbaar) en wordt relatief nog belangrijker als kernwaarde van de rol."
+        },
+        {
+          "naam": "Onderhandelingsvaardigheden",
+          "belangNu": 5,
+          "belangNa": 5,
+          "toelichting": "Contractonderhandelingen blijven overwegend menselijk (80% niet-automatiseerbaar) en vormen de kern van waardecreatie."
+        },
+        {
+          "naam": "Commercieel inzicht & kansen signaleren",
+          "belangNu": 4,
+          "belangNa": 5,
+          "toelichting": "AI kan leads en cross-sell suggereren, maar het beoordelen en prioriteren van kansen vraagt meer strategisch inzicht van de accountmanager."
+        },
+        {
+          "naam": "Kwaliteitscontrole van AI-output (offertes/rapportages)",
+          "belangNu": 1,
+          "belangNa": 4,
+          "toelichting": "Offertes (70% automatiseerbaar) en rapportages (55% automatiseerbaar) worden AI-gegenereerd, dus controleren en aanscherpen wordt een nieuwe kerntaak."
+        },
+        {
+          "naam": "AI-prompting & tooling voor sales",
+          "belangNu": 1,
+          "belangNa": 4,
+          "toelichting": "Effectief gebruik van AI-tools voor leadgeneratie, offertes en CRM-analyse wordt noodzakelijk om productief te blijven."
+        },
+        {
+          "naam": "Data-invoer & CRM-administratie",
+          "belangNu": 3,
+          "belangNa": 1,
+          "toelichting": "Handmatig bijhouden van klantgegevens (75% automatiseerbaar) verdwijnt grotendeels door automatische CRM-updates."
+        },
+        {
+          "naam": "Leadgeneratie via netwerk & beurzen",
+          "belangNu": 4,
+          "belangNa": 2,
+          "toelichting": "65% van het sourcingproces wordt geautomatiseerd via AI-gedreven leadtools, waardoor actieve netwerkinspanning minder tijd vraagt."
+        },
+        {
+          "naam": "Analytisch denken & interpreteren van rapportages",
+          "belangNu": 2,
+          "belangNa": 4,
+          "toelichting": "Nu AI rapportages opstelt (55% automatiseerbaar), verschuift de focus naar het interpreteren van data en vertalen naar actie richting management."
+        }
+      ]
+    },
+    {
+      "rolnaam": "Software developer",
+      "fte": 3,
+      "urenPerWeek": 38,
+      "kostenPerUur": 55,
+      "totaalUrenPerWeek": 114,
+      "scenarios": {
+        "realistisch": {
+          "automatiseerbareUrenPerWeek": 58.71,
+          "overgeblevenUrenPerWeek": 55.29,
+          "fteWeg": 1.545,
+          "fteOver": 1.455,
+          "reductiePercentage": 0.515,
+          "kostenBesparingPerWeek": 3229.05,
+          "kostenBesparingPerJaar": 167910.6,
+          "outputgroeiPercentage": 1.0618556701030928,
+          "taken": [
+            {
+              "omschrijving": "Schrijven en onderhouden van code voor nieuwe features",
+              "categorie": "technisch",
+              "categorieLabel": "Technisch werk & coderen",
+              "aandeel": 0.4,
+              "automatiseringspercentage": 0.5,
+              "urenPerWeek": 45.6,
+              "urenAutomatiseerbaarPerWeek": 22.8
+            },
+            {
+              "omschrijving": "Debuggen en oplossen van gemelde bugs en incidenten",
+              "categorie": "technisch",
+              "categorieLabel": "Technisch werk & coderen",
+              "aandeel": 0.15,
+              "automatiseringspercentage": 0.5,
+              "urenPerWeek": 17.099999999999998,
+              "urenAutomatiseerbaarPerWeek": 8.549999999999999
+            },
+            {
+              "omschrijving": "Schrijven en onderhouden van geautomatiseerde tests",
+              "categorie": "technisch",
+              "categorieLabel": "Technisch werk & coderen",
+              "aandeel": 0.1,
+              "automatiseringspercentage": 0.5,
+              "urenPerWeek": 11.4,
+              "urenAutomatiseerbaarPerWeek": 5.7
+            },
+            {
+              "omschrijving": "Code reviews uitvoeren voor collega's",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.08,
+              "automatiseringspercentage": 0.55,
+              "urenPerWeek": 9.120000000000001,
+              "urenAutomatiseerbaarPerWeek": 5.016000000000001
+            },
+            {
+              "omschrijving": "Deelnemen aan sprintplanning en technische ontwerpsessies",
+              "categorie": "plannen",
+              "categorieLabel": "Plannen & coördineren",
+              "aandeel": 0.1,
+              "automatiseringspercentage": 0.45,
+              "urenPerWeek": 11.4,
+              "urenAutomatiseerbaarPerWeek": 5.13
+            },
+            {
+              "omschrijving": "Schrijven van technische documentatie",
+              "categorie": "schrijven",
+              "categorieLabel": "Schrijven & documentatie",
+              "aandeel": 0.07,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 7.98,
+              "urenAutomatiseerbaarPerWeek": 5.586
+            },
+            {
+              "omschrijving": "Onderzoeken van nieuwe technologieën en bibliotheken voor mogelijke toepassing",
+              "categorie": "research",
+              "categorieLabel": "Informatie zoeken & research",
+              "aandeel": 0.06,
+              "automatiseringspercentage": 0.7,
+              "urenPerWeek": 6.84,
+              "urenAutomatiseerbaarPerWeek": 4.787999999999999
+            },
+            {
+              "omschrijving": "Overleg met product owners over requirements en scope",
+              "categorie": "strategisch",
+              "categorieLabel": "Strategisch denkwerk",
+              "aandeel": 0.04,
+              "automatiseringspercentage": 0.25,
+              "urenPerWeek": 4.5600000000000005,
+              "urenAutomatiseerbaarPerWeek": 1.1400000000000001
+            }
+          ]
+        },
+        "agressief": {
+          "automatiseerbareUrenPerWeek": 84.474,
+          "overgeblevenUrenPerWeek": 29.525999999999996,
+          "fteWeg": 2.2230000000000003,
+          "fteOver": 0.7769999999999997,
+          "reductiePercentage": 0.741,
+          "kostenBesparingPerWeek": 4646.070000000001,
+          "kostenBesparingPerJaar": 241595.64000000004,
+          "outputgroeiPercentage": 2.8610038610038613,
+          "taken": [
+            {
+              "omschrijving": "Schrijven en onderhouden van code voor nieuwe features",
+              "categorie": "technisch",
+              "categorieLabel": "Technisch werk & coderen",
+              "aandeel": 0.4,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 45.6,
+              "urenAutomatiseerbaarPerWeek": 34.2
+            },
+            {
+              "omschrijving": "Debuggen en oplossen van gemelde bugs en incidenten",
+              "categorie": "technisch",
+              "categorieLabel": "Technisch werk & coderen",
+              "aandeel": 0.15,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 17.099999999999998,
+              "urenAutomatiseerbaarPerWeek": 12.825
+            },
+            {
+              "omschrijving": "Schrijven en onderhouden van geautomatiseerde tests",
+              "categorie": "technisch",
+              "categorieLabel": "Technisch werk & coderen",
+              "aandeel": 0.1,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 11.4,
+              "urenAutomatiseerbaarPerWeek": 8.55
+            },
+            {
+              "omschrijving": "Code reviews uitvoeren voor collega's",
+              "categorie": "analyseren",
+              "categorieLabel": "Analyseren & rapporteren",
+              "aandeel": 0.08,
+              "automatiseringspercentage": 0.75,
+              "urenPerWeek": 9.120000000000001,
+              "urenAutomatiseerbaarPerWeek": 6.840000000000001
+            },
+            {
+              "omschrijving": "Deelnemen aan sprintplanning en technische ontwerpsessies",
+              "categorie": "plannen",
+              "categorieLabel": "Plannen & coördineren",
+              "aandeel": 0.1,
+              "automatiseringspercentage": 0.65,
+              "urenPerWeek": 11.4,
+              "urenAutomatiseerbaarPerWeek": 7.41
+            },
+            {
+              "omschrijving": "Schrijven van technische documentatie",
+              "categorie": "schrijven",
+              "categorieLabel": "Schrijven & documentatie",
+              "aandeel": 0.07,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 7.98,
+              "urenAutomatiseerbaarPerWeek": 6.783
+            },
+            {
+              "omschrijving": "Onderzoeken van nieuwe technologieën en bibliotheken voor mogelijke toepassing",
+              "categorie": "research",
+              "categorieLabel": "Informatie zoeken & research",
+              "aandeel": 0.06,
+              "automatiseringspercentage": 0.85,
+              "urenPerWeek": 6.84,
+              "urenAutomatiseerbaarPerWeek": 5.814
+            },
+            {
+              "omschrijving": "Overleg met product owners over requirements en scope",
+              "categorie": "strategisch",
+              "categorieLabel": "Strategisch denkwerk",
+              "aandeel": 0.04,
+              "automatiseringspercentage": 0.45,
+              "urenPerWeek": 4.5600000000000005,
+              "urenAutomatiseerbaarPerWeek": 2.0520000000000005
+            }
+          ]
+        }
+      },
+      "competenties": [
+        {
+          "naam": "Handmatig code schrijven (boilerplate/routinematig)",
+          "belangNu": 5,
+          "belangNa": 2,
+          "toelichting": "AI-codegeneratie neemt een groot deel van het routinematige coderen voor nieuwe features over."
+        },
+        {
+          "naam": "Kwaliteitscontrole van AI-gegenereerde code",
+          "belangNu": 1,
+          "belangNa": 5,
+          "toelichting": "Nu code voor 50% door AI wordt gegenereerd, moet de developer output kritisch reviewen op correctheid, security en performance."
+        },
+        {
+          "naam": "Analytisch en gestructureerd debuggen",
+          "belangNu": 4,
+          "belangNa": 4,
+          "toelichting": "AI helpt bij het lokaliseren van bugs, maar complexe incidenten vereisen nog steeds diepgaand menselijk redeneervermogen."
+        },
+        {
+          "naam": "AI-prompting en tool-orkestratie",
+          "belangNu": 1,
+          "belangNa": 5,
+          "toelichting": "Effectief gebruik van AI-coding assistants en test-generatoren wordt een kerncompetentie om productief te blijven."
+        },
+        {
+          "naam": "Architecturaal en systeemontwerp inzicht",
+          "belangNu": 3,
+          "belangNa": 5,
+          "toelichting": "Doordat routinecode wegvalt, verschuift de rol naar het ontwerpen van robuuste systemen die AI-gegenereerde onderdelen aansturen en integreren."
+        },
+        {
+          "naam": "Reviewen en valideren van geautomatiseerde tests",
+          "belangNu": 3,
+          "belangNa": 4,
+          "toelichting": "Testschrijven wordt grotendeels geautomatiseerd, maar validatie van dekking en edge-cases blijft mensenwerk."
+        },
+        {
+          "naam": "Technisch schrijven en documentatie opstellen",
+          "belangNu": 3,
+          "belangNa": 1,
+          "toelichting": "70% van documentatietaken is automatiseerbaar met AI, waardoor deze uitvoerende vaardigheid sterk afneemt in belang."
+        },
+        {
+          "naam": "Stakeholdercommunicatie met product owners",
+          "belangNu": 3,
+          "belangNa": 4,
+          "toelichting": "Requirements-overleg is slechts beperkt automatiseerbaar en wordt relatief belangrijker als andere taken wegvallen."
+        }
+      ]
+    }
+  ],
+  "sectorAnalyse": {
+    "sector": {
+      "id": "professional_services",
+      "niveau": 4,
+      "sector": "Professional services",
+      "risico": 4,
+      "kans": 1.5
+    },
+    "impactScore": 3.2,
+    "readinessScore": 2.8,
+    "eindscore": 3.76,
+    "positionering": "Ongeveer gelijk aan sectorgemiddelde",
+    "urgentie": "Gemiddeld — transformatie is raadzaam op middellange termijn",
+    "weging": {
+      "sector": 0.7,
+      "impact": 0.2,
+      "readiness": 0.1
+    }
+  },
+  "aanbevelingen": {
+    "bevindingenSamenvatting": "De AI-transformatie-analyse van Voorbeeld BV laat zien dat vooral de administratief- en supportgedreven rollen sterk automatiseerbaar zijn: Klantenservice medewerker (-67%) en Financieel administratief medewerker (-66%) kennen de grootste reductiepotentie, gedreven door taken als data entry, eenvoudig klantcontact en rapportage. Software developer krimpt ook substantieel (-52%) doordat AI-codeertools veel routinematig technisch werk overnemen, terwijl Accountmanager het meest bestendig is (-41%) vanwege de relationele en sales-gedreven aard van het werk. Met een sectorscore van 3.8/5 en gemiddelde urgentie is er geen acute noodzaak tot ingrijpen, maar de omvang van de reductiepercentages (41-67%) rechtvaardigt een gestructureerd herontwerp van rollen en processen op middellange termijn. Opvallend is dat de resterende taken in klantenservice en financiële administratie sterk overlappen (data entry & administratie, eenvoudig klantcontact), wat kansen biedt voor consolidatie. Tegelijkertijd ontstaat behoefte aan nieuwe toezichthoudende en kwaliteitsborgende functies rond AI-output, zowel in klantcontact als in softwareontwikkeling.",
+    "krimpendeRollen": [
+      {
+        "rolnaam": "Klantenservice medewerker",
+        "toelichting": "Realistische reductie van 67% (4 → 1.33 FTE) doordat eenvoudig klantcontact, data entry en rapportage grotendeels door AI-chatbots en automatisering kunnen worden overgenomen. Bij agressieve implementatie zelfs 83% reductie mogelijk."
+      },
+      {
+        "rolnaam": "Financieel administratief medewerker",
+        "toelichting": "Realistische reductie van 66% (1 → 0.34 FTE); vrijwel de volledige functie bestaat uit data entry, administratie en eenvoudig klantcontact, taken die zich goed lenen voor automatisering via AI en RPA."
+      },
+      {
+        "rolnaam": "Software developer",
+        "toelichting": "Realistische reductie van 52% (3 → 1.46 FTE) door AI-gestuurde codeergeneratie en -assistentie. De rol krimpt sterk in volume, maar blijft kwalitatief belangrijk voor architectuur, review en complexe vraagstukken."
+      }
+    ],
+    "groeiendeRollen": [
+      {
+        "rolnaam": "AI-kwaliteitscontroleur klantcontact",
+        "toelichting": "Met de afname van routinematig klantcontact ontstaat behoefte aan een nieuwe rol die AI-gegenereerde klantinteracties controleert op juistheid, toon en escalatie van complexe casussen die de AI niet goed afhandelt."
+      },
+      {
+        "rolnaam": "Senior software developer / AI-code reviewer",
+        "toelichting": "Overgebleven developer-capaciteit verschuift van zelf coderen naar het reviewen, valideren en integreren van AI-gegenereerde code, architectuurbeslissingen en het opstellen van technische prompts/specificaties."
+      },
+      {
+        "rolnaam": "Accountmanager",
+        "toelichting": "Door automatisering van administratieve en eenvoudige klantcontacttaken elders in de organisatie kan de accountmanager meer tijd besteden aan waardevolle relatiebeheer- en sourcingactiviteiten, met potentieel hogere output per FTE zonder uitbreiding van bezetting."
+      }
+    ],
+    "samenvoegKandidaten": [
+      {
+        "rollen": [
+          "Klantenservice medewerker",
+          "Financieel administratief medewerker"
+        ],
+        "toelichting": "Beide rollen hebben na automatisering vooral overlappende restcapaciteit in 'data entry & administratie' en 'eenvoudig klantcontact & 1e lijns support'. De resterende 1.33 FTE (klantenservice) en 0.34 FTE (financieel administratief) zouden samengevoegd kunnen worden tot één brede 'klant- en administratieondersteuner'-rol van circa 1.5-1.7 FTE, die zowel klantvragen als financieel-administratieve afhandeling combineert met AI-tools als eerste triage."
+      }
+    ],
+    "aanbevelingen": [
+      {
+        "titel": "Consolideer klantenservice en financiële administratie tot één ondersteunende rol",
+        "beschrijving": "Voeg de resterende taken van Klantenservice medewerker en Financieel administratief medewerker samen in een nieuwe functie 'Klant- & Administratie Specialist' (circa 1.5-1.7 FTE), waarbij AI de eerste lijn afhandelt en de medewerker zich richt op escalaties, uitzonderingen en kwaliteitscontrole over beide domeinen."
+      },
+      {
+        "titel": "Richt een AI-kwaliteitscontrole functie in voor klantinteractie",
+        "beschrijving": "Wijs één FTE (deels vrijgekomen uit klantenservice) aan als kwaliteitsbewaker van AI-gegenereerde klantcommunicatie: steekproefcontrole, toon-of-voice bewaking, en het bijhouden van een verbeterlogboek voor promptoptimalisatie."
+      },
+      {
+        "titel": "Herdefinieer de developer-rol richting review en AI-orchestratie",
+        "beschrijving": "Pas functieomschrijvingen en KPI's van software developers aan: van directe coderingsoutput naar codereview, architectuurbeslissingen, prompt engineering voor AI-coding tools en verantwoordelijkheid voor security/kwaliteitsborging van AI-gegenereerde code."
+      },
+      {
+        "titel": "Verschuif accountmanagement-capaciteit naar groei-activiteiten",
+        "beschrijving": "Automatiseer administratieve rapportage- en data-taken binnen accountmanagement (deels via de nieuwe geconsolideerde ondersteuningsrol) zodat de 2 FTE accountmanagers meer tijd besteden aan sourcing, leadgeneratie en strategisch relatiebeheer, met als doel omzetgroei zonder uitbreiding van bezetting."
+      },
+      {
+        "titel": "Faseer de transformatie via pilotimplementatie in klantenservice",
+        "beschrijving": "Start binnen 6 maanden een pilot met AI-chatbot/automatisering in klantenservice (hoogste reductiepotentieel: 67-83%), monitor kwaliteit en klanttevredenheid, en gebruik de resultaten als blauwdruk voor uitrol naar financiële administratie en software development."
+      },
+      {
+        "titel": "Investeer in interne omscholing naar AI-toezicht en prompting",
+        "beschrijving": "Ontwikkel een omscholingstraject voor medewerkers wiens taken sterk krimpen (klantenservice, financieel administratief, developers) naar nieuwe functies zoals AI-kwaliteitscontrole, promptspecialist of procesbeheerder, om gedwongen uitstroom te beperken en kennis te behouden."
+      }
+    ]
+  }
+}
