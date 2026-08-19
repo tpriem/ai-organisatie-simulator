@@ -23,7 +23,10 @@ async function launchBrowser() {
   }
 
   const { default: puppeteer } = await import("puppeteer");
-  return puppeteer.launch({ headless: true });
+  return puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
 }
 
 function esc(str) {
