@@ -13,5 +13,7 @@
     "veranderingsvermogen_mensen": 3,
     "budget": 4,
     "menselijke_beslissingen": 2
-  }
+  },
+  "scope": "afdeling",
+  "scopeLabel": "Klantenservice NL"
 }

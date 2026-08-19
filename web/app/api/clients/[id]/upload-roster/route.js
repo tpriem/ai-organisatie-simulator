@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs";
 import path from "node:path";
-import { clientDir, getClientMeta } from "@/lib/clientStore";
+import { getClientMeta, uploadRoster } from "@/lib/clientStore";
 
 const ALLOWED_EXT = [".csv", ".xlsx", ".xls"];
 
 export async function POST(request, { params }) {
   const { id } = await params;
-  if (!getClientMeta(id)) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
+  if (!(await getClientMeta(id))) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
 
   const formData = await request.formData();
   const file = formData.get("file");
@@ -18,16 +17,8 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: `Bestandstype ${ext} niet ondersteund. Gebruik .csv of .xlsx.` }, { status: 400 });
   }
 
-  const dir = clientDir(id);
-  fs.mkdirSync(dir, { recursive: true });
-
-  // Verwijder een eventueel eerder geüpload roster-bestand.
-  for (const f of fs.readdirSync(dir)) {
-    if (f.startsWith("roster.")) fs.rmSync(path.join(dir, f));
-  }
-
   const buffer = Buffer.from(await file.arrayBuffer());
-  fs.writeFileSync(path.join(dir, `roster${ext}`), buffer);
+  const fileName = await uploadRoster(id, file.name, buffer);
 
-  return NextResponse.json({ ok: true, fileName: `roster${ext}` });
+  return NextResponse.json({ ok: true, fileName });
 }

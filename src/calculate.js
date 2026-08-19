@@ -1,4 +1,5 @@
 import { getCategory, SCENARIOS } from "./config.js";
+import { roleId, roleLabel } from "./roleIdentity.js";
 
 /**
  * Berekent per rol de automatiseerbare uren, overgebleven uren en scenario's,
@@ -11,7 +12,7 @@ import { getCategory, SCENARIOS } from "./config.js";
  * Hier gebruiken we daarom: FTE_weg = automatiseerbare_uren ÷ uren_per_fte,
  * en FTE_over = totaal_fte - FTE_weg (equivalent aan overgebleven_uren ÷ uren_per_fte).
  */
-export function calculateRole({ rolnaam, fte, urenPerWeek, kostenPerUur, taken }) {
+export function calculateRole({ rolnaam, afdeling = "", fte, urenPerWeek, kostenPerUur, taken }) {
   const totaalUrenPerWeek = fte * urenPerWeek;
   const urenPerFte = urenPerWeek;
 
@@ -55,10 +56,24 @@ export function calculateRole({ rolnaam, fte, urenPerWeek, kostenPerUur, taken }
 
   return {
     rolnaam,
+    afdeling,
+    roleId: roleId({ rolnaam, afdeling }),
+    roleLabel: roleLabel({ rolnaam, afdeling }),
     fte,
     urenPerWeek,
     kostenPerUur,
     totaalUrenPerWeek,
+    // Brondata (AI-inschatting) voor de taken — los van de scenario-berekeningen hieronder,
+    // zodat de UI dit kan tonen/bewerken en opnieuw door calculateRole() kan halen.
+    taken: taken.map((taak) => {
+      const categorie = getCategory(taak.categorie);
+      return {
+        omschrijving: taak.omschrijving,
+        categorie: categorie.id,
+        categorieLabel: categorie.label,
+        aandeel: taak.aandeel,
+      };
+    }),
     scenarios,
   };
 }
@@ -88,4 +103,28 @@ export function calculateOrganisatie(roleResults) {
     };
   }
   return totals;
+}
+
+/**
+ * Groepeert rol-resultaten per afdeling en berekent per afdeling dezelfde
+ * organisatie-totalen als calculateOrganisatie(), zodat besparing/reductie ook
+ * op afdelingsniveau te zien is. Geeft [] terug als er geen enkele rol een
+ * afdeling heeft (roster zonder afdeling-kolom).
+ */
+export function calculateSubtotalenPerAfdeling(roleResults) {
+  const groups = new Map();
+  for (const r of roleResults) {
+    const key = r.afdeling?.trim() || "";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+
+  const heeftAfdelingen = [...groups.keys()].some((k) => k !== "");
+  if (!heeftAfdelingen) return [];
+
+  return [...groups.entries()].map(([afdeling, rows]) => ({
+    afdeling: afdeling || "Geen afdeling",
+    aantalRollen: rows.length,
+    scenarios: calculateOrganisatie(rows),
+  }));
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { listClients, createClient } from "@/lib/clientStore";
 
 export async function GET() {
-  return NextResponse.json(listClients());
+  return NextResponse.json(await listClients());
 }
 
 export async function POST(request) {
@@ -10,6 +10,6 @@ export async function POST(request) {
   if (!naam || !naam.trim()) {
     return NextResponse.json({ error: "Naam is verplicht" }, { status: 400 });
   }
-  const client = createClient(naam.trim());
+  const client = await createClient(naam.trim());
   return NextResponse.json(client, { status: 201 });
 }
