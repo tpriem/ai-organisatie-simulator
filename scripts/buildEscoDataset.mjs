@@ -132,26 +132,28 @@ async function leesCsv(map, patroon) {
   const naam = bestanden.find((b) => patroon.test(b));
   if (!naam) return null;
   const inhoud = await readFile(path.join(map, naam), "utf8");
-  return { naam, rijen: parse(inhoud, { columns: true, skip_empty_lines: true, bom: true }) };
+  // relax_column_count: skillsHierarchy laat lege staartkolommen weg, waardoor rijen
+  // korter zijn dan de header.
+  return {
+    naam,
+    rijen: parse(inhoud, { columns: true, skip_empty_lines: true, bom: true, relax_column_count: true }),
+  };
 }
 
-// De transversale pijler kent zes hoofdgroepen; alleen "attitudes en waarden" telt als
-// laag trainbaar (onderkant van de ijsberg). We herkennen de groep op de tekst van het
-// hoogste hiërarchieniveau, omdat de codering per ESCO-versie kan verschuiven.
-const CATEGORIE_PATRONEN = [
-  { cat: "attitudes", patroon: /attitude|houding|waarden|values/i },
-  { cat: "denken", patroon: /thinking|denken/i },
-  { cat: "taal", patroon: /language|taal/i },
-  { cat: "kennistoepassing", patroon: /application of knowledge|kennis toepassen|toepassing van kennis/i },
-  { cat: "sociaal", patroon: /social|sociale interactie/i },
-];
-
-function bepaalCategorie(tekst) {
-  for (const { cat, patroon } of CATEGORIE_PATRONEN) {
-    if (patroon.test(tekst ?? "")) return cat;
-  }
-  return null;
-}
+// De transversale pijler van ESCO kent zes hoofdgroepen (T1-T6). Alleen T3, zelfbeheer,
+// bestaat uit disposities: een positieve houding bewaren, een proactieve aanpak
+// hanteren, de bereidheid tonen om te leren. Dat is de onderkant van de ijsberg
+// (Spencer & Spencer) — te toetsen, niet in een cursus aan te leren. De overige
+// transversale groepen zijn vaardigheden en dus wél te ontwikkelen, zij het via
+// coaching en ervaring in plaats van een opleiding.
+const TRANSVERSALE_CATEGORIEEN = {
+  T1: "kern",
+  T2: "denken",
+  T3: "attitudes",
+  T4: "sociaal",
+  T5: "fysiek",
+  T6: "levensvaardigheden",
+};
 
 async function leesUitCsv(map) {
   console.log(`Bron: officiële ESCO CSV-download (${map})\n`);
@@ -161,6 +163,7 @@ async function leesUitCsv(map) {
   const skillBestand = await leesCsv(map, /^skills_.*\.csv$/i);
   const relBestand = await leesCsv(map, /^occupationSkillRelations.*\.csv$/i);
   const transBestand = await leesCsv(map, /transversal.*\.csv$/i);
+  const hierBestand = await leesCsv(map, /^skillsHierarchy.*\.csv$/i);
 
   for (const [naam, b] of [["occupations", occBestand], ["skills", skillBestand], ["relations", relBestand]]) {
     if (!b) throw new Error(`Verwacht bestand niet gevonden in ${map}: ${naam}`);
@@ -180,16 +183,31 @@ async function leesUitCsv(map) {
     altLabels: (kolom(r, "altLabels") ?? "").split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 6),
   })).filter((o) => o.id && o.label);
 
+  // De transversale collectie verwijst naar een groep op niveau 2; via de hiërarchie
+  // leiden we daaruit de hoofdcategorie (T1-T6) af.
+  const groepNaarCategorie = new Map();
+  for (const r of hierBestand?.rijen ?? []) {
+    const niveau1 = r["Level 1 code"];
+    const cat = TRANSVERSALE_CATEGORIEEN[niveau1];
+    if (!cat) continue;
+    for (const kol of ["Level 1 URI", "Level 2 URI", "Level 3 URI"]) {
+      if (r[kol]) groepNaarCategorie.set(r[kol], cat);
+    }
+  }
+
   const transversaalIds = new Set();
   const transversaalCat = new Map();
+  let zonderCategorie = 0;
   for (const r of transBestand?.rijen ?? []) {
     const id = uitBundelUri(kolom(r, "conceptUri", "uri", "skillUri"));
     if (!id) continue;
     transversaalIds.add(id);
-    const cat = bepaalCategorie(
-      [kolom(r, "broaderConceptPT", "hierarchy", "groupLabel", "broaderLabel"), kolom(r, "preferredLabel")].join(" ")
-    );
+    const cat = groepNaarCategorie.get(kolom(r, "broaderConceptUri"));
     if (cat) transversaalCat.set(id, cat);
+    else zonderCategorie++;
+  }
+  if (zonderCategorie > 0) {
+    console.warn(`  LET OP: ${zonderCategorie} transversale competenties zonder hoofdcategorie.`);
   }
 
   const skills = skillBestand.rijen.map((r) => {

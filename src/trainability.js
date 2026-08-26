@@ -42,8 +42,11 @@ export function isTrainbaar(tierId) {
  * Bepaalt de trainbaarheidstier van één ESCO-skill.
  *
  * Verwacht de genormaliseerde metadata die scripts/buildEscoDataset.mjs wegschrijft:
- *   { type: "knowledge" | "skill", reuse: "transversal" | "cross-sector" |
+ *   { type: "knowledge" | "competence", reuse: "transversal" | "cross-sector" |
  *     "sector-specific" | "occupation-specific", cat: "attitudes" | ... | null }
+ *
+ * De categorie `cat` komt uit de transversale collectie van ESCO: alleen groep T3
+ * (zelfbeheer) bestaat uit disposities en levert "laag" op.
  *
  * Geeft null terug als de metadata ontbreekt (bijv. bij analyses van vóór de
  * ESCO-koppeling) — de aanroeper hoort dat als "onbekend" te behandelen en er geen

@@ -9,7 +9,7 @@ const TOOL_NAME = "report_taak_competenties";
 // zit de beroepsmatch ernaast en is dat zichtbaar in plaats van stil verborgen.
 export const GEEN_MATCH = "(geen passende ESCO-competentie)";
 
-function bouwSchema(kandidaatLabels) {
+export function bouwSchema(kandidaatLabels) {
   const enumWaarden = [...kandidaatLabels, GEEN_MATCH];
   return {
     name: TOOL_NAME,

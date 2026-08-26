@@ -91,30 +91,45 @@ export function matchOccupations(rolnaam, limiet = 3) {
   return scores.sort((a, b) => b.score - a.score).slice(0, limiet);
 }
 
+// De kandidatenlijst wordt als enum in het tool-schema gezet, en de API weigert een
+// schema dat te complex wordt ("Schema is too complex for compilation"). Empirisch ligt
+// de grens tussen 200 en 240 waarden; we houden ruime marge. Van de beschikbare ruimte
+// gaat een vast deel naar de transversale competenties, want daar zitten de attitudes
+// in en juist die bepalen of iets te trainen valt of getoetst moet worden.
+// Empirisch getest met het daadwerkelijke schema: 160 gaat goed, 180 niet. 150 houdt
+// marge voor toekomstige schemawijzigingen. De transversale pijler telt 95 concepten en
+// past daarmee volledig binnen de resterende ruimte.
+const MAX_KANDIDATEN = 150;
+const RUIMTE_BEROEPSSKILLS = 55;
+
 /**
  * Bouwt de kandidatenpool waaruit Claude mag kiezen: de skills van de gematchte
  * beroepen, aangevuld met de transversale competenties (die voor élke rol relevant
  * kunnen worden na automatisering, denk aan kritisch beoordelen van AI-output).
  *
- * @returns {Array<{id, label, type}>} gededupliceerd
+ * Essentiële skills gaan voor optionele, en beroepen worden in volgorde van
+ * matchkwaliteit verwerkt, zodat afkappen het minst relevante het eerst raakt.
+ *
+ * @returns {Array<{id, label, type}>} gededupliceerd, maximaal MAX_KANDIDATEN
  */
 export function buildCandidateSkills(occupationIds) {
   const gekozen = new Map();
 
-  const voegToe = (id) => {
-    if (gekozen.has(id)) return;
+  const voegToe = (id, limiet) => {
+    if (gekozen.size >= limiet || gekozen.has(id)) return;
     const s = getSkill(id);
     if (s) gekozen.set(id, { id, label: s.label, type: s.type });
   };
 
-  for (const occId of occupationIds ?? []) {
-    const rel = occupationSkills.items?.[occId];
-    if (!rel) continue;
-    for (const id of rel.essential ?? []) voegToe(id);
-    for (const id of rel.optional ?? []) voegToe(id);
-  }
+  const relaties = (occupationIds ?? []).map((id) => occupationSkills.items?.[id]).filter(Boolean);
 
-  for (const id of skills.transversaal ?? []) voegToe(id);
+  for (const rel of relaties) for (const id of rel.essential ?? []) voegToe(id, RUIMTE_BEROEPSSKILLS);
+  for (const rel of relaties) for (const id of rel.optional ?? []) voegToe(id, RUIMTE_BEROEPSSKILLS);
+
+  for (const id of skills.transversaal ?? []) voegToe(id, MAX_KANDIDATEN);
+
+  // Resterende ruimte alsnog vullen met optionele beroepsskills.
+  for (const rel of relaties) for (const id of rel.optional ?? []) voegToe(id, MAX_KANDIDATEN);
 
   return [...gekozen.values()];
 }
