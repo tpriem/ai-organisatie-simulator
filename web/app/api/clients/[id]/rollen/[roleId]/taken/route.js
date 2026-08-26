@@ -6,6 +6,7 @@ import {
   calculateSubtotalenPerAfdeling,
 } from "../../../../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../../../../src/competencyTop5.js";
+import { calculateCompetentieProfiel } from "../../../../../../../../src/competencyProfile.js";
 
 function getOrigineelTaken(role) {
   if (role.taken) return role.taken;
@@ -59,6 +60,12 @@ export async function PATCH(request, { params }) {
     takenAangepast: taken,
     scenarios: recomputed.scenarios,
     competentieTop5: calculateCompetentieTop5(recomputed.scenarios.realistisch.taken, role.taakCompetenties),
+    competentieProfiel: calculateCompetentieProfiel(
+      recomputed.scenarios.realistisch.taken,
+      role.taakCompetenties,
+      role.nieuweCompetenties,
+      role.competentieMeta
+    ),
   };
 
   results.organisatieTotaal = calculateOrganisatie(results.rollen);

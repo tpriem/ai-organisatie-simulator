@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientMeta, readAnswers, readResults, writeResults } from "@/lib/clientStore";
+import { meldStoring } from "@/lib/alert";
 import { calculateSectorAnalyse } from "@/lib/scoring";
 import { generateAanbevelingen } from "../../../../../../src/generateAanbevelingen.js";
 
@@ -35,6 +36,7 @@ export async function POST(request, { params }) {
   try {
     aanbevelingen = await generateAanbevelingen(analyseContextNaam, results.rollen, sectorAnalyse);
   } catch (err) {
+    meldStoring("Aanbevelingen genereren mislukt", { klant: meta.naam, klantId: id, fout: err.message });
     return NextResponse.json({ error: `Aanbevelingen genereren mislukt: ${err.message}` }, { status: 502 });
   }
 

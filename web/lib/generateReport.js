@@ -290,6 +290,88 @@ function competentieTop5Table(items) {
   });
 }
 
+const TRAINBAARHEID_LABEL = {
+  hoog: "hoog trainbaar",
+  midden: "midden trainbaar",
+  laag: "laag trainbaar",
+};
+
+function competentieProfielTable(items) {
+  const widths = [4200, 1500, 2000];
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: [
+      cell("Competentie", { width: widths[0], header: true }),
+      cell("Gewicht", { width: widths[1], header: true }),
+      cell("Trainbaarheid", { width: widths[2], header: true }),
+    ],
+  });
+
+  const rows = items.slice(0, 6).map((c, i) => {
+    const shaded = i % 2 === 1;
+    return new TableRow({
+      children: [
+        cell(c.naam, { width: widths[0], shaded }),
+        cell(`${c.pct}%`, { width: widths[1], shaded }),
+        cell(TRAINBAARHEID_LABEL[c.trainbaarheid] ?? "onbekend", { width: widths[2], shaded }),
+      ],
+    });
+  });
+
+  return new Table({
+    width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
+    columnWidths: widths,
+    borders: tableBorders(),
+    rows: [headerRow, ...rows],
+  });
+}
+
+/**
+ * Vertaalt het competentieprofiel naar de vraag waar een CHRO op stuurt: kun je met
+ * dezelfde mensen verder, is het te ontwikkelen, of moet je hierop toetsen? Bewust
+ * geen uitspraak over het vervangen van mensen — de analyse kent het rolprofiel, niet
+ * de individuele medewerker.
+ */
+function competentieProfielBlok(profiel) {
+  if (!profiel) return [];
+
+  const uit = [
+    paragraph("Competentieprofiel — nu versus straks", { bold: true, size: 20 }),
+    paragraph(
+      `De toekomstige competentiebehoefte van deze functie komt voor ${profiel.overlapPct}% overeen met wat de rol nu al vraagt.` +
+        (profiel.overlapNaTrainingPct != null
+          ? ` Met gerichte ontwikkeling loopt dat op tot ${profiel.overlapNaTrainingPct}%.`
+          : ""),
+      { size: 18 }
+    ),
+    paragraph("Zwaarste competenties nu", { bold: true, size: 18 }),
+    competentieProfielTable(profiel.profielNu),
+    paragraph("Zwaarste competenties straks", { bold: true, size: 18 }),
+    competentieProfielTable(profiel.profielStraks),
+  ];
+
+  if (profiel.teOntwikkelen?.length) {
+    uit.push(
+      paragraph(
+        `Te ontwikkelen: ${profiel.teOntwikkelen.map((c) => c.naam).join(", ")}.`,
+        { size: 18 }
+      )
+    );
+  }
+  if (profiel.teToetsen?.length) {
+    uit.push(
+      paragraph(
+        `Toets de huidige bezetting op: ${profiel.teToetsen
+          .map((c) => c.naam)
+          .join(", ")} — deze competenties laten zich moeilijk aanleren.`,
+        { size: 18 }
+      )
+    );
+  }
+
+  return uit;
+}
+
 /**
  * Genereert het gecombineerde eindrapport (Deel 1 + Deel 2) als .docx buffer.
  * @param {object} results - het resultaat-object zoals opgeslagen in results.json
@@ -409,24 +491,34 @@ export async function generateReportDocx(results) {
           ]
         : []),
       taakTable(r),
-      ...(r.competentieTop5?.top5Nu?.length
-        ? [
-            new Paragraph({
-              spacing: { before: 150, after: 80 },
-              children: [new TextRun({ text: "De functie vóór de transformatie — top 5 competenties", bold: true, size: 20 })],
-            }),
-            competentieTop5Table(r.competentieTop5.top5Nu),
-          ]
-        : []),
-      ...(r.competentieTop5?.top5Na?.length
-        ? [
-            new Paragraph({
-              spacing: { before: 150, after: 80 },
-              children: [new TextRun({ text: "De functie ná de transformatie — top 5 competenties", bold: true, size: 20 })],
-            }),
-            competentieTop5Table(r.competentieTop5.top5Na),
-          ]
-        : []),
+      // Analyses op de ESCO-koppeling tonen het volledige profiel met trainbaarheid;
+      // oudere resultaten vallen terug op de top 5-tabellen.
+      ...(r.competentieProfiel
+        ? competentieProfielBlok(r.competentieProfiel)
+        : [
+            ...(r.competentieTop5?.top5Nu?.length
+              ? [
+                  new Paragraph({
+                    spacing: { before: 150, after: 80 },
+                    children: [
+                      new TextRun({ text: "De functie vóór de transformatie — top 5 competenties", bold: true, size: 20 }),
+                    ],
+                  }),
+                  competentieTop5Table(r.competentieTop5.top5Nu),
+                ]
+              : []),
+            ...(r.competentieTop5?.top5Na?.length
+              ? [
+                  new Paragraph({
+                    spacing: { before: 150, after: 80 },
+                    children: [
+                      new TextRun({ text: "De functie ná de transformatie — top 5 competenties", bold: true, size: 20 }),
+                    ],
+                  }),
+                  competentieTop5Table(r.competentieTop5.top5Na),
+                ]
+              : []),
+          ]),
       new Paragraph({ spacing: { after: 200 }, children: [] }),
     ]),
   ];
@@ -494,6 +586,24 @@ export async function generateReportDocx(results) {
         `Dit rapport is het begin van dat gesprek, niet de afsluiting ervan.`
     )
   );
+
+  // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 van de
+  // ESCO-gebruiksvoorwaarden schrijft deze zin letterlijk voor voor publicaties), plus
+  // de markering van eigen bewerkingen (voorwaarde 2). De trainbaarheidsindeling is
+  // nadrukkelijk onze interpretatie, niet iets wat ESCO zelf vaststelt.
+  if (rollen.some((r) => r.competentieProfiel)) {
+    children.push(
+      heading("Verantwoording competentiegegevens", HeadingLevel.HEADING_2),
+      paragraph("This publication uses the ESCO classification of the European Commission.", { italics: true }),
+      paragraph(
+        "De competenties in dit rapport komen uit ESCO, de classificatie van de Europese Commissie voor " +
+          "vaardigheden, competenties en beroepen. De indeling naar trainbaarheid is een eigen afleiding van " +
+          "House of Digital op basis van ESCO-metadata (type competentie, mate van herbruikbaarheid en de " +
+          "transversale categorie), geïnterpreteerd via het competentiemodel van Spencer & Spencer (1993). " +
+          "Die weging maakt geen deel uit van ESCO zelf."
+      )
+    );
+  }
 
   const doc = new Document({
     sections: [
