@@ -22,7 +22,7 @@ export function bouwSchema(kandidaatLabels) {
         taakCompetenties: {
           type: "array",
           description:
-            "Voor elke taak uit de taaklijst (zelfde volgorde en aantal, taakIndex 0-based) de 1-2 meest bepalende competenties.",
+            "Eén item per taak uit de taaklijst — élke taak moet voorkomen, met taakIndex 0-based — met de 1-2 meest bepalende competenties.",
           items: {
             type: "object",
             properties: {
@@ -40,7 +40,7 @@ export function bouwSchema(kandidaatLabels) {
         nieuweCompetenties: {
           type: "array",
           description:
-            "3-6 competenties die deze rol ná de transformatie nieuw nodig heeft en nu nog geen rol spelen — bijvoorbeeld het beoordelen van AI-output of het afhandelen van uitzonderingen.",
+            "Precies 3 tot 6 competenties die deze rol ná de transformatie nieuw nodig heeft en nu nog geen rol spelen — bijvoorbeeld het beoordelen van AI-output of het afhandelen van uitzonderingen. Dit veld mag nooit leeg blijven.",
           items: {
             type: "object",
             properties: {
@@ -104,21 +104,11 @@ export async function analyzeCompetencies(rolnaam, profileText, takenRealistisch
   }
 
   const kandidaatLabels = kandidaten.map((k) => k.label);
-  const anthropic = getClient();
-
   const beroepsregel = beroepen.length
     ? `Deze rol lijkt in de ESCO-classificatie het meest op: ${beroepen.map((b) => b.label).join(", ")}.`
     : "Er is geen duidelijk passend ESCO-beroep gevonden voor deze rol.";
 
-  const message = await anthropic.messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 4000,
-    tools: [bouwSchema(kandidaatLabels)],
-    tool_choice: { type: "tool", name: TOOL_NAME },
-    messages: [
-      {
-        role: "user",
-        content: `Je analyseert welke competenties nodig zijn voor de rol "${rolnaam}".
+  const prompt = `Je analyseert welke competenties nodig zijn voor de rol "${rolnaam}".
 
 ${beroepsregel}
 
@@ -136,19 +126,58 @@ ${kandidaatLabels.map((l) => `- ${l}`).join("\n")}
 Instructies:
 1. Tag élke taak (alle ${takenRealistisch.length}, op taakIndex) met de 1-2 competenties die het meest bepalend zijn om die taak uit te voeren. Past er echt niets uit de lijst, kies dan "${GEEN_MATCH}" — forceer geen competentie die er net naast zit.
 2. Benoem daarna 3-6 competenties die deze rol ná de transformatie níeuw nodig heeft en die nu nog geen rol spelen. Denk aan wat er ontstaat wanneer routinewerk wegvalt: het beoordelen van AI-output, het afhandelen van uitzonderingen, of het opvangen van de complexere gevallen die overblijven. Kies ook hier uitsluitend uit de lijst.
-3. Wees specifiek voor deze rol, niet generiek.`,
-      },
-    ],
-  });
+3. Wees specifiek voor deze rol, niet generiek.
 
-  if (message.stop_reason === "max_tokens") {
-    throw new Error(`Antwoord van Claude afgekapt door max_tokens-limiet bij competentie-analyse voor "${rolnaam}".`);
+Lever taakCompetenties voor alle ${takenRealistisch.length} taken en minstens 3 nieuwe competenties; een gedeeltelijk antwoord is onbruikbaar.`;
+
+  // Het antwoord komt er soms onvolledig uit — één getagde taak in plaats van alle, en
+  // een lege lijst nieuwe competenties. Dat is niet aan een foutmelding te merken, dus
+  // controleren we hier expliciet op volledigheid en proberen we het opnieuw. Zonder
+  // deze controle zou een half antwoord stilzwijgend een onzinnig profiel opleveren.
+  const anthropic = getClient();
+  let result = null;
+  let laatsteTekort = "";
+
+  for (let poging = 1; poging <= 3; poging++) {
+    const message = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 4000,
+      tools: [bouwSchema(kandidaatLabels)],
+      tool_choice: { type: "tool", name: TOOL_NAME },
+      messages: [
+        {
+          role: "user",
+          content:
+            poging === 1
+              ? prompt
+              : `${prompt}\n\nLet op: een eerdere poging leverde een onvolledig antwoord (${laatsteTekort}). Geef nu het volledige antwoord.`,
+        },
+      ],
+    });
+
+    if (message.stop_reason === "max_tokens") {
+      throw new Error(`Antwoord van Claude afgekapt door max_tokens-limiet bij competentie-analyse voor "${rolnaam}".`);
+    }
+
+    const kandidaatResultaat = message.content.find((block) => block.type === "tool_use")?.input;
+    const getagd = new Set(
+      (kandidaatResultaat?.taakCompetenties ?? [])
+        .map((t) => t.taakIndex)
+        .filter((i) => Number.isInteger(i) && i >= 0 && i < takenRealistisch.length)
+    );
+    const aantalNieuw = (kandidaatResultaat?.nieuweCompetenties ?? []).length;
+
+    if (getagd.size === takenRealistisch.length && aantalNieuw >= 3) {
+      result = kandidaatResultaat;
+      break;
+    }
+    laatsteTekort = `${getagd.size} van ${takenRealistisch.length} taken getagd, ${aantalNieuw} nieuwe competenties`;
   }
 
-  const toolUse = message.content.find((block) => block.type === "tool_use");
-  const result = toolUse?.input;
-  if (!result?.taakCompetenties?.length) {
-    throw new Error(`Claude gaf geen (volledige) competentie-analyse terug voor rol "${rolnaam}".`);
+  if (!result) {
+    throw new Error(
+      `Claude gaf geen volledige competentie-analyse terug voor rol "${rolnaam}" na 3 pogingen (laatste: ${laatsteTekort}).`
+    );
   }
 
   // maxItems wordt niet ondersteund in strict tool-schema's, dus de 1-2 grens hier
