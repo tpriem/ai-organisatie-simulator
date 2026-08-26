@@ -65,7 +65,12 @@ export async function POST(request, { params }) {
 
         let competentieAnalyse;
         try {
-          competentieAnalyse = await analyzeCompetencies(label, row.profile.text, roleResult.scenarios.realistisch.taken);
+          competentieAnalyse = await analyzeCompetencies(
+            label,
+            row.profile.text,
+            roleResult.scenarios.realistisch.taken,
+            row.rolnaam
+          );
         } catch (err) {
           throw new Error(`Competentie-analyse mislukt voor "${label}": ${err.message}`);
         }

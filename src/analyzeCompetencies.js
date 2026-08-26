@@ -93,8 +93,12 @@ function summarizeTaken(taken) {
  *
  * @returns {{ taakCompetenties, nieuweCompetenties, competentieLijst, competentieMeta, beroepsmatch, ongematchteTaken }}
  */
-export async function analyzeCompetencies(rolnaam, profileText, takenRealistisch) {
-  const beroepen = matchOccupations(rolnaam, 3);
+export async function analyzeCompetencies(rolnaam, profileText, takenRealistisch, matchNaam = rolnaam) {
+  // Matchen op de kale functietitel, niet op het label met afdeling erbij: "Financieel
+  // administratief medewerker (Finance)" kwam door dat ene extra woord uit op
+  // "financieel directeur" in plaats van "administratief medewerker". De afdeling zegt
+  // iets over waar de rol hangt, niet over wat het werk is.
+  const beroepen = matchOccupations(matchNaam, 3);
   const kandidaten = buildCandidateSkills(beroepen.map((b) => b.id));
 
   if (kandidaten.length === 0) {
