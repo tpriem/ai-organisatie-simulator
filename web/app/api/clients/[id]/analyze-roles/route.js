@@ -16,6 +16,7 @@ import {
 } from "../../../../../../src/calculate.js";
 import { analyzeCompetencies } from "../../../../../../src/analyzeCompetencies.js";
 import { calculateCompetentieTop5 } from "../../../../../../src/competencyTop5.js";
+import { calculateCompetentieProfiel } from "../../../../../../src/competencyProfile.js";
 
 export const maxDuration = 60;
 
@@ -71,9 +72,19 @@ export async function POST(request, { params }) {
 
         roleResult.competentieLijst = competentieAnalyse.competentieLijst;
         roleResult.taakCompetenties = competentieAnalyse.taakCompetenties;
+        roleResult.nieuweCompetenties = competentieAnalyse.nieuweCompetenties;
+        roleResult.competentieMeta = competentieAnalyse.competentieMeta;
+        roleResult.beroepsmatch = competentieAnalyse.beroepsmatch;
+        roleResult.ongematchteTaken = competentieAnalyse.ongematchteTaken;
         roleResult.competentieTop5 = calculateCompetentieTop5(
           roleResult.scenarios.realistisch.taken,
           roleResult.taakCompetenties
+        );
+        roleResult.competentieProfiel = calculateCompetentieProfiel(
+          roleResult.scenarios.realistisch.taken,
+          roleResult.taakCompetenties,
+          roleResult.nieuweCompetenties,
+          roleResult.competentieMeta
         );
 
         return roleResult;

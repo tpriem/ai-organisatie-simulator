@@ -8,6 +8,7 @@ import { IMPACT_QUESTIONS, READINESS_QUESTIONS } from "@/lib/questions";
 import { buildOrgChartData } from "@/lib/orgChartData";
 import { calculateRole } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
+import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 
 function Section({ title, icon, children, right }) {
@@ -202,6 +203,158 @@ function CompetentieTop5Block({ title, subtitle, items }) {
   );
 }
 
+const TRAINBAARHEID_KLEUR = {
+  hoog: { balk: "bg-emerald-500", stip: "bg-emerald-500", tekst: "text-emerald-700" },
+  midden: { balk: "bg-blue-500", stip: "bg-blue-500", tekst: "text-blue-700" },
+  laag: { balk: "bg-orange-500", stip: "bg-orange-500", tekst: "text-orange-700" },
+};
+const TRAINBAARHEID_ONBEKEND = { balk: "bg-slate-400", stip: "bg-slate-400", tekst: "text-slate-500" };
+
+function kleurVan(tier) {
+  return TRAINBAARHEID_KLEUR[tier] ?? TRAINBAARHEID_ONBEKEND;
+}
+
+function OverlapKpis({ profiel }) {
+  if (!profiel) return null;
+  const eersteToets = profiel.teToetsen?.[0];
+  return (
+    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="rounded-lg bg-white p-3">
+        <p className="text-[11px] text-slate-500">Overlap met huidig profiel</p>
+        <p className="text-2xl font-semibold text-slate-800">{profiel.overlapPct}%</p>
+        <p className="text-[11px] text-slate-400 mt-0.5">
+          Deel van de toekomstige competentiebehoefte dat de rol nu al vraagt
+        </p>
+      </div>
+      <div className="rounded-lg bg-white p-3">
+        <p className="text-[11px] text-slate-500">Overlap na de juiste training</p>
+        <p className="text-2xl font-semibold text-slate-800">
+          {profiel.overlapNaTrainingPct ?? "—"}
+          {profiel.overlapNaTrainingPct != null && "%"}
+        </p>
+        <p className="text-[11px] text-slate-400 mt-0.5">
+          {eersteToets
+            ? `→ toets bezetting op: ${eersteToets.naam}`
+            : profiel.overlapNaTrainingPct != null
+              ? "→ het verschil is volledig te ontwikkelen"
+              : "→ onbekend zonder ESCO-gegevens"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TijdsbestedingsBalk({ taken }) {
+  if (!taken?.length) return null;
+  const totaal = taken.reduce((s, t) => s + t.aandeel, 0);
+  if (totaal <= 0) return null;
+
+  const rij = (toonRest) => (
+    <div className="flex h-7 w-full overflow-hidden rounded">
+      {taken.map((t, i) => {
+        const breedte = (t.aandeel / totaal) * 100;
+        const blijft = toonRest ? (1 - t.automatiseringspercentage) * 100 : 100;
+        return (
+          <div
+            key={i}
+            className="flex border-r border-slate-50 last:border-r-0"
+            style={{ width: `${breedte}%` }}
+            title={`${t.omschrijving} — ${Math.round(t.aandeel * 100)}% van de rol, ${Math.round(
+              t.automatiseringspercentage * 100
+            )}% automatiseerbaar`}
+          >
+            <div className="bg-indigo-500" style={{ width: `${blijft}%` }} />
+            <div className="bg-slate-300" style={{ width: `${100 - blijft}%` }} />
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold text-slate-700">Tijdsbesteding — nu versus straks</p>
+      <p className="text-[11px] text-slate-400 mb-2">Beweeg over een blok voor de taaknaam</p>
+      <p className="text-[10px] text-slate-400 mb-0.5">Nu</p>
+      {rij(false)}
+      <p className="text-[10px] text-slate-400 mt-1.5 mb-0.5">Straks</p>
+      {rij(true)}
+      <div className="mt-1.5 flex gap-4 text-[10px] text-slate-400">
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2 w-2 rounded-sm bg-indigo-500" /> blijft
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-2 w-2 rounded-sm bg-slate-300" /> geautomatiseerd
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ProfielKolom({ titel, items, acties }) {
+  if (!items?.length) return null;
+  return (
+    <div>
+      <p className="text-[10px] text-slate-400 mb-2">{titel}</p>
+      <div className="space-y-2">
+        {items.slice(0, 6).map((c) => {
+          const kleur = kleurVan(c.trainbaarheid);
+          const actie = acties?.[c.naam];
+          return (
+            <div key={c.naam}>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${kleur.stip}`} />
+                <span className="flex-1 truncate text-[11px] text-slate-700" title={c.naam}>
+                  {c.naam}
+                </span>
+                {actie && <span className={`shrink-0 text-[10px] ${actie.klasse}`}>{actie.label}</span>}
+              </div>
+              <div className="h-1.5 overflow-hidden rounded bg-slate-200">
+                <div className={`h-full ${kleur.balk}`} style={{ width: `${c.relatiefPct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CompetentieProfielVergelijking({ profiel }) {
+  if (!profiel) return null;
+
+  // Acties per competentie: trainbaar tekort = ontwikkelen, niet-trainbaar = toetsen.
+  // Bewust geen uitspraak over mensen vervangen — de tool kent het rolprofiel, niet
+  // de medewerker; of iemand het al kan, moet de organisatie zelf toetsen.
+  const acties = {};
+  for (const c of profiel.teOntwikkelen ?? []) {
+    acties[c.naam] = { label: "ontwikkelen", klasse: "text-slate-500" };
+  }
+  for (const c of profiel.teToetsen ?? []) {
+    acties[c.naam] = { label: "toetsen bezetting", klasse: "text-orange-600" };
+  }
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold text-slate-700">Competentieprofiel — nu versus straks</p>
+      <p className="text-[11px] text-slate-400 mb-2">
+        Competenties uit de ESCO-classificatie (EU); kleur toont hoe goed ze te ontwikkelen zijn
+      </p>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <ProfielKolom titel="Nu" items={profiel.profielNu} />
+        <ProfielKolom titel="Straks" items={profiel.profielStraks} acties={acties} />
+      </div>
+      <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-slate-400">
+        {["hoog", "midden", "laag"].map((tier) => (
+          <span key={tier} className="flex items-center gap-1">
+            <span className={`inline-block h-2 w-2 rounded-full ${kleurVan(tier).stip}`} /> {tier} trainbaar
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TaakTable({ id, role, onSaved }) {
   const identifier = role.roleId ?? role.rolnaam;
   const origineelTaken = useMemo(() => getOrigineelTaken(role), [role]);
@@ -230,6 +383,21 @@ function TaakTable({ id, role, onSaved }) {
   const competentieTop5 = useMemo(
     () => calculateCompetentieTop5(liveResult.scenarios.realistisch.taken, role.taakCompetenties),
     [liveResult, role.taakCompetenties]
+  );
+
+  // Alleen beschikbaar voor analyses die op de ESCO-koppeling draaien; oudere
+  // resultaten vallen terug op de top 5-weergave hieronder.
+  const competentieProfiel = useMemo(
+    () =>
+      role.competentieMeta
+        ? calculateCompetentieProfiel(
+            liveResult.scenarios.realistisch.taken,
+            role.taakCompetenties,
+            role.nieuweCompetenties,
+            role.competentieMeta
+          )
+        : null,
+    [liveResult, role.taakCompetenties, role.nieuweCompetenties, role.competentieMeta]
   );
 
   const totaalAandeelPct = Math.round(liveTaken.reduce((s, t) => s + t.aandeel, 0) * 100);
@@ -263,16 +431,26 @@ function TaakTable({ id, role, onSaved }) {
   return (
     <>
       <WaardetypeBadge waardetype={role.waardetype} toelichting={role.waardetypeToelichting} />
-      <CompetentieTop5Block
-        title="De functie vóór de transformatie"
-        subtitle="Top 5 competenties, gewogen naar aandeel in de huidige taakverdeling"
-        items={competentieTop5.top5Nu}
-      />
-      <CompetentieTop5Block
-        title="De functie ná de transformatie"
-        subtitle="Top 5 competenties, gewogen naar het overgebleven taakaandeel (realistisch scenario)"
-        items={competentieTop5.top5Na}
-      />
+      {competentieProfiel ? (
+        <>
+          <OverlapKpis profiel={competentieProfiel} />
+          <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />
+          <CompetentieProfielVergelijking profiel={competentieProfiel} />
+        </>
+      ) : (
+        <>
+          <CompetentieTop5Block
+            title="De functie vóór de transformatie"
+            subtitle="Top 5 competenties, gewogen naar aandeel in de huidige taakverdeling"
+            items={competentieTop5.top5Nu}
+          />
+          <CompetentieTop5Block
+            title="De functie ná de transformatie"
+            subtitle="Top 5 competenties, gewogen naar het overgebleven taakaandeel (realistisch scenario)"
+            items={competentieTop5.top5Na}
+          />
+        </>
+      )}
 
       <p className="text-xs text-slate-500 mb-2">
         {role.urenPerWeek} u/week, €{role.kostenPerUur}/uur — besparing/jaar realistisch €

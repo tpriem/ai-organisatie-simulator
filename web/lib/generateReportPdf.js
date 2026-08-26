@@ -104,6 +104,69 @@ function competentieTop5Block(title, items) {
       .join("")}`;
 }
 
+const TIER_KLASSE = { hoog: "c-emerald", midden: "c-blue", laag: "c-orange" };
+
+function profielKolom(titel, items) {
+  if (!items?.length) return "";
+  return `
+    <div class="profiel-kolom">
+      <p class="profiel-kop">${esc(titel)}</p>
+      ${items
+        .slice(0, 6)
+        .map(
+          (c) => `
+        <div class="bar-row">
+          <span class="bar-label-wide">${esc(c.naam)}</span>
+          <div class="bar-track"><div class="bar-fill ${
+            TIER_KLASSE[c.trainbaarheid] ?? "c-slate"
+          }" style="width:${Math.max(c.relatiefPct, 2)}%"></div></div>
+          <span class="bar-value">${c.pct}%</span>
+        </div>`
+        )
+        .join("")}
+    </div>`;
+}
+
+/**
+ * Het competentieprofiel vertaald naar de vraag waar een CHRO op stuurt. Spiegelt
+ * bewust dezelfde inhoud als de Word-versie en de live weergave in de app.
+ */
+function competentieProfielBlock(profiel) {
+  if (!profiel) return "";
+  const zin =
+    `De toekomstige competentiebehoefte van deze functie komt voor <strong>${profiel.overlapPct}%</strong> overeen met wat de rol nu al vraagt.` +
+    (profiel.overlapNaTrainingPct != null
+      ? ` Met gerichte ontwikkeling loopt dat op tot <strong>${profiel.overlapNaTrainingPct}%</strong>.`
+      : "");
+
+  const acties = [
+    profiel.teOntwikkelen?.length
+      ? `<p style="font-size:10px;margin:4px 0 0;">Te ontwikkelen: ${profiel.teOntwikkelen
+          .map((c) => esc(c.naam))
+          .join(", ")}.</p>`
+      : "",
+    profiel.teToetsen?.length
+      ? `<p style="font-size:10px;margin:2px 0 0;">Toets de huidige bezetting op: ${profiel.teToetsen
+          .map((c) => esc(c.naam))
+          .join(", ")} — deze competenties laten zich moeilijk aanleren.</p>`
+      : "",
+  ].join("");
+
+  return `
+    <p style="font-weight:bold;font-size:12px;margin:10px 0 4px;">Competentieprofiel — nu versus straks</p>
+    <p style="font-size:10px;margin:0 0 6px;">${zin}</p>
+    <div class="profiel-grid">
+      ${profielKolom("Nu", profiel.profielNu)}
+      ${profielKolom("Straks", profiel.profielStraks)}
+    </div>
+    <p class="tier-legenda">
+      <span><i class="tier-stip c-emerald"></i>hoog trainbaar</span>
+      <span><i class="tier-stip c-blue"></i>midden trainbaar</span>
+      <span><i class="tier-stip c-orange"></i>laag trainbaar</span>
+    </p>
+    ${acties}`;
+}
+
 function listBlock(title, items, colorClass) {
   if (!items?.length) return "";
   return `
@@ -164,6 +227,13 @@ export async function generateReportPdf(results) {
   .bar-fill { height: 100%; border-radius: 3px; }
   .bar-value { width: 40px; text-align: right; font-size: 9px; font-weight: bold; flex-shrink: 0; }
   .c-slate { background: #94a3b8; } .c-indigo { background: #6366f1; } .c-indigo-light { background: #c7d2fe; }
+  .c-emerald { background: #10b981; } .c-blue { background: #3b82f6; } .c-orange { background: #f97316; }
+  .profiel-grid { display: flex; gap: 16px; }
+  .profiel-kolom { flex: 1; min-width: 0; }
+  .profiel-kop { font-size: 9px; color: #94a3b8; margin: 0 0 3px; }
+  .bar-label-wide { width: 120px; font-size: 9px; color: #475569; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tier-legenda { display: flex; gap: 12px; font-size: 9px; color: #94a3b8; margin: 5px 0 0; }
+  .tier-stip { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
   .stat-grid { display: flex; gap: 10px; margin-bottom: 14px; }
   .stat-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
   .stat-label { font-size: 9px; color: #94a3b8; margin-bottom: 2px; }
@@ -274,8 +344,12 @@ export async function generateReportPdf(results) {
         <thead><tr><th>Taak</th><th>Categorie</th><th>Aandeel</th><th>Realistisch %</th><th>Agressief %</th></tr></thead>
         <tbody>${taakRows(r)}</tbody>
       </table>
-      ${competentieTop5Block("De functie vóór de transformatie — top 5 competenties", r.competentieTop5?.top5Nu)}
-      ${competentieTop5Block("De functie ná de transformatie — top 5 competenties", r.competentieTop5?.top5Na)}
+      ${
+        r.competentieProfiel
+          ? competentieProfielBlock(r.competentieProfiel)
+          : competentieTop5Block("De functie vóór de transformatie — top 5 competenties", r.competentieTop5?.top5Nu) +
+            competentieTop5Block("De functie ná de transformatie — top 5 competenties", r.competentieTop5?.top5Na)
+      }
     </div>`
     )
     .join("")}
