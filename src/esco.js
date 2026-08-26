@@ -36,8 +36,69 @@ function normaliseer(tekst) {
     .trim();
 }
 
+// Tweeletterwoorden meenemen: afkortingen als "hr", "ie" en "ko" zijn juist
+// onderscheidend. Ze eruit filteren maakte "HR-adviseur" en "IE-adviseur" identiek.
 function tokens(tekst) {
-  return normaliseer(tekst).split(" ").filter((t) => t.length > 2);
+  return normaliseer(tekst).split(" ").filter((t) => t.length >= 2);
+}
+
+// Veelgebruikte Nederlandse afkortingen die anders nooit matchen op hun voluitgeschreven
+// tegenhanger in ESCO. Bewust kort gehouden en toegespitst op het werkveld van deze tool.
+const SYNONIEMEN = {
+  hr: ["human", "resources", "personeel", "personeelszaken"],
+  ict: ["informatietechnologie", "informatica"],
+  it: ["informatietechnologie", "informatica"],
+  ceo: ["directeur", "bestuurder"],
+  cfo: ["financieel", "directeur"],
+  hrm: ["human", "resources", "personeel"],
+  pz: ["personeelszaken", "personeel"],
+  kcc: ["klantenservice", "klantcontact"],
+};
+
+/**
+ * Bepaalt of een rol-token door een label gedekt wordt, eventueel via een synoniem.
+ * Synoniemen tellen bewust alleen mee als alternatieve manier om te matchen; ze worden
+ * niet aan de tokenset toegevoegd, want dan zouden ze de noemer opblazen en juist élke
+ * score omlaag drukken.
+ */
+function tokenGedekt(token, labelTokens) {
+  if (labelTokens.has(token)) return 1;
+  if ((SYNONIEMEN[token] ?? []).some((syn) => labelTokens.has(syn))) return 1;
+
+  // Nederlandse samenstellingen: "beheerder" zit in "systeembeheerder", "advies" in
+  // "adviesbureau". Losse woordvergelijking mist dat volledig. Deelcredit, want het is
+  // zwakker bewijs dan een echte woordmatch.
+  if (token.length >= 5) {
+    for (const lt of labelTokens) {
+      if (lt.length >= 5 && (lt.includes(token) || token.includes(lt))) return 0.6;
+    }
+  }
+  return 0;
+}
+
+// Inverse document frequency over alle beroepslabels: generieke woorden als "medewerker"
+// of "adviseur" komen in honderden labels voor en zeggen dus weinig, terwijl "hypotheek"
+// of "magazijn" een rol echt identificeert. Zonder deze weging won een match op louter
+// "adviseur" het van een inhoudelijk veel betere kandidaat.
+let idfCache = null;
+function getIdf() {
+  if (idfCache) return idfCache;
+  const documentFrequentie = new Map();
+  const items = occupations.items ?? [];
+  for (const occ of items) {
+    const gezien = new Set(tokens(`${occ.label} ${(occ.altLabels ?? []).join(" ")}`));
+    for (const t of gezien) documentFrequentie.set(t, (documentFrequentie.get(t) ?? 0) + 1);
+  }
+  const totaal = Math.max(1, items.length);
+  idfCache = new Map();
+  for (const [t, df] of documentFrequentie) idfCache.set(t, Math.log(totaal / df));
+  return idfCache;
+}
+
+function gewichtVan(token) {
+  // Onbekende tokens (bijv. uit een functieprofiel) zijn per definitie zeldzaam in de
+  // beroepenlijst en krijgen daarom een hoog, maar begrensd gewicht.
+  return getIdf().get(token) ?? Math.log((occupations.items?.length ?? 1) / 1);
 }
 
 function trigrammen(tekst) {
@@ -55,22 +116,46 @@ function overlapScore(aSet, bSet) {
 }
 
 /**
- * Scoort één rolnaam tegen één beroepslabel. Tokenoverlap weegt zwaarder dan
- * trigramgelijkenis: "klantenservice medewerker" moet "vertegenwoordiger
- * klantenservice" vinden, ook al staan de woorden in een andere volgorde.
+ * Scoort één rolnaam tegen één beroepslabel, met IDF-gewogen tokenoverlap. Zeldzame,
+ * inhoudelijke woorden bepalen de score; generieke functiewoorden nauwelijks.
+ * Trigrammen vangen Nederlandse samenstellingen op ("hypotheekadviseur" tegenover
+ * "hypotheekmakelaar"), waar losse woorden geen overlap geven.
  */
 function scoreLabel(rolTokens, rolTrigrammen, label) {
   const labelTokens = new Set(tokens(label));
-  const tokenScore = overlapScore(rolTokens, labelTokens);
+  if (labelTokens.size === 0) return 0;
+
+  let gedeeld = 0;
+  let unie = 0;
+  for (const t of rolTokens) {
+    const g = gewichtVan(t);
+    unie += g;
+    gedeeld += g * tokenGedekt(t, labelTokens);
+  }
+  // Woorden die alleen in het label staan tellen mee in de noemer, zodat een kort,
+  // generiek label niet automatisch wint van een specifieker beroep.
+  for (const t of labelTokens) {
+    if (!rolTokens.has(t)) unie += gewichtVan(t);
+  }
+  const tokenScore = unie > 0 ? gedeeld / unie : 0;
   const trigramScore = overlapScore(rolTrigrammen, trigrammen(label));
-  return tokenScore * 0.7 + trigramScore * 0.3;
+  return tokenScore * 0.75 + trigramScore * 0.25;
 }
 
 /**
- * Zoekt de best passende ESCO-beroepen bij een rolnaam. Puur lokaal en zonder
- * AI-call — het resultaat is een shortlist die daarna aan Claude wordt voorgelegd,
- * niet een definitieve keuze.
+ * Zoekt de best passende ESCO-beroepen bij een rol. Puur lokaal en zonder AI-call —
+ * het resultaat is een shortlist die daarna aan Claude wordt voorgelegd, niet een
+ * definitieve keuze.
  *
+ * Bewust alleen op de functietitel. Het functieprofiel meewegen is geprobeerd — zowel
+ * tegen de beroepstitels als tegen de skills van de bovenste kandidaten — maar maakte
+ * de uitkomst aantoonbaar slechter: bij een vage titel staan de juiste beroepen sowieso
+ * niet in de shortlist, en bij een goede titel verstoorde het een correcte match.
+ * Komt een rol er alsnog naast te zitten, dan is dat zichtbaar via het aantal taken
+ * zonder passende competentie (`ongematchteTaken`) in plaats van stilzwijgend fout.
+ *
+ * @param {string} rolnaam
+ * @param {number} limiet
  * @returns {Array<{id, label, score}>} aflopend gesorteerd, maximaal `limiet`
  */
 export function matchOccupations(rolnaam, limiet = 3) {
@@ -80,15 +165,15 @@ export function matchOccupations(rolnaam, limiet = 3) {
 
   const scores = [];
   for (const occ of occupations.items ?? []) {
-    let beste = scoreLabel(rolTokens, rolTrigrammen, occ.label);
-    for (const alt of occ.altLabels ?? []) {
-      const s = scoreLabel(rolTokens, rolTrigrammen, alt);
+    let beste = 0;
+    for (const label of [occ.label, ...(occ.altLabels ?? [])]) {
+      const s = scoreLabel(rolTokens, rolTrigrammen, label);
       if (s > beste) beste = s;
     }
     if (beste > 0) scores.push({ id: occ.id, label: occ.label, score: beste });
   }
-
-  return scores.sort((a, b) => b.score - a.score).slice(0, limiet);
+  scores.sort((a, b) => b.score - a.score);
+  return scores.slice(0, limiet);
 }
 
 // De kandidatenlijst wordt als enum in het tool-schema gezet, en de API weigert een
