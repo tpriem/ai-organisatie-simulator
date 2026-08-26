@@ -6,6 +6,7 @@ import {
   getProfileBuffers,
   writeResults,
 } from "@/lib/clientStore";
+import { meldStoring } from "@/lib/alert";
 import { parseRoster } from "../../../../../../src/parseRoster.js";
 import { parseProfileFiles, matchRosterToProfiles, roleLabel } from "../../../../../../src/parseProfiles.js";
 import { roleId } from "../../../../../../src/roleIdentity.js";
@@ -105,6 +106,16 @@ export async function POST(request, { params }) {
 
   const roleResults = uitkomsten.filter((u) => u.ok).map((u) => u.roleResult);
   const mislukteRollen = uitkomsten.filter((u) => !u.ok).map((u) => u.mislukt);
+
+  if (mislukteRollen.length > 0) {
+    meldStoring(roleResults.length === 0 ? "Analyse volledig mislukt" : "Analyse deels mislukt", {
+      klant: meta.naam,
+      klantId: id,
+      geslaagd: roleResults.length,
+      mislukt: mislukteRollen.length,
+      rollen: mislukteRollen.map((r) => ({ rol: r.roleLabel, fout: r.fout })),
+    });
+  }
 
   // Alleen als er niets bruikbaars is overgebleven, is er echt niets te tonen.
   if (roleResults.length === 0) {
