@@ -437,27 +437,11 @@ function TaakTable({ id, role, onSaved }) {
 
   return (
     <>
+      {/* Opbouw van het rolblok: eerst wat er met het werk gebeurt (tijdbalk en
+          taakverdeling), daarna pas wat dat voor competenties betekent. Zo komt de
+          onderbouwing vóór de conclusie. */}
       <WaardetypeBadge waardetype={role.waardetype} toelichting={role.waardetypeToelichting} />
-      {competentieProfiel ? (
-        <>
-          <OverlapKpis profiel={competentieProfiel} />
-          <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />
-          <CompetentieProfielVergelijking profiel={competentieProfiel} />
-        </>
-      ) : (
-        <>
-          <CompetentieTop5Block
-            title="De functie vóór de transformatie"
-            subtitle="Top 5 competenties, gewogen naar aandeel in de huidige taakverdeling"
-            items={competentieTop5.top5Nu}
-          />
-          <CompetentieTop5Block
-            title="De functie ná de transformatie"
-            subtitle="Top 5 competenties, gewogen naar het overgebleven taakaandeel (realistisch scenario)"
-            items={competentieTop5.top5Na}
-          />
-        </>
-      )}
+      {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
 
       <p className="text-xs text-slate-500 mb-2">
         {role.urenPerWeek} u/week, €{role.kostenPerUur}/uur — besparing/jaar realistisch €
@@ -547,6 +531,30 @@ function TaakTable({ id, role, onSaved }) {
           })}
         </tbody>
       </table>
+
+      {/* Competenties als apart blok onder de taakverdeling: dit is de gevolgtrekking
+          uit de cijfers hierboven, niet het vertrekpunt. */}
+      <div className="mt-6 border-t border-slate-200 pt-4">
+        {competentieProfiel ? (
+          <>
+            <OverlapKpis profiel={competentieProfiel} />
+            <CompetentieProfielVergelijking profiel={competentieProfiel} />
+          </>
+        ) : (
+          <>
+            <CompetentieTop5Block
+              title="De functie vóór de transformatie"
+              subtitle="Top 5 competenties, gewogen naar aandeel in de huidige taakverdeling"
+              items={competentieTop5.top5Nu}
+            />
+            <CompetentieTop5Block
+              title="De functie ná de transformatie"
+              subtitle="Top 5 competenties, gewogen naar het overgebleven taakaandeel (realistisch scenario)"
+              items={competentieTop5.top5Na}
+            />
+          </>
+        )}
+      </div>
     </>
   );
 }
