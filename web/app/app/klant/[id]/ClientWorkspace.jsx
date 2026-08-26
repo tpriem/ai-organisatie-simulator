@@ -351,6 +351,13 @@ function CompetentieProfielVergelijking({ profiel }) {
           </span>
         ))}
       </div>
+      {/* Voorwaarde 1 van de ESCO-gebruiksvoorwaarden schrijft de Engelse zin letterlijk
+          voor; voorwaarde 2 vraagt eigen bewerkingen als zodanig te markeren — de
+          trainbaarheidsweging is onze afleiding, niet die van ESCO. */}
+      <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
+        This service uses the ESCO classification of the European Commission. De indeling naar trainbaarheid is een
+        eigen afleiding op basis van ESCO-metadata en maakt geen deel uit van ESCO zelf.
+      </p>
     </div>
   );
 }

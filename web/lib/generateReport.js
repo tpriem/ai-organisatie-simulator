@@ -587,6 +587,24 @@ export async function generateReportDocx(results) {
     )
   );
 
+  // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 van de
+  // ESCO-gebruiksvoorwaarden schrijft deze zin letterlijk voor voor publicaties), plus
+  // de markering van eigen bewerkingen (voorwaarde 2). De trainbaarheidsindeling is
+  // nadrukkelijk onze interpretatie, niet iets wat ESCO zelf vaststelt.
+  if (rollen.some((r) => r.competentieProfiel)) {
+    children.push(
+      heading("Verantwoording competentiegegevens", HeadingLevel.HEADING_2),
+      paragraph("This publication uses the ESCO classification of the European Commission.", { italics: true }),
+      paragraph(
+        "De competenties in dit rapport komen uit ESCO, de classificatie van de Europese Commissie voor " +
+          "vaardigheden, competenties en beroepen. De indeling naar trainbaarheid is een eigen afleiding van " +
+          "House of Digital op basis van ESCO-metadata (type competentie, mate van herbruikbaarheid en de " +
+          "transversale categorie), geïnterpreteerd via het competentiemodel van Spencer & Spencer (1993). " +
+          "Die weging maakt geen deel uit van ESCO zelf."
+      )
+    );
+  }
+
   const doc = new Document({
     sections: [
       {

@@ -387,6 +387,16 @@ export async function generateReportPdf(results) {
     <p><strong>Dit rapport schetst een richting, geen exacte voorspelling. De cijfers, competentieverschuivingen en aanbevelingen zijn bedoeld als vertrekpunt voor een strategisch gesprek — niet als eindoordeel.</strong></p>
     <p>De uitkomsten geven aanleiding tot verder, verdiepend onderzoek: het toetsen van deze bevindingen aan de praktijk, verfijning op basis van interne kennis en operationele details, en vertaling naar een concreet implementatieplan. Dit rapport is het begin van dat gesprek, niet de afsluiting ervan.</p>
   </div>
+
+  ${
+    // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 schrijft deze zin
+    // letterlijk voor voor publicaties) en markering van eigen bewerkingen (voorwaarde 2).
+    rollen.some((r) => r.competentieProfiel)
+      ? `<h2>Verantwoording competentiegegevens</h2>
+    <p><em>This publication uses the ESCO classification of the European Commission.</em></p>
+    <p class="disclaimer">De competenties in dit rapport komen uit ESCO, de classificatie van de Europese Commissie voor vaardigheden, competenties en beroepen. De indeling naar trainbaarheid is een eigen afleiding van House of Digital op basis van ESCO-metadata (type competentie, mate van herbruikbaarheid en de transversale categorie), geïnterpreteerd via het competentiemodel van Spencer &amp; Spencer (1993). Die weging maakt geen deel uit van ESCO zelf.</p>`
+      : ""
+  }
 </body>
 </html>`;
 
