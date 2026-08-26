@@ -1288,6 +1288,28 @@ export default function ClientWorkspace({ id }) {
               </p>
             )}
 
+            {/* Rollen die de analyse niet haalden. De rest van het rapport klopt wél;
+                deze rollen ontbreken erin en kunnen los opnieuw geprobeerd worden. */}
+            {results.mislukteRollen?.length > 0 && (
+              <div className="mt-4 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2">
+                <p className="text-xs font-semibold text-red-800">
+                  {results.mislukteRollen.length}{" "}
+                  {results.mislukteRollen.length === 1 ? "rol is" : "rollen zijn"} niet geanalyseerd
+                </p>
+                <p className="text-[11px] text-red-700 mt-0.5">
+                  De overige rollen hieronder zijn wél volledig. Draai de analyse opnieuw om deze rollen alsnog mee te
+                  nemen — eerder geslaagde rollen blijven behouden.
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {results.mislukteRollen.map((r) => (
+                    <li key={r.roleId ?? r.roleLabel} className="text-[11px] text-red-700">
+                      <span className="font-medium">{r.roleLabel}</span> — {r.fout}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {results.subtotalenPerAfdeling?.length > 0 && (
               <div className="mt-6">
                 <p className="text-sm font-medium text-slate-700 mb-2">Subtotalen per afdeling</p>

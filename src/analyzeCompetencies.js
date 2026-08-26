@@ -93,7 +93,13 @@ function summarizeTaken(taken) {
  *
  * @returns {{ taakCompetenties, nieuweCompetenties, competentieLijst, competentieMeta, beroepsmatch, ongematchteTaken }}
  */
-export async function analyzeCompetencies(rolnaam, profileText, takenRealistisch, matchNaam = rolnaam) {
+export async function analyzeCompetencies(
+  rolnaam,
+  profileText,
+  takenRealistisch,
+  matchNaam = rolnaam,
+  { deadline = null } = {}
+) {
   // Matchen op de kale functietitel, niet op het label met afdeling erbij: "Financieel
   // administratief medewerker (Finance)" kwam door dat ene extra woord uit op
   // "financieel directeur" in plaats van "administratief medewerker". De afdeling zegt
@@ -143,6 +149,13 @@ Lever taakCompetenties voor alle ${takenRealistisch.length} taken en minstens 3 
   let laatsteTekort = "";
 
   for (let poging = 1; poging <= 3; poging++) {
+    // Een herkansing kost al gauw tien seconden. Zit de serverless-limiet dichtbij, dan
+    // is het beter om te stoppen met wat we hebben dan halverwege afgekapt te worden:
+    // in dat laatste geval verliest de klant de analyse van álle rollen.
+    if (poging > 1 && deadline && Date.now() > deadline) {
+      break;
+    }
+
     const message = await anthropic.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 4000,
@@ -179,9 +192,11 @@ Lever taakCompetenties voor alle ${takenRealistisch.length} taken en minstens 3 
   }
 
   if (!result) {
-    throw new Error(
-      `Claude gaf geen volledige competentie-analyse terug voor rol "${rolnaam}" na 3 pogingen (laatste: ${laatsteTekort}).`
-    );
+    const reden =
+      deadline && Date.now() > deadline
+        ? "tijdslimiet bereikt voordat een volledig antwoord binnen was"
+        : "na 3 pogingen geen volledig antwoord";
+    throw new Error(`Competentie-analyse onvolledig voor rol "${rolnaam}" — ${reden} (laatste: ${laatsteTekort}).`);
   }
 
   // maxItems wordt niet ondersteund in strict tool-schema's, dus de 1-2 grens hier
