@@ -105,7 +105,82 @@ export async function readResults(id) {
   return data?.results ?? null;
 }
 
-export async function writeResults(id, results) {
+const HISTORIE_TABEL = "client_results_history";
+const MAX_VERSIES = 10;
+
+// De tabel wordt handmatig aangemaakt (zie docs/versiehistorie.sql). Zolang dat niet
+// gebeurd is, moet de app gewoon blijven werken: archiveren is dan een no-op in plaats
+// van een storing. Zo is er geen moment waarop een deploy de tool omlegt.
+function tabelOntbreekt(error) {
+  return error?.code === "42P01" || /does not exist|schema cache/i.test(error?.message ?? "");
+}
+
+/**
+ * Bewaart de huidige resultaten voordat ze overschreven worden.
+ * Faalt nooit hard: een mislukt archief mag een analyse niet blokkeren.
+ */
+export async function archiveResults(id, reden) {
+  try {
+    const huidige = await readResults(id);
+    if (!huidige) return;
+
+    const { error } = await getSupabase()
+      .from(HISTORIE_TABEL)
+      .insert({ client_id: id, results: huidige, reden: reden ?? null });
+    if (error && !tabelOntbreekt(error)) throw error;
+    if (error) return;
+
+    // Oude versies opruimen zodat de tabel niet ongelimiteerd groeit.
+    const { data: oud } = await getSupabase()
+      .from(HISTORIE_TABEL)
+      .select("id")
+      .eq("client_id", id)
+      .order("created_at", { ascending: false })
+      .range(MAX_VERSIES, MAX_VERSIES + 50);
+    if (oud?.length) {
+      await getSupabase()
+        .from(HISTORIE_TABEL)
+        .delete()
+        .in("id", oud.map((r) => r.id));
+    }
+  } catch (err) {
+    console.error(`[historie] archiveren mislukt voor klant ${id}: ${err?.message}`);
+  }
+}
+
+/** Overzicht van bewaarde versies, nieuwste eerst. Zonder de zware results-blob. */
+export async function listResultsVersions(id) {
+  const { data, error } = await getSupabase()
+    .from(HISTORIE_TABEL)
+    .select("id, created_at, reden")
+    .eq("client_id", id)
+    .order("created_at", { ascending: false })
+    .limit(MAX_VERSIES);
+  if (error) {
+    if (tabelOntbreekt(error)) return [];
+    throw error;
+  }
+  return data ?? [];
+}
+
+/** Zet een bewaarde versie terug. De huidige wordt eerst zelf gearchiveerd. */
+export async function restoreResultsVersion(id, versionId) {
+  const { data, error } = await getSupabase()
+    .from(HISTORIE_TABEL)
+    .select("results")
+    .eq("id", versionId)
+    .eq("client_id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data?.results) return null;
+
+  await archiveResults(id, "vervangen bij terugzetten van een eerdere versie");
+  await writeResults(id, data.results, { archiveer: false });
+  return data.results;
+}
+
+export async function writeResults(id, results, { archiveer = true, reden = null } = {}) {
+  if (archiveer) await archiveResults(id, reden);
   const { error } = await getSupabase().from("clients").update({ results }).eq("id", id);
   if (error) throw error;
 }

@@ -146,6 +146,6 @@ export async function POST(request, { params }) {
     aanbevelingen: null,
   };
 
-  await writeResults(id, results);
+  await writeResults(id, results, { reden: "nieuwe rolanalyse gedraaid" });
   return NextResponse.json(results);
 }

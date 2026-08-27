@@ -41,6 +41,6 @@ export async function POST(request, { params }) {
   }
 
   const updated = { ...results, sectorAnalyse, aanbevelingen };
-  await writeResults(id, updated);
+  await writeResults(id, updated, { reden: "aanbevelingen gegenereerd" });
   return NextResponse.json(updated);
 }

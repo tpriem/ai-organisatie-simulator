@@ -362,6 +362,98 @@ function CompetentieProfielVergelijking({ profiel }) {
   );
 }
 
+function VersieHistorie({ id, onHersteld }) {
+  const [open, setOpen] = useState(false);
+  const [versies, setVersies] = useState(null);
+  const [bezig, setBezig] = useState(false);
+  const [fout, setFout] = useState(null);
+
+  async function openen() {
+    if (open) return setOpen(false);
+    setOpen(true);
+    setFout(null);
+    try {
+      const res = await fetch(`/api/clients/${id}/versies`);
+      const body = await res.json();
+      setVersies(res.ok ? body.versies : []);
+      if (!res.ok) setFout(body.error);
+    } catch (err) {
+      setFout(err.message);
+      setVersies([]);
+    }
+  }
+
+  async function herstel(versieId) {
+    setBezig(true);
+    setFout(null);
+    try {
+      const res = await fetch(`/api/clients/${id}/versies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ versieId }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        onHersteld(body);
+        setOpen(false);
+      } else {
+        setFout(body.error);
+      }
+    } finally {
+      setBezig(false);
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={openen}
+        className="text-xs rounded-lg bg-white text-slate-600 border border-slate-200 px-3 py-1.5 shadow-sm hover:bg-slate-50 transition-colors"
+        title="Eerdere versies van deze analyse terugzetten"
+      >
+        ↩ Vorige versies
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-20 mt-1 w-80 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+          <p className="text-xs font-semibold text-slate-700 mb-1">Eerdere versies</p>
+          <p className="text-[11px] text-slate-400 mb-2">
+            Elke analyse bewaart de vorige uitkomst. De huidige versie wordt bewaard voordat je terugzet.
+          </p>
+
+          {fout && <p className="text-[11px] text-red-600 mb-2">{fout}</p>}
+          {versies === null && <p className="text-[11px] text-slate-400">Laden…</p>}
+          {versies?.length === 0 && !fout && (
+            <p className="text-[11px] text-slate-500">
+              Nog geen eerdere versies bewaard. Ze verschijnen zodra een analyse opnieuw gedraaid wordt.
+            </p>
+          )}
+
+          <div className="space-y-1.5 max-h-64 overflow-y-auto">
+            {versies?.map((v) => (
+              <div key={v.id} className="flex items-center gap-2 rounded border border-slate-100 px-2 py-1.5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-slate-700">
+                    {new Date(v.created_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
+                  {v.reden && <p className="text-[10px] text-slate-400 truncate">{v.reden}</p>}
+                </div>
+                <button
+                  onClick={() => herstel(v.id)}
+                  disabled={bezig}
+                  className="shrink-0 text-[11px] rounded bg-slate-100 px-2 py-1 hover:bg-slate-200 disabled:opacity-50"
+                >
+                  {bezig ? "…" : "Terugzetten"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TaakTable({ id, role, onSaved }) {
   const identifier = role.roleId ?? role.rolnaam;
   const origineelTaken = useMemo(() => getOrigineelTaken(role), [role]);
@@ -1168,6 +1260,7 @@ export default function ClientWorkspace({ id }) {
                 >
                   ⬇ PDF-rapport
                 </a>
+                <VersieHistorie id={id} onHersteld={(updated) => setClient((c) => ({ ...c, results: updated }))} />
               </div>
             }
           >

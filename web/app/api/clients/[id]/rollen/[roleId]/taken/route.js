@@ -71,6 +71,6 @@ export async function PATCH(request, { params }) {
   results.organisatieTotaal = calculateOrganisatie(results.rollen);
   results.subtotalenPerAfdeling = calculateSubtotalenPerAfdeling(results.rollen);
 
-  await writeResults(id, results);
+  await writeResults(id, results, { reden: `taakverdeling aangepast voor ${role.rolnaam}` });
   return NextResponse.json(results);
 }
