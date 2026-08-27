@@ -1106,8 +1106,14 @@ export default function ClientWorkspace({ id }) {
                 htmlFor="roster-upload"
                 uploading={uploadingRoster}
                 label="Upload roster"
-                hint="Excel/CSV: rolnaam, FTE, uren/week, kosten/uur. Optioneel: afdeling, en rapporteert_aan (rolnaam van de leidinggevende) voor een organogram met rapportagelijnen."
+                hint="Excel/CSV: rolnaam, FTE, uren/week, kosten/uur. Optioneel: afdeling, en rapporteert_aan voor een organogram met rapportagelijnen."
               />
+              <a
+                href="/api/roster-template"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-500 hover:underline"
+              >
+                ⬇ Download het rostersjabloon (.xlsx)
+              </a>
               {client.rosterFileName && (
                 <p className="text-xs text-emerald-700 mt-2 flex items-center gap-1">
                   <span>✓</span> {client.rosterFileName}
