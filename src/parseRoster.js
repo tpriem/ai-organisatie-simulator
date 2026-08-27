@@ -3,7 +3,7 @@ import { parse as parseCsv } from "csv-parse/sync";
 import * as XLSX from "xlsx";
 
 const REQUIRED_COLUMNS = ["rolnaam", "fte", "uren_per_week", "kosten_per_uur"];
-const OPTIONAL_COLUMNS = ["afdeling"];
+const OPTIONAL_COLUMNS = ["afdeling", "rapporteert_aan"];
 
 const HEADER_ALIASES = {
   rolnaam: ["rolnaam", "rol", "functie", "role"],
@@ -11,6 +11,16 @@ const HEADER_ALIASES = {
   uren_per_week: ["uren_per_week", "uren per week", "gemiddeld_aantal_uren_per_week", "hours_per_week"],
   kosten_per_uur: ["kosten_per_uur", "kosten per uur", "gemiddelde_kosten_per_uur", "cost_per_hour"],
   afdeling: ["afdeling", "business_unit", "businessunit", "unit", "department", "afdeling/business_unit"],
+  // Verwijst naar de rolnaam van de leidinggevende, zoals die elders in het roster staat.
+  rapporteert_aan: [
+    "rapporteert_aan",
+    "rapporteert aan",
+    "leidinggevende",
+    "manager",
+    "reports_to",
+    "reports to",
+    "rapporteert_aan_rol",
+  ],
 };
 
 function normalizeHeader(header) {
@@ -77,6 +87,7 @@ export function parseRoster(buffer, fileName) {
     const kostenPerUur = Number(row.kosten_per_uur);
     const rolnaam = String(row.rolnaam).trim();
     const afdeling = String(row.afdeling ?? "").trim();
+    const rapporteertAan = String(row.rapporteert_aan ?? "").trim();
 
     if (!rolnaam) throw new Error(`Rij ${idx + 2}: rolnaam ontbreekt.`);
     if (!Number.isFinite(fte) || fte <= 0) throw new Error(`Rij ${idx + 2} (${rolnaam}): ongeldige FTE "${row.fte}".`);
@@ -85,6 +96,10 @@ export function parseRoster(buffer, fileName) {
     if (!Number.isFinite(kostenPerUur) || kostenPerUur <= 0)
       throw new Error(`Rij ${idx + 2} (${rolnaam}): ongeldige kosten_per_uur "${row.kosten_per_uur}".`);
 
-    return { rolnaam, fte, urenPerWeek, kostenPerUur, afdeling };
+    if (rapporteertAan && rapporteertAan.toLowerCase() === rolnaam.toLowerCase()) {
+      throw new Error(`Rij ${idx + 2} (${rolnaam}): rapporteert aan zichzelf.`);
+    }
+
+    return { rolnaam, fte, urenPerWeek, kostenPerUur, afdeling, rapporteertAan };
   });
 }

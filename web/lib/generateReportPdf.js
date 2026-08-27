@@ -109,6 +109,33 @@ function krimpPct(nu, straks) {
   return Math.round(((nu - straks) / nu) * 100);
 }
 
+/** Eén rol in de rapportagestructuur, met wie eronder hangt. */
+function hierarchieKnoop(knoop, maxFte, diepte = 0) {
+  const krimp = krimpPct(knoop.fteHuidig, knoop.fteRealistisch);
+  const spanKrimp = krimpPct(knoop.spanTotaalHuidig, knoop.spanTotaalRealistisch);
+  const inspringen = diepte * 14;
+
+  return `<div style="margin-left:${inspringen}px;border-left:${
+    diepte > 0 ? "1px solid #e2e8f0" : "none"
+  };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;">
+    <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${knoop.fteHuidig.toFixed(
+      1
+    )} → ${knoop.fteRealistisch.toFixed(2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
+    ${
+      knoop.kinderen.length
+        ? `<p style="font-size:9px;color:#94a3b8;margin:0 0 3px;">stuurt ${knoop.spanDirect} ${
+            knoop.spanDirect === 1 ? "rol" : "rollen"
+          } aan · ${knoop.spanTotaalHuidig.toFixed(1)} → ${knoop.spanTotaalRealistisch.toFixed(2)} FTE onder zich${
+            spanKrimp > 0 ? ` (−${spanKrimp}%)` : ""
+          }</p>`
+        : ""
+    }
+    ${bar("Huidig", knoop.fteHuidig, maxFte, "c-slate")}
+    ${bar("Realistisch", knoop.fteRealistisch, maxFte, "c-indigo")}
+    ${knoop.kinderen.map((k) => hierarchieKnoop(k, maxFte, diepte + 1)).join("")}
+  </div>`;
+}
+
 /** Eén afdeling in het organogram, met de rollen eronder. */
 function afdelingBlok(afdeling, orgChart) {
   const krimp = krimpPct(afdeling.fteHuidig, afdeling.fteRealistisch);
@@ -358,12 +385,25 @@ export async function generateReportPdf(results) {
 
   <h2>Organogram — voor &amp; na</h2>
   <p class="disclaimer">${
-    orgChart.heeftAfdelingen
-      ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
-      : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol."
+    orgChart.hierarchie
+      ? `Opgebouwd uit de rapportagelijnen in het roster — ${orgChart.hierarchie.lagen} ${
+          orgChart.hierarchie.lagen === 1 ? "laag" : "lagen"
+        }. Per rol: FTE nu versus overgebleven na transformatie, en hoeveel FTE eronder hangt.`
+      : orgChart.heeftAfdelingen
+        ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
+        : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol."
   }</p>
   ${
-    orgChart.heeftAfdelingen
+    orgChart.hierarchie?.problemen?.length
+      ? `<p class="disclaimer" style="color:#92400e;">Let op bij de rapportagelijnen: ${orgChart.hierarchie.problemen
+          .map(esc)
+          .join(" ")}</p>`
+      : ""
+  }
+  ${
+    orgChart.hierarchie
+      ? orgChart.hierarchie.top.map((k) => hierarchieKnoop(k, orgChart.maxFte)).join("")
+      : orgChart.heeftAfdelingen
       ? `<p style="font-weight:bold;font-size:12px;margin:8px 0 2px;">Hele organisatie: ${orgChart.organisatie.fteHuidig.toFixed(
           1
         )} → ${orgChart.organisatie.fteRealistisch.toFixed(2)} FTE${

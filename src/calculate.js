@@ -12,7 +12,15 @@ import { roleId, roleLabel } from "./roleIdentity.js";
  * Hier gebruiken we daarom: FTE_weg = automatiseerbare_uren ÷ uren_per_fte,
  * en FTE_over = totaal_fte - FTE_weg (equivalent aan overgebleven_uren ÷ uren_per_fte).
  */
-export function calculateRole({ rolnaam, afdeling = "", fte, urenPerWeek, kostenPerUur, taken }) {
+export function calculateRole({
+  rolnaam,
+  afdeling = "",
+  fte,
+  urenPerWeek,
+  kostenPerUur,
+  taken,
+  rapporteertAan = "",
+}) {
   const totaalUrenPerWeek = fte * urenPerWeek;
   const urenPerFte = urenPerWeek;
 
@@ -57,6 +65,9 @@ export function calculateRole({ rolnaam, afdeling = "", fte, urenPerWeek, kosten
   return {
     rolnaam,
     afdeling,
+    // Rolnaam van de leidinggevende uit het roster; leeg als de kolom ontbreekt.
+    // Wordt in orgChartData.js tot een boom opgelost.
+    rapporteertAan,
     roleId: roleId({ rolnaam, afdeling }),
     roleLabel: roleLabel({ rolnaam, afdeling }),
     fte,

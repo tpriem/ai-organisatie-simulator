@@ -248,16 +248,80 @@ function fteBalken(out, huidig, realistisch, agressief, schaal) {
   out.push(miniBar(agressief, schaal, "C7D2FE"));
 }
 
+function hierarchieKnoopWord(out, knoop, maxFte, diepte = 0) {
+  const krimp = krimpPct(knoop.fteHuidig, knoop.fteRealistisch);
+  const spanKrimp = krimpPct(knoop.spanTotaalHuidig, knoop.spanTotaalRealistisch);
+
+  out.push(
+    new Paragraph({
+      spacing: { before: 160, after: 40 },
+      indent: { left: diepte * 280 },
+      children: [
+        new TextRun({
+          text:
+            `${knoop.rolnaam} — ${knoop.fteHuidig.toFixed(1)} → ${knoop.fteRealistisch.toFixed(2)} FTE` +
+            (krimp > 0 ? ` (−${krimp}%)` : ""),
+          bold: true,
+          size: 20,
+        }),
+      ],
+    })
+  );
+
+  if (knoop.kinderen.length) {
+    out.push(
+      new Paragraph({
+        spacing: { after: 40 },
+        indent: { left: diepte * 280 },
+        children: [
+          new TextRun({
+            text:
+              `stuurt ${knoop.spanDirect} ${knoop.spanDirect === 1 ? "rol" : "rollen"} aan · ` +
+              `${knoop.spanTotaalHuidig.toFixed(1)} → ${knoop.spanTotaalRealistisch.toFixed(2)} FTE onder zich` +
+              (spanKrimp > 0 ? ` (−${spanKrimp}%)` : ""),
+            size: 16,
+            color: "94A3B8",
+          }),
+        ],
+      })
+    );
+  }
+
+  out.push(paragraph(`Huidig — ${knoop.fteHuidig.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(miniBar(knoop.fteHuidig, maxFte, "94A3B8"));
+  out.push(paragraph(`Realistisch — ${knoop.fteRealistisch.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(miniBar(knoop.fteRealistisch, maxFte, "6366F1"));
+
+  for (const kind of knoop.kinderen) hierarchieKnoopWord(out, kind, maxFte, diepte + 1);
+}
+
 function organogramSection(rollen) {
   const chart = buildOrgChartData(rollen);
   const out = [
     paragraph(
-      chart.heeftAfdelingen
-        ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
-        : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol.",
+      chart.hierarchie
+        ? `Opgebouwd uit de rapportagelijnen in het roster — ${chart.hierarchie.lagen} ${
+            chart.hierarchie.lagen === 1 ? "laag" : "lagen"
+          }. Per rol: FTE nu versus overgebleven na transformatie, en hoeveel FTE eronder hangt.`
+        : chart.heeftAfdelingen
+          ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
+          : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol.",
       { italics: true, size: 18, color: "64748B" }
     ),
   ];
+
+  if (chart.hierarchie) {
+    if (chart.hierarchie.problemen.length) {
+      out.push(
+        paragraph(`Let op bij de rapportagelijnen: ${chart.hierarchie.problemen.join(" ")}`, {
+          size: 16,
+          color: "92400E",
+        })
+      );
+    }
+    for (const knoop of chart.hierarchie.top) hierarchieKnoopWord(out, knoop, chart.maxFte);
+    return out;
+  }
 
   if (!chart.heeftAfdelingen) {
     for (const r of chart.rollen) {

@@ -139,6 +139,45 @@ function krimpPct(nu, straks) {
   return Math.round(((nu - straks) / nu) * 100);
 }
 
+function HierarchieKnoop({ knoop, maxFte }) {
+  const krimp = krimpPct(knoop.fteHuidig, knoop.fteRealistisch);
+  const stuurtAan = knoop.kinderen.length > 0;
+  const spanKrimp = krimpPct(knoop.spanTotaalHuidig, knoop.spanTotaalRealistisch);
+
+  return (
+    <div className="border-l border-slate-200 pl-3 ml-1">
+      <div className="py-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-sm font-medium text-slate-800">{knoop.rolnaam}</p>
+          <p className="text-xs text-slate-500 shrink-0">
+            {knoop.fteHuidig.toFixed(1)} → {knoop.fteRealistisch.toFixed(2)} FTE
+            {krimp > 0 && <span className="text-slate-400"> · −{krimp}%</span>}
+          </p>
+        </div>
+
+        {/* De aansturing is hier het interessante getal: krimpt de span sterk, dan is de
+            vraag of deze laag nog nodig is. */}
+        {stuurtAan && (
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            stuurt {knoop.spanDirect} {knoop.spanDirect === 1 ? "rol" : "rollen"} aan ·{" "}
+            {knoop.spanTotaalHuidig.toFixed(1)} → {knoop.spanTotaalRealistisch.toFixed(2)} FTE onder zich
+            {spanKrimp > 0 && ` (−${spanKrimp}%)`}
+          </p>
+        )}
+
+        <div className="mt-1.5 space-y-1">
+          <OrgChartBar label="Huidig" value={knoop.fteHuidig} maxValue={maxFte} colorClass="bg-slate-400" />
+          <OrgChartBar label="Realistisch" value={knoop.fteRealistisch} maxValue={maxFte} colorClass="bg-indigo-500" />
+        </div>
+      </div>
+
+      {knoop.kinderen.map((k) => (
+        <HierarchieKnoop key={k.roleId} knoop={k} maxFte={maxFte} />
+      ))}
+    </div>
+  );
+}
+
 function OrgChartAfdeling({ afdeling, maxAfdelingFte, maxFte }) {
   const krimp = krimpPct(afdeling.fteHuidig, afdeling.fteRealistisch);
   return (
@@ -1067,7 +1106,7 @@ export default function ClientWorkspace({ id }) {
                 htmlFor="roster-upload"
                 uploading={uploadingRoster}
                 label="Upload roster"
-                hint="Excel/CSV: rolnaam, FTE, uren/week, kosten/uur (+ optioneel afdeling)"
+                hint="Excel/CSV: rolnaam, FTE, uren/week, kosten/uur. Optioneel: afdeling, en rapporteert_aan (rolnaam van de leidinggevende) voor een organogram met rapportagelijnen."
               />
               {client.rosterFileName && (
                 <p className="text-xs text-emerald-700 mt-2 flex items-center gap-1">
@@ -1504,10 +1543,31 @@ export default function ClientWorkspace({ id }) {
               return (
                 <>
                   <p className="text-xs text-slate-400 mb-4">
-                    {chart.heeftAfdelingen
-                      ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
-                      : "Geen afdelingen in het roster — dit toont FTE per rol, huidig vs. overgebleven na transformatie, geschaald t.o.v. de grootste rol."}
+                    {chart.hierarchie
+                      ? `Opgebouwd uit de rapportagelijnen in het roster — ${chart.hierarchie.lagen} ${
+                          chart.hierarchie.lagen === 1 ? "laag" : "lagen"
+                        }. Per rol: FTE nu versus overgebleven na transformatie, en hoeveel FTE eronder hangt.`
+                      : chart.heeftAfdelingen
+                        ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
+                        : "Geen afdelingen in het roster — dit toont FTE per rol, huidig vs. overgebleven na transformatie, geschaald t.o.v. de grootste rol."}
                   </p>
+
+                  {/* Rommelige rostergegevens niet stil wegpoetsen: als een rapportagelijn
+                      niet klopt, hoort de gebruiker dat te zien. */}
+                  {chart.hierarchie?.problemen?.length > 0 && (
+                    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2">
+                      <p className="text-xs font-semibold text-amber-800">
+                        Let op bij de rapportagelijnen in het roster
+                      </p>
+                      <ul className="mt-1 space-y-0.5">
+                        {chart.hierarchie.problemen.map((p, i) => (
+                          <li key={i} className="text-[11px] text-amber-700">
+                            {p}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {chart.heeftAfdelingen && (
                     <div className="mb-5 rounded-lg bg-indigo-600 text-white px-4 py-3">
@@ -1524,16 +1584,20 @@ export default function ClientWorkspace({ id }) {
                     </div>
                   )}
 
-                  {chart.heeftAfdelingen
-                    ? chart.afdelingen.map((a) => (
-                        <OrgChartAfdeling
-                          key={a.afdeling}
-                          afdeling={a}
-                          maxAfdelingFte={chart.maxAfdelingFte}
-                          maxFte={chart.maxFte}
-                        />
+                  {chart.hierarchie
+                    ? chart.hierarchie.top.map((k) => (
+                        <HierarchieKnoop key={k.roleId} knoop={k} maxFte={chart.maxFte} />
                       ))
-                    : chart.rollen.map((r) => <OrgChartRole key={r.roleId} rol={r} maxFte={chart.maxFte} />)}
+                    : chart.heeftAfdelingen
+                      ? chart.afdelingen.map((a) => (
+                          <OrgChartAfdeling
+                            key={a.afdeling}
+                            afdeling={a}
+                            maxAfdelingFte={chart.maxAfdelingFte}
+                            maxFte={chart.maxFte}
+                          />
+                        ))
+                      : chart.rollen.map((r) => <OrgChartRole key={r.roleId} rol={r} maxFte={chart.maxFte} />)}
                 </>
               );
             })()}
