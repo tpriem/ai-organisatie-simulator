@@ -134,6 +134,54 @@ function OrgChartRole({ rol, maxFte }) {
   );
 }
 
+function krimpPct(nu, straks) {
+  if (!nu) return 0;
+  return Math.round(((nu - straks) / nu) * 100);
+}
+
+function OrgChartAfdeling({ afdeling, maxAfdelingFte, maxFte }) {
+  const krimp = krimpPct(afdeling.fteHuidig, afdeling.fteRealistisch);
+  return (
+    <div className="mb-5 rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-slate-50 px-3 py-2.5 border-b border-slate-200">
+        <div className="flex items-baseline justify-between gap-3 mb-2">
+          <p className="text-sm font-semibold text-slate-800">{afdeling.afdeling}</p>
+          <p className="text-xs text-slate-500 shrink-0">
+            {afdeling.fteHuidig.toFixed(1)} → {afdeling.fteRealistisch.toFixed(2)} FTE
+            {krimp > 0 && <span className="text-slate-400"> · −{krimp}%</span>}
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <OrgChartBar label="Huidig" value={afdeling.fteHuidig} maxValue={maxAfdelingFte} colorClass="bg-slate-400" />
+          <OrgChartBar
+            label="Realistisch"
+            value={afdeling.fteRealistisch}
+            maxValue={maxAfdelingFte}
+            colorClass="bg-indigo-500"
+          />
+          <OrgChartBar
+            label="Agressief"
+            value={afdeling.fteAgressief}
+            maxValue={maxAfdelingFte}
+            colorClass="bg-indigo-300"
+          />
+        </div>
+      </div>
+
+      {/* Rollen ingesprongen onder hun afdeling, geschaald op de grootste rol zodat ze
+          onderling vergelijkbaar blijven. Bij één rol zijn de balken identiek aan die
+          van de afdeling; dan alleen de naam, want herhaling voegt niets toe. */}
+      <div className="px-3 pl-6">
+        {afdeling.rollen.length === 1 ? (
+          <p className="py-2.5 text-xs text-slate-500">{afdeling.rollen[0].rolnaam}</p>
+        ) : (
+          afdeling.rollen.map((r) => <OrgChartRole key={r.roleId} rol={r} maxFte={maxFte} />)
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TabButton({ active, onClick, icon, label, done }) {
   return (
     <button
@@ -1450,13 +1498,44 @@ export default function ClientWorkspace({ id }) {
 
         {results && (
           <Section title="Organogram — voor & na" icon="🏢">
-            <p className="text-xs text-slate-400 mb-4">
-              Geen hiërarchie beschikbaar in het roster — dit toont FTE per rol, huidig vs. overgebleven na
-              transformatie, geschaald t.o.v. de grootste rol.
-            </p>
             {(() => {
-              const { maxFte, rollen } = buildOrgChartData(results.rollen);
-              return rollen.map((r) => <OrgChartRole key={r.roleId ?? r.rolnaam} rol={r} maxFte={maxFte} />);
+              const chart = buildOrgChartData(results.rollen);
+              const orgKrimp = krimpPct(chart.organisatie.fteHuidig, chart.organisatie.fteRealistisch);
+              return (
+                <>
+                  <p className="text-xs text-slate-400 mb-4">
+                    {chart.heeftAfdelingen
+                      ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
+                      : "Geen afdelingen in het roster — dit toont FTE per rol, huidig vs. overgebleven na transformatie, geschaald t.o.v. de grootste rol."}
+                  </p>
+
+                  {chart.heeftAfdelingen && (
+                    <div className="mb-5 rounded-lg bg-indigo-600 text-white px-4 py-3">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="text-sm font-semibold">Hele organisatie</p>
+                        <p className="text-sm">
+                          {chart.organisatie.fteHuidig.toFixed(1)} → {chart.organisatie.fteRealistisch.toFixed(2)} FTE
+                          {orgKrimp > 0 && <span className="text-indigo-200"> · −{orgKrimp}%</span>}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-indigo-200 mt-0.5">
+                        {chart.afdelingen.length} afdelingen, {chart.rollen.length} rollen
+                      </p>
+                    </div>
+                  )}
+
+                  {chart.heeftAfdelingen
+                    ? chart.afdelingen.map((a) => (
+                        <OrgChartAfdeling
+                          key={a.afdeling}
+                          afdeling={a}
+                          maxAfdelingFte={chart.maxAfdelingFte}
+                          maxFte={chart.maxFte}
+                        />
+                      ))
+                    : chart.rollen.map((r) => <OrgChartRole key={r.roleId} rol={r} maxFte={chart.maxFte} />)}
+                </>
+              );
             })()}
           </Section>
         )}

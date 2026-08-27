@@ -104,6 +104,40 @@ function competentieTop5Block(title, items) {
       .join("")}`;
 }
 
+function krimpPct(nu, straks) {
+  if (!nu) return 0;
+  return Math.round(((nu - straks) / nu) * 100);
+}
+
+/** Eén afdeling in het organogram, met de rollen eronder. */
+function afdelingBlok(afdeling, orgChart) {
+  const krimp = krimpPct(afdeling.fteHuidig, afdeling.fteRealistisch);
+  // Bij één rol zijn de rolbalken identiek aan die van de afdeling; dan alleen de naam.
+  const rollen =
+    afdeling.rollen.length === 1
+      ? `<p style="font-size:10px;color:#64748b;margin:4px 0 0 14px;">${esc(afdeling.rollen[0].rolnaam)}</p>`
+      : afdeling.rollen
+          .map(
+            (r) => `<div style="margin:6px 0 0 14px;">
+        <p style="font-size:10px;margin:0 0 3px;">${esc(r.rolnaam)}</p>
+        ${bar("Huidig", r.fteHuidig, orgChart.maxFte, "c-slate")}
+        ${bar("Realistisch", r.fteRealistisch, orgChart.maxFte, "c-indigo")}
+        ${bar("Agressief", r.fteAgressief, orgChart.maxFte, "c-indigo-light")}
+      </div>`
+          )
+          .join("");
+
+  return `<div class="role-block">
+    <p style="font-weight:bold;font-size:12px;margin-bottom:4px;">${esc(afdeling.afdeling)} — ${afdeling.fteHuidig.toFixed(
+      1
+    )} → ${afdeling.fteRealistisch.toFixed(2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
+    ${bar("Huidig", afdeling.fteHuidig, orgChart.maxAfdelingFte, "c-slate")}
+    ${bar("Realistisch", afdeling.fteRealistisch, orgChart.maxAfdelingFte, "c-indigo")}
+    ${bar("Agressief", afdeling.fteAgressief, orgChart.maxAfdelingFte, "c-indigo-light")}
+    ${rollen}
+  </div>`;
+}
+
 const TIER_KLASSE = { hoog: "c-emerald", midden: "c-blue", laag: "c-orange" };
 
 function profielKolom(titel, items) {
@@ -196,7 +230,8 @@ export async function generateReportPdf(results) {
     aanbevelingen,
   } = results;
   const datum = new Date(gegenereerdOp).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" });
-  const { maxFte, rollen: chartRollen } = buildOrgChartData(rollen);
+  const orgChart = buildOrgChartData(rollen);
+  const { maxFte, rollen: chartRollen } = orgChart;
   const scopeSuffix = scope === "afdeling" && scopeLabel ? ` — ${esc(scopeLabel)}` : "";
 
   const html = `<!doctype html>
@@ -322,17 +357,34 @@ export async function generateReportPdf(results) {
   }
 
   <h2>Organogram — voor &amp; na</h2>
-  <p class="disclaimer">Geen hiërarchie beschikbaar in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol.</p>
-  ${chartRollen
-    .map(
-      (r) => `<div class="role-block">
+  <p class="disclaimer">${
+    orgChart.heeftAfdelingen
+      ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
+      : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol."
+  }</p>
+  ${
+    orgChart.heeftAfdelingen
+      ? `<p style="font-weight:bold;font-size:12px;margin:8px 0 2px;">Hele organisatie: ${orgChart.organisatie.fteHuidig.toFixed(
+          1
+        )} → ${orgChart.organisatie.fteRealistisch.toFixed(2)} FTE${
+          krimpPct(orgChart.organisatie.fteHuidig, orgChart.organisatie.fteRealistisch) > 0
+            ? ` (−${krimpPct(orgChart.organisatie.fteHuidig, orgChart.organisatie.fteRealistisch)}%)`
+            : ""
+        }</p>
+    <p class="disclaimer" style="margin:0 0 8px;">${orgChart.afdelingen.length} afdelingen, ${
+          orgChart.rollen.length
+        } rollen</p>` + orgChart.afdelingen.map((a) => afdelingBlok(a, orgChart)).join("")
+      : chartRollen
+          .map(
+            (r) => `<div class="role-block">
       <p style="font-weight:bold;font-size:12px;margin-bottom:4px;">${esc(r.rolnaam)}</p>
       ${bar("Huidig", r.fteHuidig, maxFte, "c-slate")}
       ${bar("Realistisch", r.fteRealistisch, maxFte, "c-indigo")}
       ${bar("Agressief", r.fteAgressief, maxFte, "c-indigo-light")}
     </div>`
-    )
-    .join("")}
+          )
+          .join("")
+  }
 
   <h2>Detail per rol — taakverdeling &amp; competenties</h2>
   ${rollen

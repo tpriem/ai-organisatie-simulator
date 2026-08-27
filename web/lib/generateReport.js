@@ -14,6 +14,7 @@ import {
   HeightRule,
 } from "docx";
 import { WAARDETYPES, getWaardetype } from "../../src/config.js";
+import { buildOrgChartData } from "./orgChartData.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -233,28 +234,87 @@ function miniBar(value, maxValue, colorHex) {
   });
 }
 
+function krimpPct(nu, straks) {
+  if (!nu) return 0;
+  return Math.round(((nu - straks) / nu) * 100);
+}
+
+function fteBalken(out, huidig, realistisch, agressief, schaal) {
+  out.push(paragraph(`Huidig — ${huidig.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(miniBar(huidig, schaal, "94A3B8"));
+  out.push(paragraph(`Realistisch — ${realistisch.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(miniBar(realistisch, schaal, "6366F1"));
+  out.push(paragraph(`Agressief — ${agressief.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(miniBar(agressief, schaal, "C7D2FE"));
+}
+
 function organogramSection(rollen) {
-  const maxFte = Math.max(...rollen.map((r) => r.fte), 1);
+  const chart = buildOrgChartData(rollen);
   const out = [
     paragraph(
-      "Geen hiërarchie beschikbaar in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol.",
+      chart.heeftAfdelingen
+        ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
+        : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol.",
       { italics: true, size: 18, color: "64748B" }
     ),
   ];
 
-  for (const r of rollen) {
+  if (!chart.heeftAfdelingen) {
+    for (const r of chart.rollen) {
+      out.push(
+        new Paragraph({
+          spacing: { before: 200, after: 60 },
+          children: [new TextRun({ text: r.label, bold: true, size: 22 })],
+        })
+      );
+      fteBalken(out, r.fteHuidig, r.fteRealistisch, r.fteAgressief, chart.maxFte);
+    }
+    return out;
+  }
+
+  const orgKrimp = krimpPct(chart.organisatie.fteHuidig, chart.organisatie.fteRealistisch);
+  out.push(
+    paragraph(
+      `Hele organisatie: ${chart.organisatie.fteHuidig.toFixed(1)} → ${chart.organisatie.fteRealistisch.toFixed(2)} FTE` +
+        (orgKrimp > 0 ? ` (−${orgKrimp}%)` : "") +
+        ` — ${chart.afdelingen.length} afdelingen, ${chart.rollen.length} rollen`,
+      { bold: true, size: 20 }
+    )
+  );
+
+  for (const a of chart.afdelingen) {
+    const krimp = krimpPct(a.fteHuidig, a.fteRealistisch);
     out.push(
       new Paragraph({
-        spacing: { before: 200, after: 60 },
-        children: [new TextRun({ text: r.roleLabel ?? r.rolnaam, bold: true, size: 22 })],
+        spacing: { before: 240, after: 60 },
+        children: [
+          new TextRun({
+            text:
+              `${a.afdeling} — ${a.fteHuidig.toFixed(1)} → ${a.fteRealistisch.toFixed(2)} FTE` +
+              (krimp > 0 ? ` (−${krimp}%)` : ""),
+            bold: true,
+            size: 22,
+          }),
+        ],
       })
     );
-    out.push(paragraph(`Huidig — ${r.fte.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
-    out.push(miniBar(r.fte, maxFte, "94A3B8"));
-    out.push(paragraph(`Realistisch — ${r.scenarios.realistisch.fteOver.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
-    out.push(miniBar(r.scenarios.realistisch.fteOver, maxFte, "6366F1"));
-    out.push(paragraph(`Agressief — ${r.scenarios.agressief.fteOver.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
-    out.push(miniBar(r.scenarios.agressief.fteOver, maxFte, "C7D2FE"));
+    fteBalken(out, a.fteHuidig, a.fteRealistisch, a.fteAgressief, chart.maxAfdelingFte);
+
+    // Bij één rol zijn de rolbalken identiek aan die van de afdeling; dan alleen de naam.
+    if (a.rollen.length === 1) {
+      out.push(paragraph(a.rollen[0].rolnaam, { size: 16, color: "64748B" }));
+      continue;
+    }
+    for (const r of a.rollen) {
+      out.push(
+        new Paragraph({
+          spacing: { before: 140, after: 40 },
+          indent: { left: 300 },
+          children: [new TextRun({ text: r.rolnaam, size: 18 })],
+        })
+      );
+      fteBalken(out, r.fteHuidig, r.fteRealistisch, r.fteAgressief, chart.maxFte);
+    }
   }
 
   return out;
