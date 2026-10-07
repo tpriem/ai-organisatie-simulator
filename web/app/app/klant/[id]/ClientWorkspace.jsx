@@ -920,13 +920,13 @@ export default function ClientWorkspace({ id }) {
   if (loading)
     return (
       <div className="flex-1 bg-slate-50">
-        <main className="max-w-3xl mx-auto px-6 py-12 text-sm text-slate-400">Laden...</main>
+        <main className="max-w-7xl mx-auto px-6 py-12 text-sm text-slate-400">Laden...</main>
       </div>
     );
   if (!client)
     return (
       <div className="flex-1 bg-slate-50">
-        <main className="max-w-3xl mx-auto px-6 py-12 text-sm text-red-600">Klant niet gevonden.</main>
+        <main className="max-w-7xl mx-auto px-6 py-12 text-sm text-red-600">Klant niet gevonden.</main>
       </div>
     );
 
@@ -936,7 +936,11 @@ export default function ClientWorkspace({ id }) {
 
   return (
     <div className="flex-1 bg-slate-50">
-      <main className="max-w-3xl mx-auto w-full px-6 py-10">
+      {/* Breder dan de gebruikelijke leesbreedte: dit scherm bestaat vooral uit tabellen
+          (rollen, taken, subtotalen per afdeling) en die worden met meer ruimte beter
+          leesbaar, niet slechter. Wel een bovengrens, zodat regels op een breed scherm
+          niet over de volle breedte uitlopen. */}
+      <main className="max-w-7xl mx-auto w-full px-6 py-10">
         {/* Klant-switcher */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           <a href="/app" className="text-sm text-slate-400 hover:text-indigo-600 transition-colors">
@@ -1612,7 +1616,9 @@ export default function ClientWorkspace({ id }) {
 
         {results?.aanbevelingen && (
           <Section title="Bevindingen & Aanbevelingen" icon="💡">
-            <p className="text-sm text-slate-700 mb-5">{results.aanbevelingen.bevindingenSamenvatting}</p>
+            {/* Het scherm is breed omwille van de tabellen, maar lopende tekst blijft
+                begrensd: over 1280px lezen volle regels niet prettig. */}
+            <p className="text-sm text-slate-700 mb-5 max-w-3xl">{results.aanbevelingen.bevindingenSamenvatting}</p>
 
             <div className="grid sm:grid-cols-3 gap-4 mb-5">
               <div>
