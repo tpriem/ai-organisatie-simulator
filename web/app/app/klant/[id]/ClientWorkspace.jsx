@@ -22,7 +22,7 @@ const BESTEMMING_STIJL = {
   onbepaald: { balk: "bg-slate-200", tekst: "text-slate-400" },
 };
 
-function CapaciteitBestemming({ results }) {
+export function CapaciteitBestemming({ results }) {
   const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
   if (bestemming.length === 0) return null;
 
