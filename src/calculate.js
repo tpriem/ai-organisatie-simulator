@@ -109,6 +109,9 @@ export function calculateOrganisatie(roleResults) {
       totaalFteHuidig,
       totaalFteWeg,
       totaalFteOver,
+      // Dezelfde grootheid als totaalFteWeg, maar in de eenheid waarin het gesprek
+      // over inzet gaat in plaats van over ontslag. Werd al berekend en weggegooid.
+      totaalVrijgekomenUrenPerWeek: totaalAutomatiseerbaarPerWeek,
       reductiePercentageOrganisatie: totaalUrenPerWeek > 0 ? totaalAutomatiseerbaarPerWeek / totaalUrenPerWeek : 0,
       totaalKostenBesparingPerJaar,
     };
@@ -138,4 +141,36 @@ export function calculateSubtotalenPerAfdeling(roleResults) {
     aantalRollen: rows.length,
     scenarios: calculateOrganisatie(rows),
   }));
+}
+
+/**
+ * Verdeelt de vrijgekomen capaciteit over de waardetypes van de rollen waaruit ze
+ * vrijkomt.
+ *
+ * Het punt van deze uitsplitsing: "6,6 FTE komt vrij" zegt niets over wat je ermee
+ * doet, terwijl dat juist de beslissing is. Kostenreductie levert een eenmalig
+ * voordeel dat wegconcurreert zodra AI gemeengoed is; capaciteit die naar kwaliteit
+ * of volume gaat, stapelt. Door de capaciteit naar bestemming te splitsen wordt die
+ * keuze zichtbaar in plaats van voorgebakken.
+ *
+ * Rollen zonder waardetype (analyses van vóór die toevoeging) vallen onder "onbepaald",
+ * zodat ze niet stilzwijgend bij een van de drie worden opgeteld.
+ */
+export function calculateCapaciteitBestemming(roleResults, scenario = "realistisch") {
+  const groepen = new Map();
+
+  for (const r of roleResults) {
+    const key = r.waardetype || "onbepaald";
+    if (!groepen.has(key)) groepen.set(key, { waardetype: key, rollen: 0, fte: 0, urenPerWeek: 0 });
+    const g = groepen.get(key);
+    g.rollen += 1;
+    g.fte += r.scenarios[scenario].fteWeg;
+    g.urenPerWeek += r.scenarios[scenario].automatiseerbareUrenPerWeek;
+  }
+
+  const totaalFte = [...groepen.values()].reduce((s, g) => s + g.fte, 0);
+
+  return [...groepen.values()]
+    .map((g) => ({ ...g, aandeel: totaalFte > 0 ? g.fte / totaalFte : 0 }))
+    .sort((a, b) => b.fte - a.fte);
 }

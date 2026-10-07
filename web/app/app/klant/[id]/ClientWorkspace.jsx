@@ -6,10 +6,62 @@ import { signOut } from "next-auth/react";
 import { SECTORS, getSector } from "@/lib/sectors";
 import { IMPACT_QUESTIONS, READINESS_QUESTIONS } from "@/lib/questions";
 import { buildOrgChartData } from "@/lib/orgChartData";
-import { calculateRole } from "../../../../../src/calculate.js";
+import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
+
+// Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
+// die de analyse blootlegt: kostenreductie levert een eenmalig voordeel dat
+// wegconcurreert zodra AI gemeengoed is, capaciteit die naar kwaliteit of volume gaat
+// stapelt. Zonder deze uitsplitsing leest "6,6 FTE komt vrij" automatisch als besparing.
+const BESTEMMING_STIJL = {
+  kostenreductie: { balk: "bg-slate-400", tekst: "text-slate-700" },
+  capaciteitsgroei: { balk: "bg-indigo-500", tekst: "text-indigo-700" },
+  kwaliteitsverbetering: { balk: "bg-emerald-500", tekst: "text-emerald-700" },
+  onbepaald: { balk: "bg-slate-200", tekst: "text-slate-400" },
+};
+
+export function CapaciteitBestemming({ results }) {
+  const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
+  if (bestemming.length === 0) return null;
+
+  const alleenOnbepaald = bestemming.every((b) => b.waardetype === "onbepaald");
+  if (alleenOnbepaald) return null;
+
+  return (
+    <div className="mb-5 rounded-xl border border-slate-200 p-4">
+      <p className="text-sm font-semibold text-slate-800">Waar gaat die capaciteit heen?</p>
+      <p className="text-xs text-slate-500 mt-0.5 mb-3">
+        Per rol is ingeschat welke bestemming het meest voor de hand ligt. Dit is een vertrekpunt voor het gesprek,
+        geen voorschrift — de keuze is aan de organisatie.
+      </p>
+
+      <div className="space-y-2.5">
+        {bestemming.map((b) => {
+          const type = getWaardetype(b.waardetype);
+          const stijl = BESTEMMING_STIJL[b.waardetype] ?? BESTEMMING_STIJL.onbepaald;
+          return (
+            <div key={b.waardetype}>
+              <div className="flex items-baseline justify-between gap-3 mb-1">
+                <span className={`text-xs font-medium ${stijl.tekst}`}>
+                  {type ? `${type.icon} ${type.label}` : "Nog niet bepaald"}
+                </span>
+                <span className="text-xs text-slate-500 shrink-0">
+                  {b.fte.toFixed(1)} FTE · {Math.round(b.urenPerWeek)} u/week ·{" "}
+                  {b.rollen} {b.rollen === 1 ? "rol" : "rollen"}
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className={`h-full ${stijl.balk}`} style={{ width: `${Math.max(b.aandeel * 100, 1.5)}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function Section({ title, icon, children, right }) {
   return (
@@ -622,10 +674,22 @@ function TaakTable({ id, role, onSaved }) {
       <WaardetypeBadge waardetype={role.waardetype} toelichting={role.waardetypeToelichting} />
       {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
 
-      <p className="text-xs text-slate-500 mb-2">
-        {role.urenPerWeek} u/week, €{role.kostenPerUur}/uur — besparing/jaar realistisch €
-        {Math.round(liveResult.scenarios.realistisch.kostenBesparingPerJaar).toLocaleString("nl-NL")}, agressief €
-        {Math.round(liveResult.scenarios.agressief.kostenBesparingPerJaar).toLocaleString("nl-NL")}
+      {/* Capaciteit voorop, bedrag als detail. Bij een rol met waardetype
+          capaciteitsgroei of kwaliteit is het besparingsbedrag zelfs misleidend: die
+          uren ga je niet wegsnijden. */}
+      <p className="text-xs text-slate-500 mb-1">
+        {role.fte} FTE × {role.urenPerWeek} u/week — er komt{" "}
+        <span className="font-medium text-slate-700">
+          {Math.round(liveResult.scenarios.realistisch.automatiseerbareUrenPerWeek)} uur per week
+        </span>{" "}
+        vrij ({liveResult.scenarios.realistisch.fteWeg.toFixed(2)} FTE), agressief{" "}
+        {Math.round(liveResult.scenarios.agressief.automatiseerbareUrenPerWeek)} uur.
+      </p>
+      <p className="text-[11px] text-slate-400 mb-2">
+        Als besparing ingeboekt: €
+        {Math.round(liveResult.scenarios.realistisch.kostenBesparingPerJaar).toLocaleString("nl-NL")} – €
+        {Math.round(liveResult.scenarios.agressief.kostenBesparingPerJaar).toLocaleString("nl-NL")} per jaar (à €
+        {role.kostenPerUur}/uur).
       </p>
       <div className="flex items-center justify-between mb-1.5">
         <span className={`text-[11px] ${totaalAandeelPct !== 100 ? "text-red-600 font-medium" : "text-slate-400"}`}>
@@ -1382,31 +1446,43 @@ export default function ClientWorkspace({ id }) {
                 )}–${(results.organisatieTotaal.agressief.reductiePercentageOrganisatie * 100).toFixed(0)}%`}
                 sub="realistisch – agressief"
               />
+              {/* De kop-KPI is de vrijgekomen capaciteit, niet de besparing. Dezelfde
+                  som, maar het stelt de vervolgvraag — waar zet je die uren op in —
+                  in plaats van 'm te beantwoorden met kostenreductie. */}
               <StatCard
-                label="Besparing/jaar"
-                value={`€${Math.round(
-                  results.organisatieTotaal.realistisch.totaalKostenBesparingPerJaar / 1000
-                )}k–${Math.round(results.organisatieTotaal.agressief.totaalKostenBesparingPerJaar / 1000)}k`}
-                sub="realistisch – agressief"
+                label="Capaciteit die vrijkomt"
+                value={`${results.organisatieTotaal.realistisch.totaalFteWeg.toFixed(1)} FTE`}
+                sub={`${Math.round(
+                  results.organisatieTotaal.realistisch.totaalVrijgekomenUrenPerWeek ??
+                    results.organisatieTotaal.realistisch.totaalFteWeg * 36
+                )} uur per week`}
               />
             </div>
 
-            {(() => {
-              const counts = WAARDETYPES.map((w) => ({
-                ...w,
-                count: results.rollen.filter((r) => r.waardetype === w.id).length,
-              })).filter((w) => w.count > 0);
-              if (counts.length === 0) return null;
-              return (
-                <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500">
-                  {counts.map((w) => (
-                    <span key={w.id} className="inline-flex items-center gap-1">
-                      {w.icon} <span className="font-medium text-slate-700">{w.count}</span> {w.label.toLowerCase()}
-                    </span>
-                  ))}
-                </div>
-              );
-            })()}
+            <CapaciteitBestemming results={results} />
+
+            {/* Financieel beeld bewust ná de bestemmingsvraag: het is één van de drie
+                mogelijke uitkomsten, niet de kop van het rapport. */}
+            <details className="mb-5 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
+              <summary className="cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-800">
+                Financieel beeld — wat de capaciteit waard is als je 'm volledig als besparing inboekt
+              </summary>
+              <p className="mt-2 text-xs text-slate-600">
+                €
+                {Math.round(
+                  results.organisatieTotaal.realistisch.totaalKostenBesparingPerJaar / 1000
+                ).toLocaleString("nl-NL")}
+                k – €
+                {Math.round(results.organisatieTotaal.agressief.totaalKostenBesparingPerJaar / 1000).toLocaleString(
+                  "nl-NL"
+                )}
+                k per jaar (realistisch – agressief).
+              </p>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Dit bedrag geldt alleen als de vrijgekomen uren daadwerkelijk uit de kosten verdwijnen. Zet je ze in
+                voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.
+              </p>
+            </details>
 
             {results.sectorAnalyse &&
               (() => {
