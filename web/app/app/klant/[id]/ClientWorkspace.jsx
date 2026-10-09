@@ -10,6 +10,7 @@ import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
+import { calculateScanDekking } from "../../../../../src/scanDekking.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
@@ -61,6 +62,34 @@ export function CapaciteitBestemming({ results }) {
         })}
       </div>
     </div>
+  );
+}
+
+const MATCH_KLEUR = {
+  sterk: { stip: "bg-emerald-500", tekst: "text-emerald-700" },
+  matig: { stip: "bg-amber-500", tekst: "text-amber-700" },
+  zwak: { stip: "bg-red-500", tekst: "text-red-700" },
+};
+
+// Waarop is deze rol gematcht, en hoe zeker. De competentie-analyse kiest uit de pool
+// van het gematchte ESCO-beroep; zit die match ernaast, dan klopt de hele analyse van
+// die rol niet — zonder foutmelding. Daarom hoort dit zichtbaar te zijn bij de rol zelf.
+function BeroepsmatchRegel({ beroepsmatch }) {
+  if (!beroepsmatch?.label) return null;
+  const kwaliteit =
+    typeof beroepsmatch.score !== "number" ? null : beroepsmatch.score >= 0.8 ? "sterk" : beroepsmatch.score >= 0.5 ? "matig" : "zwak";
+  const stijl = MATCH_KLEUR[kwaliteit] ?? { stip: "bg-slate-300", tekst: "text-slate-400" };
+
+  return (
+    <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1.5 flex-wrap">
+      <span>Competenties ontleend aan ESCO-beroep</span>
+      <span className="font-medium text-slate-600">{beroepsmatch.label}</span>
+      <span className={`inline-flex items-center gap-1 ${stijl.tekst}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${stijl.stip}`} />
+        match {beroepsmatch.score.toFixed(2)}
+      </span>
+      {kwaliteit !== "sterk" && <span className="text-amber-700">— controleer of dit de juiste rol is</span>}
+    </p>
   );
 }
 
@@ -141,6 +170,78 @@ export function CompetentieAgenda({ results }) {
           {nietTrainbaar.length === 1 ? " is" : " zijn"} laag trainbaar — disposities in plaats van vaardigheden. Die
           los je niet op met een opleidingsbudget; de vraag is of je ze al in huis hebt. Toets daarop bij de huidige
           bezetting.
+        </p>
+      )}
+    </Section>
+  );
+}
+
+// Hoe volledig en hoe stevig is deze analyse. Een scan die alleen uitkomsten toont
+// verbergt haar eigen onzekerheid; dit paneel maakt die expliciet, zodat een adviseur
+// weet wat hij wel en niet kan beweren.
+export function ScanDekking({ results }) {
+  const d = useMemo(() => calculateScanDekking(results), [results]);
+  if (!d.heeftMatchdata) return null;
+
+  const allesInOrde =
+    d.zwakkeMatches.length === 0 && d.ontbrekendeProfielen.length === 0 && d.ongematchteTaken === 0;
+
+  return (
+    <Section title="Dekking van deze analyse" icon="🔍">
+      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
+        Elke rol wordt gekoppeld aan een beroep uit de ESCO-classificatie; uit dat beroep komt de competentielijst
+        waaruit de analyse kiest. Hoe sterker die koppeling, hoe steviger de competentie-uitspraken over die rol.
+      </p>
+
+      <div className="grid sm:grid-cols-3 gap-3 mb-5">
+        <StatCard
+          label="Rollen geanalyseerd"
+          value={d.rollen}
+          sub={d.ontbrekendeProfielen.length > 0 ? `${d.ontbrekendeProfielen.length} zonder profiel` : "alle rollen"}
+        />
+        <StatCard
+          label="Taken met competentie"
+          value={d.taakdekking === null ? "—" : `${Math.round(d.taakdekking * 100)}%`}
+          sub={`${d.takenTotaal - d.ongematchteTaken} van ${d.takenTotaal} taken`}
+        />
+        <StatCard
+          label="Matches om te controleren"
+          value={d.zwakkeMatches.length}
+          sub={d.zwakkeMatches.length === 0 ? "alle koppelingen sterk" : "zie hieronder"}
+        />
+      </div>
+
+      {d.zwakkeMatches.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 mb-4">
+          <p className="text-xs font-semibold text-amber-800 mb-1.5">
+            Deze koppelingen zijn niet overtuigend — controleer ze voordat het rapport de deur uit gaat
+          </p>
+          <ul className="space-y-1">
+            {d.zwakkeMatches.map((m) => (
+              <li key={m.roleId} className="text-[11px] text-amber-800">
+                <span className="font-medium">{m.roleLabel}</span> → {m.beroep}{" "}
+                <span className="text-amber-600">(match {m.score.toFixed(2)})</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-amber-700 mt-1.5">
+            De competenties van deze rollen komen uit de lijst van het gematchte beroep. Klopt de koppeling niet, dan
+            is de competentie-analyse van die rol onbetrouwbaar — ook al ziet het rapport er compleet uit.
+          </p>
+        </div>
+      )}
+
+      {d.ontbrekendeProfielen.length > 0 && (
+        <p className="text-xs text-slate-500">
+          Niet meegenomen, want geen functieprofiel aangeleverd: {d.ontbrekendeProfielen.join(", ")}. Deze rollen
+          tellen niet mee in de capaciteit, de ontwikkelagenda of het organogram.
+        </p>
+      )}
+
+      {allesInOrde && (
+        <p className="text-xs text-emerald-700">
+          Alle rollen hebben een profiel, alle taken zijn aan een competentie gekoppeld en alle beroepskoppelingen
+          zijn sterk.
         </p>
       )}
     </Section>
@@ -756,6 +857,7 @@ function TaakTable({ id, role, onSaved }) {
           taakverdeling), daarna pas wat dat voor competenties betekent. Zo komt de
           onderbouwing vóór de conclusie. */}
       <WaardetypeBadge waardetype={role.waardetype} toelichting={role.waardetypeToelichting} />
+      <BeroepsmatchRegel beroepsmatch={role.beroepsmatch} />
       {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
 
       {/* Capaciteit voorop, bedrag als detail. Bij een rol met waardetype
@@ -1775,6 +1877,7 @@ export default function ClientWorkspace({ id }) {
         )}
 
         <CompetentieAgenda results={results} />
+        <ScanDekking results={results} />
 
         {results?.aanbevelingen && (
           <Section title="Bevindingen & Aanbevelingen" icon="💡">
