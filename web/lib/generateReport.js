@@ -15,6 +15,7 @@ import {
 } from "docx";
 import { WAARDETYPES, getWaardetype } from "../../src/config.js";
 import { buildOrgChartData } from "./orgChartData.js";
+import { driedeling } from "../../src/competencyProfile.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -456,16 +457,28 @@ function competentieProfielTable(items) {
  * geen uitspraak over het vervangen van mensen — de analyse kent het rolprofiel, niet
  * de individuele medewerker.
  */
+// Drie delen die samen 100% zijn, in plaats van "loopt op tot X%" — dat laatste las
+// als een toestand die bereikt wordt, terwijl het een bovengrens is.
+function competentieZin(profiel) {
+  const basis = `De toekomstige competentiebehoefte van deze functie komt voor ${profiel.overlapPct}% overeen met wat de rol nu al vraagt.`;
+  const d = driedeling(profiel);
+  if (!d) return basis;
+
+  return (
+    `${basis} Daarvan komt ${d.teOntwikkelenPct}% erbij dat met gerichte ontwikkeling te overbruggen is` +
+    (d.nietTrainbaarPct > 0
+      ? `, en ${d.nietTrainbaarPct}% dat zich niet laat trainen — daarop is toetsing van de huidige bezetting nodig.`
+      : "; er blijft niets over dat zich niet laat trainen.")
+  );
+}
+
 function competentieProfielBlok(profiel) {
   if (!profiel) return [];
 
   const uit = [
     paragraph("Competentieprofiel — nu versus straks", { bold: true, size: 20 }),
     paragraph(
-      `De toekomstige competentiebehoefte van deze functie komt voor ${profiel.overlapPct}% overeen met wat de rol nu al vraagt.` +
-        (profiel.overlapNaTrainingPct != null
-          ? ` Met gerichte ontwikkeling loopt dat op tot ${profiel.overlapNaTrainingPct}%.`
-          : ""),
+      competentieZin(profiel),
       { size: 18 }
     ),
     paragraph("Zwaarste competenties nu", { bold: true, size: 18 }),

@@ -8,7 +8,7 @@ import { IMPACT_QUESTIONS, READINESS_QUESTIONS } from "@/lib/questions";
 import { buildOrgChartData } from "@/lib/orgChartData";
 import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
-import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
+import { calculateCompetentieProfiel, driedeling } from "../../../../../src/competencyProfile.js";
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
 import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
 import { calculateMobiliteit } from "../../../../../src/mobiliteit.js";
@@ -701,27 +701,35 @@ function kleurVan(tier) {
 function OverlapKpis({ profiel }) {
   if (!profiel) return null;
   const eersteToets = profiel.teToetsen?.[0];
+  // Werkt ook op analyses van vóór deze driedeling; die missen de velden en krijgen ze
+  // afgeleid, zodat een bestaand rapport niet stilzwijgend de helft weglaat.
+  const d = driedeling(profiel);
   return (
     <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div className="rounded-lg bg-white p-3">
-        <p className="text-[11px] text-slate-500">Overlap met huidig profiel</p>
+        <p className="text-[11px] text-slate-500">Sluit nu al aan</p>
         <p className="text-2xl font-semibold text-slate-800">{profiel.overlapPct}%</p>
         <p className="text-[11px] text-slate-400 mt-0.5">
-          Deel van de toekomstige competentiebehoefte dat de rol nu al vraagt
+          {d
+            ? `van de toekomstige behoefte — nog ${d.teOntwikkelenPct}% is te ontwikkelen`
+            : "van de toekomstige competentiebehoefte vraagt de rol nu al"}
         </p>
       </div>
+      {/* Bewust het níet-trainbare deel als kopgetal. "80% na training" leest als een
+          toestand die je bereikt, terwijl het een bovengrens is; wat je niet kunt
+          trainen is het getal waar een beslissing aan hangt. */}
       <div className="rounded-lg bg-white p-3">
-        <p className="text-[11px] text-slate-500">Overlap na de juiste training</p>
+        <p className="text-[11px] text-slate-500">Niet met training te overbruggen</p>
         <p className="text-2xl font-semibold text-slate-800">
-          {profiel.overlapNaTrainingPct ?? "—"}
-          {profiel.overlapNaTrainingPct != null && "%"}
+          {d ? d.nietTrainbaarPct : "—"}
+          {d && "%"}
         </p>
         <p className="text-[11px] text-slate-400 mt-0.5">
-          {eersteToets
-            ? `→ toets bezetting op: ${eersteToets.naam}`
-            : profiel.overlapNaTrainingPct != null
-              ? "→ het verschil is volledig te ontwikkelen"
-              : "→ onbekend zonder ESCO-gegevens"}
+          {!d
+            ? "→ onbekend zonder ESCO-gegevens"
+            : eersteToets
+              ? `→ toets bezetting op: ${eersteToets.naam}`
+              : "→ het hele verschil is te ontwikkelen"}
         </p>
       </div>
     </div>

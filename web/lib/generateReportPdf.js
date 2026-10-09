@@ -1,4 +1,5 @@
 import { buildOrgChartData } from "./orgChartData.js";
+import { driedeling } from "../../src/competencyProfile.js";
 import { WAARDETYPES, getWaardetype } from "../../src/config.js";
 
 /**
@@ -194,11 +195,16 @@ function profielKolom(titel, items) {
  */
 function competentieProfielBlock(profiel) {
   if (!profiel) return "";
-  const zin =
-    `De toekomstige competentiebehoefte van deze functie komt voor <strong>${profiel.overlapPct}%</strong> overeen met wat de rol nu al vraagt.` +
-    (profiel.overlapNaTrainingPct != null
-      ? ` Met gerichte ontwikkeling loopt dat op tot <strong>${profiel.overlapNaTrainingPct}%</strong>.`
-      : "");
+  // Drie delen die samen 100% zijn, in plaats van "loopt op tot X%" — dat laatste las
+  // als een toestand die bereikt wordt, terwijl het een bovengrens is.
+  const d = driedeling(profiel);
+  const basis = `De toekomstige competentiebehoefte van deze functie komt voor <strong>${profiel.overlapPct}%</strong> overeen met wat de rol nu al vraagt.`;
+  const zin = !d
+    ? basis
+    : `${basis} Daarvan komt <strong>${d.teOntwikkelenPct}%</strong> erbij dat met gerichte ontwikkeling te overbruggen is` +
+      (d.nietTrainbaarPct > 0
+        ? `, en <strong>${d.nietTrainbaarPct}%</strong> dat zich niet laat trainen — daarop is toetsing van de huidige bezetting nodig.`
+        : "; er blijft niets over dat zich niet laat trainen.");
 
   const acties = [
     profiel.teOntwikkelen?.length

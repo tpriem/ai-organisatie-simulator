@@ -114,8 +114,51 @@ export function calculateCompetentieProfiel(takenRealistisch, taakCompetenties, 
     profielStraks: toLijst(profielStraks, tierVan),
     overlapPct: Math.round(overlap * 100),
     overlapNaTrainingPct: heeftTiers ? Math.round((overlap + trainbaarTekort) * 100) : null,
+    // De toekomstige behoefte valt uiteen in drie delen die samen 100% zijn: wat de rol
+    // nu al vraagt, wat erbij komt en te ontwikkelen is, en wat erbij komt en zich niet
+    // laat trainen. Dat laatste is het getal waar een beslissing aan hangt, dus het
+    // wordt hier één keer berekend in plaats van op elke weergaveplek opnieuw.
+    // De twee delen waar een beslissing aan hangt worden exact afgeleid; het middelste
+    // deel vangt de afrondingsruis op. Zo tellen de drie altijd precies op tot 100 —
+    // anders staat er op het scherm een driedeling die 99 of 101 oplevert.
+    teOntwikkelenPct: heeftTiers
+      ? 100 - Math.round(overlap * 100) - Math.max(0, 100 - Math.round((overlap + trainbaarTekort) * 100))
+      : null,
+    nietTrainbaarPct: heeftTiers ? Math.max(0, 100 - Math.round((overlap + trainbaarTekort) * 100)) : null,
     teOntwikkelen: teOntwikkelen.map(alsItem),
     teToetsen: teToetsen.map(alsItem),
     heeftTrainbaarheidsdata: heeftTiers,
+  };
+}
+
+/**
+ * De driedeling van de toekomstige competentiebehoefte: wat de rol nu al vraagt, wat
+ * erbij komt en te ontwikkelen is, en wat erbij komt en zich niet laat trainen.
+ *
+ * Werkt ook op profielen uit eerdere analyses, die deze velden nog niet bevatten: dan
+ * worden ze afgeleid uit overlapPct en overlapNaTrainingPct. Zonder die afleiding zou
+ * een bestaand rapport stilzwijgend de helft van de zin weglaten — en dat is precies
+ * het soort stille verschil waar niemand op let.
+ *
+ * @returns {{ sluitAanPct, teOntwikkelenPct, nietTrainbaarPct }|null}
+ */
+export function driedeling(profiel) {
+  if (!profiel || typeof profiel.overlapPct !== "number") return null;
+
+  if (typeof profiel.teOntwikkelenPct === "number" && typeof profiel.nietTrainbaarPct === "number") {
+    return {
+      sluitAanPct: profiel.overlapPct,
+      teOntwikkelenPct: profiel.teOntwikkelenPct,
+      nietTrainbaarPct: profiel.nietTrainbaarPct,
+    };
+  }
+
+  if (typeof profiel.overlapNaTrainingPct !== "number") return null;
+
+  const nietTrainbaarPct = Math.max(0, 100 - profiel.overlapNaTrainingPct);
+  return {
+    sluitAanPct: profiel.overlapPct,
+    teOntwikkelenPct: Math.max(0, 100 - profiel.overlapPct - nietTrainbaarPct),
+    nietTrainbaarPct,
   };
 }

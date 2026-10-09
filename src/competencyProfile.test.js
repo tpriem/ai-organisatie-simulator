@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateCompetentieProfiel } from "./competencyProfile.js";
+import { calculateCompetentieProfiel, driedeling } from "./competencyProfile.js";
 
 // Klantenservicerol waarin het belwerk grotendeels wegvalt — het scenario waar de hele
 // module om draait: de rol krimpt niet alleen, hij verandert van aard.
@@ -93,4 +93,44 @@ test("zonder nieuwe competenties blijft het toekomstprofiel bruikbaar", () => {
   const r = calculateCompetentieProfiel(taken, taakCompetenties, [], meta);
   assert.ok(Math.abs(som(r.profielStraks) - 1) < 1e-9);
   assert.ok(r.overlapPct > 0);
+});
+
+test("de drie delen van de behoefte tellen samen op tot honderd procent", () => {
+  // Wat nu al aansluit, wat erbij komt en te ontwikkelen is, en wat zich niet laat
+  // trainen. De weergave leunt erop dat dit een volledige driedeling is.
+  const r = calculateCompetentieProfiel(taken, taakCompetenties, nieuweCompetenties, meta);
+  assert.equal(r.overlapPct + r.teOntwikkelenPct + r.nietTrainbaarPct, 100);
+});
+
+test("het niet-trainbare deel is het complement van de bovengrens met training", () => {
+  const r = calculateCompetentieProfiel(taken, taakCompetenties, nieuweCompetenties, meta);
+  assert.equal(r.nietTrainbaarPct, 100 - r.overlapNaTrainingPct);
+});
+
+test("zonder trainbaarheidsgegevens wordt ook over de driedeling niets beweerd", () => {
+  const r = calculateCompetentieProfiel(taken, taakCompetenties, nieuweCompetenties, {});
+  assert.equal(r.teOntwikkelenPct, null);
+  assert.equal(r.nietTrainbaarPct, null);
+});
+
+test("de driedeling werkt ook op een profiel van vóór deze velden", () => {
+  // Opgeslagen analyses bevatten alleen overlapPct en overlapNaTrainingPct. Zonder
+  // afleiding zou een bestaand rapport stil de helft van de zin weglaten.
+  const oud = { overlapPct: 39, overlapNaTrainingPct: 89 };
+  const d = driedeling(oud);
+  assert.equal(d.sluitAanPct, 39);
+  assert.equal(d.nietTrainbaarPct, 11);
+  assert.equal(d.teOntwikkelenPct, 50);
+  assert.equal(d.sluitAanPct + d.teOntwikkelenPct + d.nietTrainbaarPct, 100);
+});
+
+test("een nieuw profiel gebruikt zijn eigen velden, niet de afleiding", () => {
+  const nieuw = { overlapPct: 40, overlapNaTrainingPct: 80, teOntwikkelenPct: 40, nietTrainbaarPct: 20 };
+  assert.deepEqual(driedeling(nieuw), { sluitAanPct: 40, teOntwikkelenPct: 40, nietTrainbaarPct: 20 });
+});
+
+test("zonder trainbaarheidsgegevens is er geen driedeling", () => {
+  assert.equal(driedeling({ overlapPct: 40, overlapNaTrainingPct: null }), null);
+  assert.equal(driedeling(null), null);
+  assert.equal(driedeling({}), null);
 });
