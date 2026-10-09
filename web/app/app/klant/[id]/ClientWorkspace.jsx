@@ -11,6 +11,7 @@ import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
 import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
+import { calculateMobiliteit } from "../../../../../src/mobiliteit.js";
 import { calculateScanDekking } from "../../../../../src/scanDekking.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 
@@ -91,6 +92,82 @@ function BeroepsmatchRegel({ beroepsmatch }) {
       </span>
       {kwaliteit !== "sterk" && <span className="text-amber-700">— controleer of dit de juiste rol is</span>}
     </p>
+  );
+}
+
+// Waar kunnen de mensen heen bij wie capaciteit vrijkomt? Bewust als vergelijking met
+// blijven, niet als ranglijst van bestemmingen: op de data ligt de overlap met de eigen
+// veranderde rol twee tot drie keer hoger dan met welke andere rol ook. Een kale
+// ranglijst zou keuzevrijheid suggereren die er niet is.
+export function Mobiliteit({ results }) {
+  const m = useMemo(() => calculateMobiliteit(results?.rollen ?? [], { maxPerRol: 2 }), [results?.rollen]);
+  if (!m.heeftData) return null;
+
+  const metAlternatief = m.herkomsten.filter((h) => h.alternatieven.length > 0);
+  const besteVerhouding = Math.max(0, ...metAlternatief.map((h) => h.alternatieven[0].verhouding));
+
+  return (
+    <Section title="Waar kunnen deze mensen heen?" icon="🔀">
+      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
+        Per rol waar capaciteit vrijkomt: hoe goed het huidige profiel aansluit op de eigen rol ná de transformatie,
+        en hoe het dichtstbijzijnde alternatief daarbij afsteekt. Competenties zijn vergelijkbaar doordat alle rollen
+        uit dezelfde ESCO-woordenschat putten.
+      </p>
+
+      {besteVerhouding > 0 && besteVerhouding < 0.6 && (
+        <p className="text-sm text-slate-700 mb-4 max-w-3xl">
+          In deze organisatie is doorgroeien in de eigen, veranderde rol overal kansrijker dan overstappen — het beste
+          alternatief komt nergens boven {Math.round(besteVerhouding * 100)}% van die aansluiting uit. Dat wijst op
+          sterk gespecialiseerde rollen: reken niet op interne doorstroom als vanzelfsprekende uitweg.
+        </p>
+      )}
+
+      <div className="space-y-3">
+        {m.herkomsten.map((h) => (
+          <div key={h.roleId} className="rounded-lg border border-slate-200 p-3">
+            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+              <p className="text-sm font-medium text-slate-800">{h.roleLabel}</p>
+              <p className="text-xs text-slate-500">{h.vrijgekomenFte.toFixed(2)} FTE komt vrij</p>
+            </div>
+
+            <div className="flex items-center gap-3 mb-1.5">
+              <span className="text-xs text-slate-700 w-56 shrink-0">Blijven, in de veranderde rol</span>
+              <div className="flex-1 min-w-0 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full bg-indigo-500" style={{ width: `${h.blijvenOverlapPct}%` }} />
+              </div>
+              <span className="text-xs text-slate-700 w-32 text-right shrink-0 tabular-nums">
+                {h.blijvenOverlapPct}% aansluiting
+              </span>
+            </div>
+
+            {h.alternatieven.map((a) => (
+              <div key={a.roleId} className="flex items-center gap-3 mb-1.5">
+                <span className="text-xs text-slate-500 w-56 shrink-0 truncate" title={a.roleLabel}>
+                  → {a.roleLabel}
+                </span>
+                <div className="flex-1 min-w-0 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full bg-slate-400" style={{ width: `${a.overlapPct}%` }} />
+                </div>
+                <span className="text-xs text-slate-500 w-32 text-right shrink-0 tabular-nums">
+                  {a.overlapPct}% · {Math.round(a.verhouding * 100)}% hiervan
+                </span>
+              </div>
+            ))}
+
+            {h.alternatieven.length === 0 && (
+              <p className="text-[11px] text-slate-400 mt-1">Geen enkele andere rol komt in de buurt.</p>
+            )}
+
+            {h.blijvenNietTrainbaarPct > 0 && (
+              <p className="text-[11px] text-amber-700 mt-1.5">
+                Van wat deze rol straks extra nodig heeft is {h.blijvenNietTrainbaarPct}% niet met training te
+                overbruggen — toets daarop bij de huidige bezetting.
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </Section>
   );
 }
 
@@ -1960,6 +2037,7 @@ export default function ClientWorkspace({ id }) {
         )}
 
         <Taakprofiel results={results} />
+        <Mobiliteit results={results} />
         <CompetentieAgenda results={results} />
         <ScanDekking results={results} />
 

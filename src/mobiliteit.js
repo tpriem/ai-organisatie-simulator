@@ -1,9 +1,7 @@
 import { isTrainbaar } from "./trainability.js";
 
 /**
- * NOG NIET IN GEBRUIK — zie de blokkade onderaan deze toelichting.
- *
- * Welke overstap tussen rollen is realistisch?
+ * Waar kunnen de mensen heen bij wie capaciteit vrijkomt?
  *
  * De tool kon tot nu toe per rol zeggen hoe goed het huidige profiel aansluit op wat
  * diezelfde rol ná de transformatie vraagt. Wat ontbrak is de vraag die een leider
@@ -19,21 +17,19 @@ import { isTrainbaar } from "./trainability.js";
  * toekomstige profiel van de bestemmingsrol. Bewust dezelfde maat, zodat "61% overlap"
  * overal hetzelfde betekent.
  *
- * BLOKKADE — waarom dit nog niet in de weergave zit.
+ * Twee ontwerpkeuzes die uit meten volgen, niet uit voorkeur.
  *
- * Op de huidige analysedata levert dit vrijwel overal 0% kruisoverlap op. Dat is geen
- * bevinding over de organisatie maar een artefact: elke rol wordt los geanalyseerd, dus
- * het model beschrijft elke rol in zijn eigen beste woorden zonder enige druk richting
- * een gedeelde woordenschat.
+ * De vergelijking is met blíjven, niet een ranglijst van bestemmingen. Op de echte data
+ * ligt de overlap met de eigen, veranderde rol op 33-65% en met andere rollen op
+ * 14-21%. Een kale ranglijst van bestemmingen suggereert dan keuzevrijheid die er niet
+ * is; het eerlijke beeld is dat doorgroeien in de eigen rol doorgaans kansrijker is, en
+ * hoe ver het beste alternatief daarbij achterblijft.
  *
- * Gemeten op Voorbeeld BV: de kandidatenpools van de zes rollen delen 95 tot 111 van
- * hun 150 competenties, en ongeveer de helft van de competenties die andere rollen
- * kozen zat gewoon in de eigen pool. De keuze om ze niet te kiezen was dus vrij, niet
- * afgedwongen.
- *
- * Zolang dat zo is, zou deze module aan een CHRO melden dat niemand ergens heen kan,
- * terwijl dat niet volgt uit de data. Eerst moeten alle rollen van een klant uit één
- * gedeelde competentiewoordenschat kiezen; daarna is deze vergelijking betekenisvol.
+ * En er wordt gerangschikt op ruwe overlap, niet op overlap ná training. Dat laatste
+ * getal komt voor elk rolpaar op 76-100% uit, en bij een bestemming zonder
+ * laag-trainbare competenties stelselmatig op 100%. Het meet vooral hoe trainbaar de
+ * bestemming is, niet hoe dicht iemand erbij staat. Als rangschikking is het dus
+ * waardeloos; het niet-trainbare deel van het gat blijft wél als risicosignaal staan.
  */
 
 const alsMap = (lijst) => new Map((lijst ?? []).map((c) => [c.naam, c.aandeel ?? 0]));
@@ -79,17 +75,20 @@ export function vergelijkProfielen(profielNu, profielStraks) {
 }
 
 /**
- * Bouwt de mogelijke overstappen tussen alle rollen.
+ * Zet per rol met vrijgekomen capaciteit af: blijven tegenover overstappen.
  *
  * @param {object[]} roleResults
  * @param {object} opties
  * @param {string} opties.scenario
- * @param {number} opties.minimaleOverlap ondergrens om een pad te tonen; daaronder is
- *   het geen loopbaanpad maar een carrièreswitch, en dat is geen advies dat deze tool
- *   kan onderbouwen.
- * @param {number} opties.maxPerRol hoeveel bestemmingen per herkomstrol
+ * @param {number} opties.minimaleVerhouding ondergrens ten opzichte van blijven. Laag
+ *   gezet en bewust: dat een alternatief maar een derde zo kansrijk is als blijven, is
+ *   zelf de boodschap. Het verhoudingsgetal zegt dat duidelijker dan weglaten.
+ * @param {number} opties.maxPerRol hoeveel alternatieven per rol
  */
-export function calculateMobiliteit(roleResults, { scenario = "realistisch", minimaleOverlap = 0.3, maxPerRol = 3 } = {}) {
+export function calculateMobiliteit(
+  roleResults,
+  { scenario = "realistisch", minimaleVerhouding = 0.15, maxPerRol = 3 } = {}
+) {
   const rollen = (roleResults ?? []).filter((r) => r.competentieProfiel);
   if (rollen.length < 2) return { herkomsten: [], heeftData: false };
 
@@ -100,37 +99,41 @@ export function calculateMobiliteit(roleResults, { scenario = "realistisch", min
     // Zonder vrijgekomen capaciteit is er niemand om te verplaatsen.
     if (vrijgekomenFte <= 0.05) continue;
 
-    const bestemmingen = [];
+    // De maatstaf: hoe goed sluit het huidige profiel aan op de eigen rol zoals die ná
+    // de transformatie wordt. Alles wat een overstap oplevert wordt hieraan afgemeten.
+    const blijven = vergelijkProfielen(van.competentieProfiel.profielNu, van.competentieProfiel.profielStraks);
+
+    const alternatieven = [];
     for (const naar of rollen) {
       if (naar.roleId === van.roleId) continue;
 
       const v = vergelijkProfielen(van.competentieProfiel.profielNu, naar.competentieProfiel.profielStraks);
-      if (v.overlap < minimaleOverlap) continue;
+      const verhouding = blijven.overlap > 0 ? v.overlap / blijven.overlap : 0;
+      if (verhouding < minimaleVerhouding) continue;
 
-      bestemmingen.push({
+      const nietTrainbaar = v.teToetsen.reduce((s, t) => s + t.pct, 0);
+
+      alternatieven.push({
         roleId: naar.roleId,
         rolnaam: naar.rolnaam,
         roleLabel: naar.roleLabel ?? naar.rolnaam,
         afdeling: naar.afdeling ?? "",
         // Hoeveel van de bestemmingsrol na de transformatie overblijft. Een rol die
         // zelf vrijwel verdwijnt is geen realistische bestemming, hoe goed de
-        // competenties ook aansluiten.
+        // competenties ook aansluiten. Het oordeel daarover is aan de lezer.
         fteNaTransformatie: naar.scenarios?.[scenario]?.fteOver ?? 0,
         overlapPct: Math.round(v.overlap * 100),
-        overlapNaTrainingPct: v.overlapNaTraining === null ? null : Math.round(v.overlapNaTraining * 100),
+        // Hoe het alternatief zich verhoudt tot blijven. 1,0 betekent even kansrijk.
+        verhouding,
+        // Het deel van het gat dat niet met training te overbruggen is: het echte
+        // risico van deze overstap.
+        nietTrainbaarPct: nietTrainbaar,
         teOntwikkelen: v.teOntwikkelen.slice(0, 5),
         teToetsen: v.teToetsen.slice(0, 5),
-        heeftTrainbaarheidsdata: v.heeftTrainbaarheidsdata,
       });
     }
 
-    if (bestemmingen.length === 0) continue;
-
-    // Sorteren op wat haalbaar is ná training: dat is de vraag die telt bij een
-    // overstap, niet wat er vandaag al toevallig overlapt.
-    bestemmingen.sort(
-      (a, b) => (b.overlapNaTrainingPct ?? b.overlapPct) - (a.overlapNaTrainingPct ?? a.overlapPct) || b.overlapPct - a.overlapPct
-    );
+    alternatieven.sort((a, b) => b.overlapPct - a.overlapPct);
 
     herkomsten.push({
       roleId: van.roleId,
@@ -138,7 +141,9 @@ export function calculateMobiliteit(roleResults, { scenario = "realistisch", min
       roleLabel: van.roleLabel ?? van.rolnaam,
       afdeling: van.afdeling ?? "",
       vrijgekomenFte,
-      bestemmingen: bestemmingen.slice(0, maxPerRol),
+      blijvenOverlapPct: Math.round(blijven.overlap * 100),
+      blijvenNietTrainbaarPct: blijven.teToetsen.reduce((s, t) => s + t.pct, 0),
+      alternatieven: alternatieven.slice(0, maxPerRol),
     });
   }
 

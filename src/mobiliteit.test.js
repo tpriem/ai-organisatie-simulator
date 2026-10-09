@@ -51,37 +51,6 @@ test("een rol zonder vrijgekomen capaciteit is geen herkomst", () => {
   assert.equal(m.heeftData, false);
 });
 
-test("een rol is nooit zijn eigen bestemming", () => {
-  const m = calculateMobiliteit([
-    rol("A", { fteWeg: 2, nu: [comp("x", 1)], straks: [comp("x", 1)] }),
-    rol("B", { fteWeg: 0, nu: [comp("x", 1)], straks: [comp("x", 1)] }),
-  ]);
-  assert.equal(m.herkomsten[0].bestemmingen.every((b) => b.rolnaam !== "A"), true);
-});
-
-test("bestemmingen met te weinig overlap vallen af", () => {
-  const m = calculateMobiliteit(
-    [
-      rol("Herkomst", { fteWeg: 2, nu: [comp("x", 1)], straks: [comp("x", 1)] }),
-      rol("Ver weg", { fteWeg: 0, nu: [comp("y", 1)], straks: [comp("y", 1)] }),
-    ],
-    { minimaleOverlap: 0.3 }
-  );
-  assert.equal(m.herkomsten.length, 0, "geen enkel pad haalt de ondergrens");
-});
-
-test("bestemmingen staan op volgorde van haalbaarheid na training", () => {
-  const m = calculateMobiliteit([
-    rol("Herkomst", { fteWeg: 3, nu: [comp("basis", 1)] , straks: [comp("basis", 1)] }),
-    // Dichtbij: half gedeeld, rest trainbaar.
-    rol("Dichtbij", { fteWeg: 0, nu: [], straks: [comp("basis", 0.5), comp("extra", 0.5, "hoog")] }),
-    // Verder: half gedeeld, rest níet trainbaar.
-    rol("Verder", { fteWeg: 0, nu: [], straks: [comp("basis", 0.5), comp("hard", 0.5, "laag")] }),
-  ]);
-  const namen = m.herkomsten[0].bestemmingen.map((b) => b.rolnaam);
-  assert.equal(namen[0], "Dichtbij", `volgorde was ${namen.join(", ")}`);
-});
-
 test("de herkomst met de meeste vrijgekomen capaciteit staat vooraan", () => {
   const p = [comp("a", 1)];
   const m = calculateMobiliteit([
@@ -92,19 +61,68 @@ test("de herkomst met de meeste vrijgekomen capaciteit staat vooraan", () => {
   assert.equal(m.herkomsten[0].rolnaam, "Groot");
 });
 
-test("de krimp van de bestemmingsrol wordt meegegeven", () => {
-  // Een rol die zelf vrijwel verdwijnt is geen realistische bestemming, ook al sluiten
-  // de competenties goed aan. Dat oordeel hoort bij de lezer, dus het getal moet erbij.
+test("te weinig rollen of ontbrekende profielen leveren geen fout", () => {
+  assert.equal(calculateMobiliteit([]).heeftData, false);
+  assert.equal(calculateMobiliteit(null).heeftData, false);
+  assert.equal(calculateMobiliteit([{ rolnaam: "A" }, { rolnaam: "B" }]).heeftData, false);
+});
+
+test("blijven is de maatstaf waaraan alternatieven worden afgemeten", () => {
+  const m = calculateMobiliteit([
+    rol("Herkomst", { fteWeg: 2, nu: [comp("a", 0.5), comp("b", 0.5)], straks: [comp("a", 1)] }),
+    rol("Doel", { fteWeg: 0, nu: [], straks: [comp("b", 1)] }),
+  ]);
+  const h = m.herkomsten[0];
+  assert.equal(h.blijvenOverlapPct, 50, "eigen profiel dekt de helft van de eigen toekomst");
+  assert.equal(h.alternatieven[0].overlapPct, 50);
+  assert.ok(Math.abs(h.alternatieven[0].verhouding - 1) < 1e-9, "even kansrijk als blijven");
+});
+
+test("een alternatief dat ver achterblijft bij blijven wordt niet genoemd", () => {
+  // Niet omdat het onmogelijk is, maar omdat het geen advies is dat deze data draagt.
+  const m = calculateMobiliteit(
+    [
+      rol("Herkomst", { fteWeg: 2, nu: [comp("a", 0.9), comp("b", 0.1)], straks: [comp("a", 1)] }),
+      rol("Ver weg", { fteWeg: 0, nu: [], straks: [comp("b", 1)] }),
+    ],
+    { minimaleVerhouding: 0.4 }
+  );
+  assert.equal(m.herkomsten[0].alternatieven.length, 0, "0,1 tegen 0,9 is te ver");
+});
+
+test("een rol is nooit zijn eigen alternatief", () => {
+  const p = [comp("x", 1)];
+  const m = calculateMobiliteit([rol("A", { fteWeg: 2, nu: p, straks: p }), rol("B", { fteWeg: 0, nu: p, straks: p })]);
+  assert.ok(m.herkomsten[0].alternatieven.every((a) => a.rolnaam !== "A"));
+});
+
+test("alternatieven staan op volgorde van ruwe overlap, niet van trainbaarheid", () => {
+  // Overlap na training onderscheidt bestemmingen nauwelijks; de ruwe overlap wel.
+  const m = calculateMobiliteit([
+    rol("Herkomst", { fteWeg: 3, nu: [comp("a", 0.6), comp("b", 0.4)], straks: [comp("a", 1)] }),
+    rol("Dichtbij", { fteWeg: 0, nu: [], straks: [comp("a", 0.6), comp("nieuw", 0.4, "hoog")] }),
+    rol("Verder", { fteWeg: 0, nu: [], straks: [comp("b", 0.4), comp("nieuw", 0.6, "hoog")] }),
+  ]);
+  assert.equal(m.herkomsten[0].alternatieven[0].rolnaam, "Dichtbij");
+});
+
+test("het niet-trainbare deel van het gat komt mee als risicosignaal", () => {
+  const m = calculateMobiliteit([
+    rol("Herkomst", { fteWeg: 2, nu: [comp("gedeeld", 1)], straks: [comp("gedeeld", 1)] }),
+    rol("Doel", { fteWeg: 0, nu: [], straks: [comp("gedeeld", 0.5), comp("hard", 0.5, "laag")] }),
+  ]);
+  const alt = m.herkomsten[0].alternatieven[0];
+  assert.equal(alt.nietTrainbaarPct, 50);
+  assert.equal(alt.teToetsen.length, 1);
+});
+
+test("de krimp van de bestemmingsrol komt mee", () => {
+  // Een rol die zelf vrijwel verdwijnt is geen realistische bestemming, hoe goed de
+  // competenties ook aansluiten. Dat oordeel is aan de lezer, dus het getal hoort erbij.
   const p = [comp("a", 1)];
   const m = calculateMobiliteit([
     rol("Herkomst", { fteWeg: 2, nu: p, straks: p }),
     rol("Verdwijnt bijna", { fteWeg: 0, fteOver: 0.1, nu: p, straks: p }),
   ]);
-  assert.equal(m.herkomsten[0].bestemmingen[0].fteNaTransformatie, 0.1);
-});
-
-test("te weinig rollen of ontbrekende profielen leveren geen fout", () => {
-  assert.equal(calculateMobiliteit([]).heeftData, false);
-  assert.equal(calculateMobiliteit(null).heeftData, false);
-  assert.equal(calculateMobiliteit([{ rolnaam: "A" }, { rolnaam: "B" }]).heeftData, false);
+  assert.equal(m.herkomsten[0].alternatieven[0].fteNaTransformatie, 0.1);
 });
