@@ -10,6 +10,7 @@ import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
+import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
 import { calculateScanDekking } from "../../../../../src/scanDekking.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 
@@ -90,6 +91,88 @@ function BeroepsmatchRegel({ beroepsmatch }) {
       </span>
       {kwaliteit !== "sterk" && <span className="text-amber-700">— controleer of dit de juiste rol is</span>}
     </p>
+  );
+}
+
+// Welk soort werk de organisatie doet, nu en straks. Automatisering raakt categorieën
+// ongelijk, dus het profiel verschuift — en die verschuiving zegt iets scherpers dan
+// "er komt capaciteit vrij": ze zegt wat voor organisatie je wordt.
+export function Taakprofiel({ results }) {
+  const p = useMemo(() => calculateTaakprofiel(results?.rollen ?? [], "realistisch"), [results?.rollen]);
+  if (!p.heeftData) return null;
+
+  const maxAandeel = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
+  const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
+  const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
+
+  const pp = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pp`;
+
+  return (
+    <Section title="Waar het werk uit bestaat — nu en straks" icon="🧭">
+      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
+        Het aandeel van alle werkuren per taakcategorie. Automatisering raakt categorieën ongelijk, dus de
+        samenstelling verschuift: werk dat moeilijk te automatiseren is wordt een groter deel van het geheel, ook als
+        het in absolute uren krimpt.
+      </p>
+
+      {(groeiers.length > 0 || krimpers.length > 0) && (
+        <p className="text-sm text-slate-700 mb-4 max-w-3xl">
+          {groeiers.length > 0 && (
+            <>
+              Het zwaartepunt verschuift naar <span className="font-medium">{groeiers[0].label.toLowerCase()}</span> (
+              {pp(groeiers[0].verschuiving)})
+            </>
+          )}
+          {groeiers.length > 0 && krimpers.length > 0 && (
+            <>
+              , ten koste van <span className="font-medium">{krimpers[0].label.toLowerCase()}</span> (
+              {pp(krimpers[0].verschuiving)})
+            </>
+          )}
+          .
+        </p>
+      )}
+
+      <div className="space-y-2">
+        {p.categorieen.map((c) => (
+          <div key={c.id} className="flex items-center gap-3">
+            <span className="text-xs text-slate-700 w-64 shrink-0 truncate" title={c.label}>
+              {c.label}
+            </span>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full bg-slate-400" style={{ width: `${(c.aandeelNu / maxAandeel) * 100}%` }} />
+              </div>
+              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div className="h-full bg-indigo-500" style={{ width: `${(c.aandeelStraks / maxAandeel) * 100}%` }} />
+              </div>
+            </div>
+            <span className="text-[11px] text-slate-500 w-24 text-right shrink-0 tabular-nums">
+              {(c.aandeelNu * 100).toFixed(0)}% → {(c.aandeelStraks * 100).toFixed(0)}%
+            </span>
+            <span
+              className={`text-[11px] w-20 text-right shrink-0 tabular-nums ${
+                c.verschuiving > 0.01 ? "text-emerald-700" : c.verschuiving < -0.01 ? "text-slate-400" : "text-slate-300"
+              }`}
+            >
+              {Math.abs(c.verschuiving) > 0.001 ? pp(c.verschuiving) : "—"}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center gap-4 text-[11px] text-slate-400">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-full bg-slate-400" /> nu
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-full bg-indigo-500" /> na transformatie
+        </span>
+        <span className="ml-auto">
+          {Math.round(p.urenNu)} → {Math.round(p.urenStraks)} uur per week in totaal
+        </span>
+      </div>
+    </Section>
   );
 }
 
@@ -1876,6 +1959,7 @@ export default function ClientWorkspace({ id }) {
           </Section>
         )}
 
+        <Taakprofiel results={results} />
         <CompetentieAgenda results={results} />
         <ScanDekking results={results} />
 
