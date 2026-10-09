@@ -9,6 +9,7 @@ import { buildOrgChartData } from "@/lib/orgChartData";
 import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../src/competencyProfile.js";
+import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
@@ -60,6 +61,89 @@ export function CapaciteitBestemming({ results }) {
         })}
       </div>
     </div>
+  );
+}
+
+// De ontwikkelbehoefte opgeteld over alle rollen. Per rol staat al wat er nieuw nodig
+// is, maar los van elkaar zie je niet dat één competentie de hele organisatie raakt —
+// en dat is een organisatiebreed programma, geen reeks ontwikkelgesprekken.
+export function CompetentieAgenda({ results }) {
+  const agenda = useMemo(
+    () => calculateCompetentieAgenda(results?.rollen ?? [], "realistisch"),
+    [results?.rollen]
+  );
+  if (agenda.competenties.length === 0) return null;
+
+  const breed = agenda.competenties.filter((c) => c.aantalRollen > 1);
+  const nietTrainbaar = agenda.competenties.filter((c) => c.trainbaarheid === "laag");
+
+  return (
+    <Section title="Ontwikkelagenda — organisatiebreed" icon="🎓">
+      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
+        De competenties die ná de transformatie nieuw nodig zijn, opgeteld over alle rollen en gewogen naar de FTE die
+        overblijft. Een competentie die in meerdere rollen terugkomt is één programma, geen reeks losse gesprekken.
+      </p>
+
+      <div className="grid sm:grid-cols-3 gap-3 mb-5">
+        <StatCard label="Competenties nieuw nodig" value={agenda.competenties.length} sub="over alle rollen" />
+        <StatCard
+          label="Raakt meerdere rollen"
+          value={breed.length}
+          sub={breed.length > 0 ? "kandidaat voor één programma" : "allemaal rolspecifiek"}
+        />
+        <StatCard
+          label="Niet met training op te lossen"
+          value={agenda.aandeelNietTrainbaar === null ? "—" : `${Math.round(agenda.aandeelNietTrainbaar * 100)}%`}
+          sub={`${nietTrainbaar.length} van de ${agenda.competenties.length} competenties`}
+        />
+      </div>
+
+      <div className="rounded-lg border border-slate-200 overflow-hidden">
+        <table className="w-full text-xs">
+          <thead className="bg-slate-50 text-slate-500">
+            <tr>
+              <th className="text-left font-medium py-2 px-3">Competentie</th>
+              <th className="text-left font-medium py-2 px-3 w-40">Ontwikkelbaar</th>
+              <th className="text-right font-medium py-2 px-3 w-20">Rollen</th>
+              <th className="text-right font-medium py-2 px-3 w-20">FTE</th>
+              <th className="text-right font-medium py-2 px-3 w-20">Belang</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {agenda.competenties.map((c) => {
+              const stijl = TRAINBAARHEID_KLEUR[c.trainbaarheid] ?? { stip: "bg-slate-300", tekst: "text-slate-400" };
+              return (
+                <tr key={c.naam} className="hover:bg-slate-50/60">
+                  <td className="py-2 px-3 text-slate-800">{c.naam}</td>
+                  <td className="py-2 px-3">
+                    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap ${stijl.tekst}`}>
+                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${stijl.stip}`} />
+                      {c.trainbaarheid ? `${c.trainbaarheid} trainbaar` : "onbekend"}
+                    </span>
+                  </td>
+                  {/* Welke rollen het precies zijn is nuttig maar te lang voor de regel;
+                      staat daarom achter de muisaanwijzer. */}
+                  <td className="py-2 px-3 text-right text-slate-600 cursor-help" title={c.rollen.join("\n")}>
+                    {c.aantalRollen}
+                  </td>
+                  <td className="py-2 px-3 text-right text-slate-600">{c.fte.toFixed(1)}</td>
+                  <td className="py-2 px-3 text-right text-slate-600">{c.gemiddeldBelang.toFixed(1)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {nietTrainbaar.length > 0 && (
+        <p className="mt-3 text-xs text-amber-700 max-w-3xl">
+          {nietTrainbaar.length === 1 ? "Eén competentie" : `${nietTrainbaar.length} competenties`} in deze lijst
+          {nietTrainbaar.length === 1 ? " is" : " zijn"} laag trainbaar — disposities in plaats van vaardigheden. Die
+          los je niet op met een opleidingsbudget; de vraag is of je ze al in huis hebt. Toets daarop bij de huidige
+          bezetting.
+        </p>
+      )}
+    </Section>
   );
 }
 
@@ -1689,6 +1773,8 @@ export default function ClientWorkspace({ id }) {
             })()}
           </Section>
         )}
+
+        <CompetentieAgenda results={results} />
 
         {results?.aanbevelingen && (
           <Section title="Bevindingen & Aanbevelingen" icon="💡">
