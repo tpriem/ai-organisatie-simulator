@@ -98,14 +98,19 @@ export async function analyzeCompetencies(
   profileText,
   takenRealistisch,
   matchNaam = rolnaam,
-  { deadline = null } = {}
+  { deadline = null, gedeeldeKandidaten = null } = {}
 ) {
   // Matchen op de kale functietitel, niet op het label met afdeling erbij: "Financieel
   // administratief medewerker (Finance)" kwam door dat ene extra woord uit op
   // "financieel directeur" in plaats van "administratief medewerker". De afdeling zegt
   // iets over waar de rol hangt, niet over wat het werk is.
   const beroepen = matchOccupations(matchNaam, 3);
-  const kandidaten = buildCandidateSkills(beroepen.map((b) => b.id));
+
+  // Bij voorkeur één woordenschat voor alle rollen van een klant. Kreeg elke rol een
+  // eigen pool, dan beschreven rollen hetzelfde vermogen met verschillende termen —
+  // puur omdat de ene term wel en de andere niet beschikbaar was — en leek hun overlap
+  // nul. Valt terug op de eigen pool wanneer er geen gedeelde is meegegeven.
+  const kandidaten = gedeeldeKandidaten?.length ? gedeeldeKandidaten : buildCandidateSkills(beroepen.map((b) => b.id));
 
   if (kandidaten.length === 0) {
     throw new Error(

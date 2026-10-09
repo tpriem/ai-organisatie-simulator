@@ -305,3 +305,98 @@ export function skillIdByLabel(label, kandidaten) {
   }
   return null;
 }
+
+/**
+ * Bouwt één gedeelde kandidatenpool voor álle rollen van een klant samen.
+ *
+ * Waarom dit nodig is. Tot nu toe kreeg elke rol een eigen pool uit zijn eigen
+ * gematchte beroepen. Het gevolg: rollen beschrijven hetzelfde vermogen met
+ * verschillende ESCO-termen, puur omdat de ene term wel en de andere niet in hun pool
+ * zat. Gemeten op Voorbeeld BV: een klantenservicemedewerker kreeg "communiceren met
+ * klanten", een accountmanager kreeg "relaties met klanten onderhouden" — en geen van
+ * beide had de term van de ander beschikbaar. Daardoor leek de overlap tussen die
+ * rollen nul, terwijl het grotendeels hetzelfde werk raakt.
+ *
+ * Met één pool kiezen alle rollen uit dezelfde woordenschat. Dat maakt profielen
+ * onderling vergelijkbaar, wat een voorwaarde is voor elke uitspraak over interne
+ * doorstroom.
+ *
+ * Verdeling van de beperkte ruimte: skills die bij meerdere rollen horen gaan voor,
+ * want juist dat zijn de begrippen waarop rollen elkaar kunnen raken. Daarna krijgt
+ * elke rol gegarandeerd een eigen minimum, zodat een specialistische rol niet
+ * wegvalt tegen de meerderheid.
+ *
+ * @param {Array<string[]>} occupationIdsPerRol per rol de gematchte beroeps-id's
+ * @returns {Array<{id, label, type}>} gededupliceerd, maximaal MAX_KANDIDATEN
+ */
+export function buildSharedCandidateSkills(occupationIdsPerRol, { minPerRol = 6 } = {}) {
+  const rollen = (occupationIdsPerRol ?? []).filter((ids) => (ids ?? []).length > 0);
+  if (rollen.length === 0) return [];
+  if (rollen.length === 1) return buildCandidateSkills(rollen[0]);
+
+  // Per rol de skills verzamelen, essentieel apart van optioneel.
+  const perRol = rollen.map((ids) => {
+    const essentieel = new Set();
+    const optioneel = new Set();
+    for (const id of ids) {
+      const rel = occupationSkills.items?.[id];
+      if (!rel) continue;
+      for (const s of rel.essential ?? []) essentieel.add(s);
+      for (const s of rel.optional ?? []) optioneel.add(s);
+    }
+    return { essentieel, optioneel };
+  });
+
+  // Bij hoeveel rollen komt een skill voor? Dat bepaalt de voorrang.
+  const rolTelling = new Map();
+  for (const { essentieel, optioneel } of perRol) {
+    for (const id of new Set([...essentieel, ...optioneel])) {
+      rolTelling.set(id, (rolTelling.get(id) ?? 0) + 1);
+    }
+  }
+
+  const gekozen = new Map();
+  const voegToe = (id) => {
+    if (gekozen.size >= RUIMTE_BEROEPSSKILLS || gekozen.has(id)) return false;
+    const s = getSkill(id);
+    if (!s) return false;
+    gekozen.set(id, { id, label: s.label, type: s.type });
+    return true;
+  };
+
+  // 1. Elke rol eerst zijn gegarandeerde minimum, uit de eigen essentiële skills.
+  //    Dit staat vooraan zodat een specialistische rol altijd vertegenwoordigd is,
+  //    ook als de rest van de ruimte opgaat aan gedeelde begrippen.
+  for (const { essentieel } of perRol) {
+    let gezet = 0;
+    const gesorteerd = [...essentieel].sort((a, b) => (rolTelling.get(b) ?? 0) - (rolTelling.get(a) ?? 0));
+    for (const id of gesorteerd) {
+      if (gezet >= minPerRol) break;
+      if (voegToe(id)) gezet++;
+    }
+  }
+
+  // 2. Resterende ruimte naar de skills die bij de meeste rollen horen. Dit zijn de
+  //    begrippen waarop rollen elkaar kunnen raken, en dus waar doorstroom zichtbaar
+  //    wordt. Essentieel gaat voor optioneel bij gelijke spreiding.
+  const essentieelErgens = new Set(perRol.flatMap(({ essentieel }) => [...essentieel]));
+  const rest = [...rolTelling.entries()]
+    .filter(([id]) => !gekozen.has(id))
+    .sort(
+      (a, b) =>
+        b[1] - a[1] ||
+        Number(essentieelErgens.has(b[0])) - Number(essentieelErgens.has(a[0])) ||
+        String(a[0]).localeCompare(String(b[0]))
+    );
+  for (const [id] of rest) voegToe(id);
+
+  // 3. De transversale pijler hoort er altijd bij: die competenties worden juist ná
+  //    automatisering relevant, ongeacht de rol.
+  for (const id of skills.transversaal ?? []) {
+    if (gekozen.size >= MAX_KANDIDATEN || gekozen.has(id)) continue;
+    const s = getSkill(id);
+    if (s) gekozen.set(id, { id, label: s.label, type: s.type });
+  }
+
+  return [...gekozen.values()];
+}

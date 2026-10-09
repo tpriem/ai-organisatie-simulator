@@ -17,6 +17,7 @@ import {
   calculateSubtotalenPerAfdeling,
 } from "../../../../../../src/calculate.js";
 import { analyzeCompetencies } from "../../../../../../src/analyzeCompetencies.js";
+import { matchOccupations, buildSharedCandidateSkills } from "../../../../../../src/esco.js";
 import { calculateCompetentieTop5 } from "../../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../../src/competencyProfile.js";
 
@@ -57,6 +58,15 @@ export async function POST(request, { params }) {
     );
   }
 
+  // Eén competentiewoordenschat voor alle rollen van deze klant, vóór de analyse
+  // begint. Kreeg elke rol een eigen pool, dan beschreven rollen hetzelfde vermogen met
+  // verschillende ESCO-termen omdat de term van de ander simpelweg niet beschikbaar
+  // was. Profielen waren daardoor niet onderling vergelijkbaar, wat elke uitspraak over
+  // interne doorstroom blokkeerde.
+  const gedeeldeKandidaten = buildSharedCandidateSkills(
+    matched.map((row) => matchOccupations(row.rolnaam, 3).map((b) => b.id))
+  );
+
   // Rollen falen onafhankelijk van elkaar. Eén mislukte rol mocht vroeger de hele
   // analyse omgooien, waardoor ook al het geslaagde werk verloren ging — bij een klant
   // met tientallen rollen betekende dat opnieuw beginnen om één rol.
@@ -74,7 +84,7 @@ export async function POST(request, { params }) {
           row.profile.text,
           roleResult.scenarios.realistisch.taken,
           row.rolnaam,
-          { deadline: competentieDeadline }
+          { deadline: competentieDeadline, gedeeldeKandidaten }
         );
 
         roleResult.competentieLijst = competentieAnalyse.competentieLijst;
