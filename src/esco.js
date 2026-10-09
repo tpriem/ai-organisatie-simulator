@@ -53,7 +53,54 @@ const SYNONIEMEN = {
   hrm: ["human", "resources", "personeel"],
   pz: ["personeelszaken", "personeel"],
   kcc: ["klantenservice", "klantcontact"],
+
+  // Engelse functiewoorden. Rosters van Nederlandse organisaties staan er vol mee,
+  // terwijl de ESCO-labels Nederlands zijn. "Software developer" kwam daardoor uit op
+  // "embedded systems software developer" — de enige met een Engels alt-label.
+  developer: ["ontwikkelaar", "softwareontwikkelaar"],
+  analyst: ["analist"],
+  designer: ["ontwerper"],
+  engineer: ["ingenieur"],
+  assistant: ["assistent"],
+  advisor: ["adviseur"],
+  adviser: ["adviseur"],
+  director: ["directeur"],
+  head: ["hoofd"],
+  officer: ["functionaris"],
+
+  // Domeinsynoniemen die in de praktijk inwisselbaar zijn maar in de taxonomie niet.
+  klantenservice: ["contactcenter", "callcenter", "klantcontact"],
+  contactcenter: ["klantenservice", "callcenter"],
+  callcenter: ["klantenservice", "contactcenter"],
+  finance: ["financieel", "financiele", "boekhouding"],
+  sales: ["verkoop"],
+  marketing: ["marketing"],
 };
+
+// Woorden die aangeven dat een rol leidinggevend is. Dat verandert de rol fundamenteel:
+// een manager klantenservice heeft een andere competentiepool dan een medewerker
+// klantenservice. Zonder deze regel woog "manager" net zo zwaar als elk ander woord en
+// kwam een leidinggevende uit op een uitvoerende rol.
+//
+// Alleen losse woorden tellen, geen samenstellingen: "accountmanager" is één token en
+// is géén leidinggevende rol, terwijl "manager klantenservice" er twee heeft.
+const LEIDINGGEVEND = new Set([
+  "manager",
+  "hoofd",
+  "teamleider",
+  "teamlead",
+  "leidinggevende",
+  "directeur",
+  "chef",
+  "supervisor",
+  "bedrijfsleider",
+  "afdelingshoofd",
+]);
+
+function isLeidinggevend(tokenSet) {
+  for (const t of tokenSet) if (LEIDINGGEVEND.has(t)) return true;
+  return false;
+}
 
 /**
  * Bepaalt of een rol-token door een label gedekt wordt, eventueel via een synoniem.
@@ -61,19 +108,33 @@ const SYNONIEMEN = {
  * niet aan de tokenset toegevoegd, want dan zouden ze de noemer opblazen en juist élke
  * score omlaag drukken.
  */
+/**
+ * Hoe goed dekt één woord uit de rolnaam dit label?
+ *
+ * Geeft naast de dekking terug wélk labelwoord daarvoor gebruikt is. Dat is nodig omdat
+ * een labelwoord dat al via een synoniem is afgedekt niet nóg eens in de noemer mag
+ * belanden: "data analyst" tegen "data-analist" hoorde een volle match te zijn, maar
+ * "analist" werd als onbeantwoord woord meegeteld en drukte de score onder die van een
+ * beroep met een letterlijk Engels alt-label.
+ *
+ * @returns {{ dekking: number, gebruikt: string|null }}
+ */
 function tokenGedekt(token, labelTokens) {
-  if (labelTokens.has(token)) return 1;
-  if ((SYNONIEMEN[token] ?? []).some((syn) => labelTokens.has(syn))) return 1;
+  if (labelTokens.has(token)) return { dekking: 1, gebruikt: token };
+
+  for (const syn of SYNONIEMEN[token] ?? []) {
+    if (labelTokens.has(syn)) return { dekking: 1, gebruikt: syn };
+  }
 
   // Nederlandse samenstellingen: "beheerder" zit in "systeembeheerder", "advies" in
   // "adviesbureau". Losse woordvergelijking mist dat volledig. Deelcredit, want het is
   // zwakker bewijs dan een echte woordmatch.
   if (token.length >= 5) {
     for (const lt of labelTokens) {
-      if (lt.length >= 5 && (lt.includes(token) || token.includes(lt))) return 0.6;
+      if (lt.length >= 5 && (lt.includes(token) || token.includes(lt))) return { dekking: 0.6, gebruikt: lt };
     }
   }
-  return 0;
+  return { dekking: 0, gebruikt: null };
 }
 
 // Inverse document frequency over alle beroepslabels: generieke woorden als "medewerker"
@@ -127,19 +188,31 @@ function scoreLabel(rolTokens, rolTrigrammen, label) {
 
   let gedeeld = 0;
   let unie = 0;
+  const gebruikteLabelwoorden = new Set();
   for (const t of rolTokens) {
     const g = gewichtVan(t);
     unie += g;
-    gedeeld += g * tokenGedekt(t, labelTokens);
+    const { dekking, gebruikt } = tokenGedekt(t, labelTokens);
+    gedeeld += g * dekking;
+    if (gebruikt) gebruikteLabelwoorden.add(gebruikt);
   }
   // Woorden die alleen in het label staan tellen mee in de noemer, zodat een kort,
-  // generiek label niet automatisch wint van een specifieker beroep.
+  // generiek label niet automatisch wint van een specifieker beroep. Woorden die al
+  // een rolwoord hebben beantwoord — ook via een synoniem — tellen niet nog eens mee.
   for (const t of labelTokens) {
-    if (!rolTokens.has(t)) unie += gewichtVan(t);
+    if (!rolTokens.has(t) && !gebruikteLabelwoorden.has(t)) unie += gewichtVan(t);
   }
   const tokenScore = unie > 0 ? gedeeld / unie : 0;
   const trigramScore = overlapScore(rolTrigrammen, trigrammen(label));
-  return tokenScore * 0.75 + trigramScore * 0.25;
+  let score = tokenScore * 0.75 + trigramScore * 0.25;
+
+  // Leidinggevend of niet is geen detail maar een ander beroep. Komen rol en label
+  // daarin niet overeen, dan is de match verdacht — ook als de woorden verder kloppen.
+  const rolLeidt = isLeidinggevend(rolTokens);
+  const labelLeidt = isLeidinggevend(labelTokens);
+  if (rolLeidt !== labelLeidt) score *= rolLeidt ? 0.5 : 0.8;
+
+  return score;
 }
 
 /**
@@ -165,9 +238,14 @@ export function matchOccupations(rolnaam, limiet = 3) {
 
   const scores = [];
   for (const occ of occupations.items ?? []) {
-    let beste = 0;
-    for (const label of [occ.label, ...(occ.altLabels ?? [])]) {
-      const s = scoreLabel(rolTokens, rolTrigrammen, label);
+    // Een match op het hoofdlabel telt iets zwaarder dan op een alternatief label.
+    // Generieke alt-labels komen bij veel beroepen voor: "projectmanager" staat bij vijf
+    // beroepen, waaronder "manager productontwikkeling kleding". Zonder dit onderscheid
+    // wint zo'n specifiek beroep de gelijkspel willekeurig van het beroep dat gewoon
+    // "projectmanager" heet.
+    let beste = scoreLabel(rolTokens, rolTrigrammen, occ.label);
+    for (const alt of occ.altLabels ?? []) {
+      const s = scoreLabel(rolTokens, rolTrigrammen, alt) * 0.93;
       if (s > beste) beste = s;
     }
     if (beste > 0) scores.push({ id: occ.id, label: occ.label, score: beste });
