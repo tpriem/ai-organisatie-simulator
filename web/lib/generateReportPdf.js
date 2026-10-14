@@ -5,6 +5,7 @@ import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
+import { dekkingZinnen, beroepsmatchRegel } from "../../src/rapportTeksten.js";
 
 /**
  * Vercel's serverless functions kunnen geen volledige, lokaal-geïnstalleerde Chromium
@@ -159,6 +160,20 @@ function taakprofielBlock(rollen) {
   ${conclusie}
   ${rijen}
   <p class="disclaimer">In totaal ${Math.round(p.urenNu)} → ${Math.round(p.urenStraks)} uur per week.</p>`;
+}
+
+// Hoe volledig en hoe stevig is deze analyse. Teksten komen uit rapportTeksten.js zodat
+// PDF en Word dezelfde formulering gebruiken.
+function dekkingBlock(results) {
+  const z = dekkingZinnen(results);
+  if (!z.heeftIets) return "";
+
+  return `
+  <h2>Dekking en betrouwbaarheid</h2>
+  <p class="disclaimer">Elke rol wordt gekoppeld aan een beroep uit de ESCO-classificatie; uit dat beroep komt de competentielijst waaruit de analyse kiest. Hoe sterker die koppeling, hoe steviger de competentie-uitspraken over die rol.</p>
+  ${z.dekking ? `<p>${esc(z.dekking)}</p>` : ""}
+  ${z.mislukt ? `<p style="color:#b45309;">${esc(z.mislukt)}</p>` : ""}
+  ${z.zwak ? `<p>${esc(z.zwak)}</p>` : ""}`;
 }
 
 // De ontwikkelbehoefte opgeteld over alle rollen. Zelfde berekening als in de app.
@@ -546,6 +561,13 @@ export function buildReportHtml(results) {
       ? `<p style="color:#b45309;font-style:italic;">Let op: voor de volgende rollen ontbrak een functieprofiel: ${esc(missingProfiles.join(", "))}.</p>`
       : ""
   }
+  ${
+    // Een mislukte rol ontbreekt in alle totalen hierboven; dat hoort direct bij de tabel
+    // te staan, niet alleen in de verantwoording aan het eind.
+    dekkingZinnen(results).mislukt
+      ? `<p style="color:#b45309;font-style:italic;">Let op: ${esc(dekkingZinnen(results).mislukt)}</p>`
+      : ""
+  }
 
   ${
     subtotalenPerAfdeling?.length
@@ -622,6 +644,7 @@ export function buildReportHtml(results) {
       (r) => `<div class="role-block">
       <h3>${esc(r.roleLabel ?? r.rolnaam)} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(2)} agressief)</h3>
       ${waardetypeLine(r)}
+      ${beroepsmatchRegel(r.beroepsmatch) ? `<p class="disclaimer">${esc(beroepsmatchRegel(r.beroepsmatch))}</p>` : ""}
       <table>
         <thead><tr><th>Taak</th><th>Categorie</th><th>Aandeel</th><th>Realistisch %</th><th>Agressief %</th></tr></thead>
         <tbody>${taakRows(r)}</tbody>
@@ -669,6 +692,8 @@ export function buildReportHtml(results) {
     <p><strong>Dit rapport schetst een richting, geen exacte voorspelling. De cijfers, competentieverschuivingen en aanbevelingen zijn bedoeld als vertrekpunt voor een strategisch gesprek — niet als eindoordeel.</strong></p>
     <p>De uitkomsten geven aanleiding tot verder, verdiepend onderzoek: het toetsen van deze bevindingen aan de praktijk, verfijning op basis van interne kennis en operationele details, en vertaling naar een concreet implementatieplan. Dit rapport is het begin van dat gesprek, niet de afsluiting ervan.</p>
   </div>
+
+  ${dekkingBlock(results)}
 
   ${
     // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 schrijft deze zin

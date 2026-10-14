@@ -6,6 +6,8 @@ import { calculateTaakprofiel } from "./taakprofiel.js";
 import { calculateCompetentieProfiel } from "./competencyProfile.js";
 import { calculateCompetentieAgenda } from "./competencyAgenda.js";
 import { calculateMobiliteit } from "./mobiliteit.js";
+import { dekkingZinnen, beroepsmatchRegel } from "./rapportTeksten.js";
+import { nl } from "./formatNl.js";
 import { buildReportHtml } from "../web/lib/generateReportPdf.js";
 import { generateReportDocx } from "../web/lib/generateReport.js";
 
@@ -49,7 +51,16 @@ const COMPETENTIES = {
   },
 };
 
+// Eén sterke, één perfecte en één matige koppeling: zo is er een twijfelgeval om te melden.
+const BEROEPEN = {
+  "Klantenservice medewerker": { id: "1", label: "vertegenwoordiger klantenservice", score: 0.92 },
+  Accountmanager: { id: "2", label: "accountmanager", score: 1 },
+  Kwaliteitsmedewerker: { id: "3", label: "kwaliteitsbeoordelaar", score: 0.55 },
+};
+
 function metCompetenties(r) {
+  r.beroepsmatch = BEROEPEN[r.rolnaam];
+  r.ongematchteTaken = 0;
   const c = COMPETENTIES[r.rolnaam];
   r.taakCompetenties = c.taak.map((competenties, taakIndex) => ({ taakIndex, competenties }));
   r.nieuweCompetenties = c.nieuw.map(([naam, belang]) => ({ naam, belang, toelichting: "" }));
@@ -63,7 +74,7 @@ function metCompetenties(r) {
   return r;
 }
 
-function fixture({ competenties = true } = {}) {
+function fixture({ competenties = true, mislukt = false } = {}) {
   const rollen = [
     rol("Klantenservice medewerker", "Klantenservice", 8, [
       { omschrijving: "Bellen", categorie: "klantcontact", aandeel: 0.7 },
@@ -85,6 +96,7 @@ function fixture({ competenties = true } = {}) {
     scopeLabel: "",
     gegenereerdOp: "2026-10-14T10:00:00.000Z",
     missingProfiles: [],
+    mislukteRollen: mislukt ? [{ roleLabel: "Jurist (Legal)", rolnaam: "Jurist", fout: "tijdslimiet" }] : [],
     organisatieTotaal: calculateOrganisatie(rollen),
     subtotalenPerAfdeling: [],
     rollen,
@@ -97,6 +109,10 @@ const platHtml = (html) =>
   html
     .replace(/<style[\s\S]*?<\/style>/g, "")
     .replace(/<[^>]+>/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ");
 
@@ -206,4 +222,63 @@ test("de mobiliteitsconclusie verschijnt alleen als het beste alternatief ver ac
   const beste = Math.max(0, ...m.herkomsten.filter((h) => h.alternatieven.length).map((h) => h.alternatieven[0].verhouding));
   const verwacht = beste > 0 && beste < 0.6;
   assert.equal(pdf.includes("doorgroeien in de eigen, veranderde rol"), verwacht);
+});
+
+// ── Blok 3: dekking en beroepsmatch ───────────────────────────────────────────────────
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: bij elke rol staat het ESCO-beroep waaruit de competenties komen`, async () => {
+    const { results, [formaat]: tekst } = await rapporten();
+    for (const r of results.rollen) {
+      assert.ok(tekst.includes(beroepsmatchRegel(r.beroepsmatch)), `regel voor ${r.rolnaam} ontbreekt`);
+    }
+  });
+
+  test(`${formaat}: een matige koppeling wordt als indicatief benoemd, een sterke niet`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    assert.ok(tekst.includes(`"kwaliteitsbeoordelaar" (match ${nl(0.55, 2)}). De koppeling sluit minder nauw aan`));
+    assert.ok(!tekst.includes(`"accountmanager" (match ${nl(1, 2)}). De koppeling sluit minder nauw aan`));
+  });
+
+  test(`${formaat}: de dekkingssectie meldt taakdekking en de twijfelgevallen`, async () => {
+    const { results, [formaat]: tekst } = await rapporten();
+    const z = dekkingZinnen(results);
+    assert.ok(tekst.includes("Dekking en betrouwbaarheid"));
+    assert.ok(tekst.includes(z.dekking), "dekkingszin ontbreekt");
+    assert.ok(z.zwak && tekst.includes(z.zwak), "melding over matige koppelingen ontbreekt");
+  });
+
+  test(`${formaat}: een mislukte rol wordt gemeld, bij de totalen én in de dekking`, async () => {
+    // Zonder deze melding ontbreekt de rol stilzwijgend in alle totalen van een rapport
+    // dat naar de klant gaat.
+    const { results, [formaat]: tekst } = await rapporten({ mislukt: true });
+    const zin = dekkingZinnen(results).mislukt;
+    assert.ok(zin, "er hoort een melding te zijn");
+    const voorkomens = tekst.split(zin).length - 1;
+    assert.ok(voorkomens >= 2, `melding staat ${voorkomens}x, verwacht bij de totalen én in de dekking`);
+    assert.ok(tekst.indexOf(zin) < tekst.indexOf("Waar het werk uit bestaat"), "eerste melding hoort vóór de analyses te staan");
+  });
+
+  test(`${formaat}: zonder mislukte rollen staat er geen melding over mislukte rollen`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    assert.ok(!tekst.includes("Niet geanalyseerd, en dus niet opgenomen in de totalen"));
+  });
+}
+
+test("de rapportteksten gebruiken een decimale komma", () => {
+  assert.equal(nl(0.84, 2), "0,84");
+  assert.equal(nl(6.4, 1), "6,4");
+  assert.equal(beroepsmatchRegel({ label: "x", score: 0.84 }), 'Competenties ontleend aan het ESCO-beroep "x" (match 0,84).');
+});
+
+test("een sterke koppeling krijgt geen voorbehoud", () => {
+  assert.ok(!beroepsmatchRegel({ label: "x", score: 0.9 }).includes("indicatief"));
+  assert.ok(beroepsmatchRegel({ label: "x", score: 0.61 }).includes("indicatief"));
+  assert.ok(beroepsmatchRegel({ label: "x", score: 0.46 }).includes("indicatief"));
+});
+
+test("zonder beroepsmatch geen regel en geen fout", () => {
+  assert.equal(beroepsmatchRegel(null), null);
+  assert.equal(beroepsmatchRegel({}), null);
+  assert.deepEqual(dekkingZinnen({}).heeftIets, false);
 });

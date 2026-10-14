@@ -20,6 +20,7 @@ import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
+import { dekkingZinnen, beroepsmatchRegel } from "../../src/rapportTeksten.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -840,6 +841,11 @@ export async function generateReportDocx(results) {
           ),
         ]
       : []),
+    // Een mislukte rol ontbreekt in alle totalen hierboven; dat hoort direct bij de tabel
+    // te staan, niet alleen in de verantwoording aan het eind.
+    ...(dekkingZinnen(results).mislukt
+      ? [paragraph(`Let op: ${dekkingZinnen(results).mislukt}`, { italics: true, color: "B45309" })]
+      : []),
 
     ...taakprofielSectie(rollen),
     ...mobiliteitSectie(rollen),
@@ -862,6 +868,9 @@ export async function generateReportDocx(results) {
               { bold: true, size: 18 }
             ),
           ]
+        : []),
+      ...(beroepsmatchRegel(r.beroepsmatch)
+        ? [paragraph(beroepsmatchRegel(r.beroepsmatch), { italics: true, size: 18, color: "64748B" })]
         : []),
       taakTable(r),
       // Analyses op de ESCO-koppeling tonen het volledige profiel met trainbaarheid;
@@ -959,6 +968,22 @@ export async function generateReportDocx(results) {
         `Dit rapport is het begin van dat gesprek, niet de afsluiting ervan.`
     )
   );
+
+  // Dekking en betrouwbaarheid: hoe stevig zijn de uitspraken in dit rapport. Teksten
+  // komen uit rapportTeksten.js zodat PDF en Word dezelfde formulering gebruiken.
+  const dekking = dekkingZinnen(results);
+  if (dekking.heeftIets) {
+    children.push(
+      heading("Dekking en betrouwbaarheid", HeadingLevel.HEADING_2),
+      paragraph(
+        "Elke rol wordt gekoppeld aan een beroep uit de ESCO-classificatie; uit dat beroep komt de competentielijst waaruit de analyse kiest. Hoe sterker die koppeling, hoe steviger de competentie-uitspraken over die rol.",
+        { italics: true, size: 18, color: "64748B" }
+      ),
+      ...(dekking.dekking ? [paragraph(dekking.dekking)] : []),
+      ...(dekking.mislukt ? [paragraph(dekking.mislukt, { color: "B45309" })] : []),
+      ...(dekking.zwak ? [paragraph(dekking.zwak)] : [])
+    );
+  }
 
   // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 van de
   // ESCO-gebruiksvoorwaarden schrijft deze zin letterlijk voor voor publicaties), plus
