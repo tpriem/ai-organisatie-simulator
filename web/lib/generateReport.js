@@ -20,7 +20,7 @@ import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
-import { dekkingZinnen, beroepsmatchRegel } from "../../src/rapportTeksten.js";
+import { dekkingZinnen, beroepsmatchRegel, waardetypeHerkomstZin, waardetypeHandmatigRegel } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
@@ -242,7 +242,9 @@ function capaciteitSectie(organisatieTotaal, rollen) {
     }
     out.push(
       paragraph(
-        "Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.",
+        `Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.${
+          waardetypeHerkomstZin(rollen) ? ` ${waardetypeHerkomstZin(rollen)}` : ""
+        }`,
         { italics: true, size: 18, color: "64748B" }
       )
     );
@@ -865,6 +867,9 @@ export async function generateReportDocx(results) {
               { bold: true, size: 18 }
             ),
           ]
+        : []),
+      ...(waardetypeHandmatigRegel(r)
+        ? [paragraph(waardetypeHandmatigRegel(r), { italics: true, size: 18, color: "64748B" })]
         : []),
       ...(beroepsmatchRegel(r.beroepsmatch)
         ? [paragraph(beroepsmatchRegel(r.beroepsmatch), { italics: true, size: 18, color: "64748B" })]

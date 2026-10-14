@@ -13,6 +13,7 @@ import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.
 import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
 import { calculateMobiliteit } from "../../../../../src/mobiliteit.js";
 import { calculateScanDekking, matchKwaliteit } from "../../../../../src/scanDekking.js";
+import { isHandmatig, waardetypeHerkomst } from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
 
@@ -29,6 +30,7 @@ const BESTEMMING_STIJL = {
 
 export function CapaciteitBestemming({ results }) {
   const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
+  const herkomst = useMemo(() => waardetypeHerkomst(results.rollen), [results.rollen]);
   if (bestemming.length === 0) return null;
 
   const alleenOnbepaald = bestemming.every((b) => b.waardetype === "onbepaald");
@@ -64,6 +66,16 @@ export function CapaciteitBestemming({ results }) {
           );
         })}
       </div>
+
+      {/* Deze verdeling rust voor een deel op menselijk oordeel zodra een adviseur
+          waardetypes heeft bijgestuurd; dat moet de lezer kunnen zien. */}
+      {herkomst.handmatig > 0 && (
+        <p className="mt-3 text-[11px] text-slate-500">
+          Voor {herkomst.handmatig} van de {herkomst.totaal} {herkomst.totaal === 1 ? "rol" : "rollen"} is de bestemming
+          handmatig bepaald
+          {herkomst.afwijkend > 0 ? ` — ${herkomst.afwijkend} daarvan wijkt af van de inschatting van Claude` : ""}.
+        </p>
+      )}
     </div>
   );
 }
@@ -645,13 +657,127 @@ function getOrigineelTaken(role) {
   }));
 }
 
-function WaardetypeBadge({ waardetype, toelichting, compact = false }) {
+// Het waardetype van een rol bijsturen. Claude leidt het af uit het functieprofiel, maar
+// wat een organisatie met de vrijgekomen tijd wil is haar keuze, niet die van een
+// taalmodel. Zodra de bestemming het kopgetal van het rapport bepaalt, moet de adviseur
+// die kunnen vastleggen.
+function WaardetypeBeheer({ id, role, onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [reden, setReden] = useState("");
+  const [bezig, setBezig] = useState(false);
+  const [fout, setFout] = useState(null);
+
+  const huidig = getWaardetype(role.waardetype);
+  const handmatig = isHandmatig(role);
+  const ai = getWaardetype(role.waardetypeAI);
+
+  async function kies(waardetype) {
+    setBezig(true);
+    setFout(null);
+    try {
+      const res = await fetch(`/api/clients/${id}/rollen/${encodeURIComponent(role.roleId ?? role.rolnaam)}/waardetype`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waardetype, reden }),
+      });
+      const body = await res.json();
+      if (res.ok) {
+        onSaved(body);
+        setReden("");
+        setOpen(false);
+      } else {
+        setFout(body.error ?? "Opslaan mislukt");
+      }
+    } catch (err) {
+      setFout(err.message);
+    } finally {
+      setBezig(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-lg bg-indigo-50/60 px-3 py-2">
+      <div className="flex items-start gap-2">
+        <span className="text-base leading-none">{huidig?.icon ?? "❔"}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-slate-700">
+            {huidig?.label ?? "Waardetype nog niet bepaald"}
+            {handmatig && (
+              <span className="ml-1.5 rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
+                handmatig bepaald
+              </span>
+            )}
+          </p>
+          {role.waardetypeToelichting && <p className="text-xs text-slate-500 mt-0.5">{role.waardetypeToelichting}</p>}
+          {handmatig && ai && ai.id !== huidig?.id && (
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Inschatting van Claude was: {ai.icon} {ai.label}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="shrink-0 text-[11px] text-indigo-600 hover:text-indigo-500 hover:underline"
+        >
+          {open ? "Sluiten" : "Bijsturen"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-2 border-t border-indigo-100 pt-2">
+          <p className="text-[11px] text-slate-500 mb-1.5">Waar moet de vrijgekomen tijd van deze rol naartoe?</p>
+          <div className="flex flex-wrap gap-1.5">
+            {WAARDETYPES.map((w) => (
+              <button
+                key={w.id}
+                onClick={() => kies(w.id)}
+                disabled={bezig}
+                aria-pressed={role.waardetype === w.id}
+                className={`rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+                  role.waardetype === w.id
+                    ? "border-indigo-400 bg-white font-medium text-indigo-700"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+                }`}
+              >
+                {w.icon} {w.label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={reden}
+            onChange={(e) => setReden(e.target.value)}
+            maxLength={300}
+            placeholder="Reden (optioneel), bijvoorbeeld: groeiambitie in de regio"
+            className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          {handmatig && (
+            <button
+              onClick={() => kies(null)}
+              disabled={bezig}
+              className="mt-1.5 text-[11px] text-slate-500 hover:text-slate-700 hover:underline disabled:opacity-50"
+            >
+              Terug naar de inschatting van Claude
+            </button>
+          )}
+          {fout && <p className="mt-1.5 text-[11px] text-red-600">{fout}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WaardetypeBadge({ waardetype, toelichting, compact = false, handmatig = false }) {
   const w = getWaardetype(waardetype);
   if (!w) return null;
   if (compact) {
     return (
-      <span title={`${w.label}${toelichting ? ` — ${toelichting}` : ""}`} className="text-sm">
+      <span
+        title={`${w.label}${handmatig ? " (handmatig bepaald)" : ""}${toelichting ? ` — ${toelichting}` : ""}`}
+        className="text-sm"
+      >
         {w.icon}
+        {handmatig && <span className="text-indigo-500">*</span>}
       </span>
     );
   }
@@ -1025,7 +1151,7 @@ function TaakTable({ id, role, onSaved }) {
       {/* Opbouw van het rolblok: eerst wat er met het werk gebeurt (tijdbalk en
           taakverdeling), daarna pas wat dat voor competenties betekent. Zo komt de
           onderbouwing vóór de conclusie. */}
-      <WaardetypeBadge waardetype={role.waardetype} toelichting={role.waardetypeToelichting} />
+      <WaardetypeBeheer id={id} role={role} onSaved={onSaved} />
       <BeroepsmatchRegel beroepsmatch={role.beroepsmatch} />
       {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
 
@@ -1876,7 +2002,7 @@ export default function ClientWorkspace({ id }) {
                           <td className="py-2 px-3 w-4 text-indigo-400">{isOpen ? "▾" : "▸"}</td>
                           <td className="py-2 px-3 font-medium text-slate-800">
                             <span className="inline-flex items-center gap-1.5">
-                              <WaardetypeBadge waardetype={r.waardetype} toelichting={r.waardetypeToelichting} compact />
+                              <WaardetypeBadge waardetype={r.waardetype} toelichting={r.waardetypeToelichting} handmatig={isHandmatig(r)} compact />
                               {r.roleLabel ?? r.rolnaam}
                             </span>
                           </td>

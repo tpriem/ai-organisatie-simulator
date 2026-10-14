@@ -6,7 +6,8 @@ import { calculateTaakprofiel } from "./taakprofiel.js";
 import { calculateCompetentieProfiel } from "./competencyProfile.js";
 import { calculateCompetentieAgenda } from "./competencyAgenda.js";
 import { calculateMobiliteit } from "./mobiliteit.js";
-import { dekkingZinnen, beroepsmatchRegel } from "./rapportTeksten.js";
+import { dekkingZinnen, beroepsmatchRegel, waardetypeHerkomstZin, waardetypeHandmatigRegel } from "./rapportTeksten.js";
+import { stelWaardetypeIn } from "./waardetype.js";
 import { nl } from "./formatNl.js";
 import { buildReportHtml } from "../web/lib/generateReportPdf.js";
 import { generateReportDocx } from "../web/lib/generateReport.js";
@@ -74,7 +75,7 @@ function metCompetenties(r) {
   return r;
 }
 
-function fixture({ competenties = true, mislukt = false } = {}) {
+function fixture({ competenties = true, mislukt = false, handmatig = false } = {}) {
   const rollen = [
     rol("Klantenservice medewerker", "Klantenservice", 8, [
       { omschrijving: "Bellen", categorie: "klantcontact", aandeel: 0.7 },
@@ -90,6 +91,13 @@ function fixture({ competenties = true, mislukt = false } = {}) {
     ], "kwaliteitsverbetering"),
   ];
   if (competenties) rollen.forEach(metCompetenties);
+  // Klantenservice stond op kostenreductie; de adviseur stuurt dat bij naar kwaliteit.
+  if (handmatig) {
+    rollen[0] = stelWaardetypeIn(rollen[0], "kwaliteitsverbetering", {
+      reden: "Servicekwaliteit is hier het onderscheidend vermogen",
+      nu: new Date("2026-10-15T09:00:00.000Z"),
+    });
+  }
   return {
     bedrijfsnaam: "Testklant BV",
     scope: "bedrijf",
@@ -295,3 +303,44 @@ for (const formaat of ["pdf", "docx"]) {
     assert.deepEqual(verdacht, [], `decimale punt gevonden: ${verdacht.slice(0, 3).join(" | ")}`);
   });
 }
+
+// ── Handmatig bepaald waardetype ──────────────────────────────────────────────────────
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: een bijgestuurd waardetype werkt door in de verdeling van de capaciteit`, async () => {
+    // Het hele doel van bijsturen: de keuze van de adviseur moet in het kopgetal staan.
+    const { results, [formaat]: tekst } = await rapporten({ handmatig: true });
+    assert.equal(results.rollen[0].waardetype, "kwaliteitsverbetering");
+    const verdeling = calculateCapaciteitBestemming(results.rollen, "realistisch");
+    assert.ok(verdeling.some((b) => b.waardetype === "kwaliteitsverbetering"));
+    for (const b of verdeling) assert.ok(tekst.includes(`${nl(b.fte, 1)} FTE`), `${b.waardetype} ontbreekt`);
+  });
+
+  test(`${formaat}: het rapport meldt dat de bestemming deels handmatig is bepaald`, async () => {
+    const { results, [formaat]: tekst } = await rapporten({ handmatig: true });
+    const zin = waardetypeHerkomstZin(results.rollen);
+    assert.ok(zin && zin.includes("1 van de 3 rollen"), `zin onverwacht: ${zin}`);
+    assert.ok(tekst.includes(zin), "herkomstzin ontbreekt in het rapport");
+  });
+
+  test(`${formaat}: bij de bijgestuurde rol staat de reden en wat de inschatting was`, async () => {
+    const { results, [formaat]: tekst } = await rapporten({ handmatig: true });
+    assert.ok(tekst.includes("Servicekwaliteit is hier het onderscheidend vermogen"), "reden ontbreekt");
+    assert.ok(tekst.includes(waardetypeHandmatigRegel(results.rollen[0])));
+    assert.ok(tekst.includes("De inschatting op basis van het functieprofiel was: kostenreductie"));
+  });
+
+  test(`${formaat}: zonder bijsturen staat er niets over handmatig bepaalde waardetypes`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    assert.ok(!tekst.includes("handmatig bepaald"));
+    assert.ok(!tekst.includes("Handmatig bepaald"));
+  });
+}
+
+test("het rapport noemt het taalmodel niet bij naam", () => {
+  // De klant leest "de inschatting op basis van het functieprofiel"; in de app mag het
+  // "Claude" zijn, voor de adviseur.
+  const { rollen } = fixture({ handmatig: true });
+  assert.ok(!waardetypeHandmatigRegel(rollen[0]).includes("Claude"));
+  assert.ok(!waardetypeHerkomstZin(rollen).includes("Claude"));
+});

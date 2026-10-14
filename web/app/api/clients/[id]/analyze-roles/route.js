@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import {
   getClientMeta,
   readAnswers,
+  readResults,
   getRosterBuffer,
   getProfileBuffers,
   writeResults,
 } from "@/lib/clientStore";
 import { meldStoring } from "@/lib/alert";
+import { neemHandmatigeWaardetypesOver } from "../../../../../../src/waardetype.js";
 import { parseRoster } from "../../../../../../src/parseRoster.js";
 import { parseProfileFiles, matchRosterToProfiles, roleLabel } from "../../../../../../src/parseProfiles.js";
 import { roleId } from "../../../../../../src/roleIdentity.js";
@@ -142,6 +144,12 @@ export async function POST(request, { params }) {
   const scope = answers.scope ?? "bedrijf";
   const scopeLabel = answers.scopeLabel ?? "";
 
+  // Een nieuwe analyse begint helemaal opnieuw en zou handmatig bepaalde waardetypes
+  // stilzwijgend weggooien. Dat is een bewuste menselijke beslissing, dus die nemen we
+  // over; de nieuwe inschatting van Claude blijft zichtbaar naast de keuze.
+  const vorigeResultaten = await readResults(id).catch(() => null);
+  const rollenMetKeuzes = neemHandmatigeWaardetypesOver(roleResults, vorigeResultaten?.rollen);
+
   const results = {
     bedrijfsnaam: meta.naam,
     scope,
@@ -151,7 +159,7 @@ export async function POST(request, { params }) {
     mislukteRollen,
     organisatieTotaal: orgTotals,
     subtotalenPerAfdeling,
-    rollen: roleResults,
+    rollen: rollenMetKeuzes,
     sectorAnalyse: null,
     aanbevelingen: null,
   };

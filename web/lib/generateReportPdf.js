@@ -5,7 +5,7 @@ import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
-import { dekkingZinnen, beroepsmatchRegel } from "../../src/rapportTeksten.js";
+import { dekkingZinnen, beroepsmatchRegel, waardetypeHerkomstZin, waardetypeHandmatigRegel } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
 /**
@@ -55,9 +55,10 @@ function pct(n) {
 function waardetypeLine(rol) {
   const w = getWaardetype(rol.waardetype);
   if (!w) return "";
+  const handmatig = waardetypeHandmatigRegel(rol);
   return `<p><strong>${w.icon} ${esc(w.label)}</strong>${
     rol.waardetypeToelichting ? ` — ${esc(rol.waardetypeToelichting)}` : ""
-  }</p>`;
+  }${handmatig ? `<br/><span class="disclaimer">${esc(handmatig)}</span>` : ""}</p>`;
 }
 
 // Balk met een eigen waardetekst, voor percentages en gecombineerde cijfers. bar()
@@ -112,7 +113,9 @@ function capaciteitBlock(organisatieTotaal, rollen) {
   ${rijen}
   ${
     heeftBestemming
-      ? `<p class="disclaimer">Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.</p>`
+      ? `<p class="disclaimer">Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.${
+          waardetypeHerkomstZin(rollen) ? ` ${esc(waardetypeHerkomstZin(rollen))}` : ""
+        }</p>`
       : ""
   }`;
 }

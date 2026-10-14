@@ -1,5 +1,7 @@
 import { calculateScanDekking, matchKwaliteit } from "./scanDekking.js";
 import { nl } from "./formatNl.js";
+import { getWaardetype } from "./config.js";
+import { isHandmatig, waardetypeHerkomst } from "./waardetype.js";
 
 /**
  * Teksten over dekking en bewijskracht, voor de rapporten.
@@ -65,4 +67,38 @@ export function dekkingZinnen(results) {
     : null;
 
   return { dekking, mislukt, zwak, heeftIets: Boolean(dekking || mislukt || zwak) };
+}
+
+/**
+ * Eén zin over hoeveel rollen een handmatig bepaalde bestemming hebben.
+ *
+ * Zodra een adviseur waardetypes bijstuurt, rust de verdeling van de capaciteit deels op
+ * menselijk oordeel in plaats van op een afleiding uit de functieprofielen. Dat is geen
+ * gebrek — het is juist waar de organisatie haar eigen keuze inbrengt — maar de lezer moet
+ * het wel kunnen zien.
+ *
+ * @returns {string|null}
+ */
+export function waardetypeHerkomstZin(rollen) {
+  const h = waardetypeHerkomst(rollen);
+  if (h.handmatig === 0) return null;
+  return (
+    `Voor ${h.handmatig} van de ${h.totaal} ${h.totaal === 1 ? "rol" : "rollen"} is de bestemming handmatig bepaald` +
+    (h.afwijkend > 0
+      ? `; ${h.afwijkend} daarvan wijkt af van de inschatting op basis van het functieprofiel.`
+      : ", in lijn met de inschatting op basis van het functieprofiel.")
+  );
+}
+
+/**
+ * Regel bij een rol die laat zien dat het waardetype handmatig is bepaald.
+ * @returns {string|null}
+ */
+export function waardetypeHandmatigRegel(rol) {
+  if (!isHandmatig(rol)) return null;
+  const ai = getWaardetype(rol.waardetypeAI);
+  const huidig = getWaardetype(rol.waardetype);
+  return ai && huidig && ai.id !== huidig.id
+    ? `Handmatig bepaald. De inschatting op basis van het functieprofiel was: ${ai.label.toLowerCase()}.`
+    : "Handmatig bepaald.";
 }
