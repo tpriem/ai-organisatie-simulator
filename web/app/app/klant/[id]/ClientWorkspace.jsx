@@ -691,15 +691,20 @@ function getOrigineelTaken(role) {
 function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
   const [open, setOpen] = useState(false);
   const [reden, setReden] = useState("");
-  const [bezig, setBezig] = useState(false);
+  // Welke actie loopt er: "bevestigen", "terugzetten" of "opslaan". Opslaan schrijft ook een
+  // versie in de historie en kan enkele seconden duren; zonder zichtbare voortgang klikt een
+  // adviseur dubbel of denkt dat er niets gebeurt.
+  const [bezigMet, setBezigMet] = useState(null);
+  const bezig = bezigMet !== null;
   const [fout, setFout] = useState(null);
 
   const huidig = getWaardetype(role.waardetype);
   const handmatig = isHandmatig(role);
   const ai = getWaardetype(role.waardetypeAI);
 
-  async function kies(waardetype) {
-    setBezig(true);
+  async function kies(waardetype, actie = "opslaan") {
+    if (bezig) return;
+    setBezigMet(actie);
     setFout(null);
     try {
       const res = await fetch(`/api/clients/${id}/rollen/${encodeURIComponent(role.roleId ?? role.rolnaam)}/waardetype`, {
@@ -718,12 +723,15 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
     } catch (err) {
       setFout(err.message);
     } finally {
-      setBezig(false);
+      setBezigMet(null);
     }
   }
 
   return (
-    <div className="mb-4 rounded-lg bg-indigo-50/60 px-3 py-2">
+    <div className="mb-4 rounded-lg bg-indigo-50/60 px-3 py-2" aria-busy={bezig}>
+      <span className="sr-only" role="status" aria-live="polite">
+        {bezigMet ? "Bezig met opslaan" : ""}
+      </span>
       <div className="flex items-start gap-2">
         <span className="text-base leading-none">{huidig?.icon ?? "❔"}</span>
         <div className="flex-1 min-w-0">
@@ -761,11 +769,12 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
             waardetype of stuur het bij.
           </p>
           <button
-            onClick={() => kies(role.waardetype)}
+            onClick={() => kies(role.waardetype, "bevestigen")}
             disabled={bezig}
-            className="shrink-0 rounded-md bg-white border border-amber-300 px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-white border border-amber-300 px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
           >
-            Bevestigen
+            {bezigMet === "bevestigen" && <Spinner />}
+            {bezigMet === "bevestigen" ? "Bevestigen…" : "Bevestigen"}
           </button>
         </div>
       )}
@@ -780,7 +789,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
                 onClick={() => kies(w.id)}
                 disabled={bezig}
                 aria-pressed={role.waardetype === w.id}
-                className={`rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
                   role.waardetype === w.id
                     ? "border-indigo-400 bg-white font-medium text-indigo-700"
                     : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
@@ -800,17 +809,32 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
           />
           {handmatig && (
             <button
-              onClick={() => kies(null)}
+              onClick={() => kies(null, "terugzetten")}
               disabled={bezig}
-              className="mt-1.5 text-[11px] text-slate-500 hover:text-slate-700 hover:underline disabled:opacity-50"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-700 hover:underline disabled:opacity-50"
             >
-              Terug naar de inschatting van Claude
+              {bezigMet === "terugzetten" && <Spinner />}
+              {bezigMet === "terugzetten" ? "Terugzetten…" : "Terug naar de inschatting van Claude"}
             </button>
+          )}
+          {bezigMet === "opslaan" && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+              <Spinner /> Opslaan…
+            </p>
           )}
           {fout && <p className="mt-1.5 text-[11px] text-red-600">{fout}</p>}
         </div>
       )}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+    />
   );
 }
 
