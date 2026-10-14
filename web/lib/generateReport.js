@@ -13,9 +13,11 @@ import {
   BorderStyle,
   HeightRule,
 } from "docx";
-import { WAARDETYPES, getWaardetype } from "../../src/config.js";
+import { getWaardetype } from "../../src/config.js";
 import { buildOrgChartData } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
+import { calculateCapaciteitBestemming } from "../../src/calculate.js";
+import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -26,16 +28,6 @@ function eur(n) {
 
 function pct(n) {
   return `${Math.round(n * 100)}%`;
-}
-
-function waardetypeSummarySentence(rollen) {
-  const parts = WAARDETYPES.map((w) => ({
-    ...w,
-    count: rollen.filter((r) => r.waardetype === w.id).length,
-  })).filter((w) => w.count > 0);
-  if (parts.length === 0) return null;
-  const clauses = parts.map((w) => `${w.count} rol${w.count === 1 ? "" : "len"} ${w.label.toLowerCase()}`);
-  return `Van de vrijgekomen capaciteit is de meest passende lezing: ${clauses.join(", ")}.`;
 }
 
 function cell(text, { width, header = false, shaded = false, bold = false } = {}) {
@@ -83,7 +75,7 @@ function paragraph(text, opts = {}) {
 }
 
 function rolSummaryTable(rollen) {
-  const widths = [2400, 700, 1000, 1000, 1800, 2450];
+  const widths = [2200, 600, 900, 950, 1500, 1500, 1900];
   const headerRow = new TableRow({
     tableHeader: true,
     children: [
@@ -92,7 +84,8 @@ function rolSummaryTable(rollen) {
       cell("Uren/wk", { width: widths[2], header: true }),
       cell("Kosten/uur", { width: widths[3], header: true }),
       cell("Reductie (R–A)", { width: widths[4], header: true }),
-      cell("Besparing/jaar (R–A)", { width: widths[5], header: true }),
+      cell("Vrijkomend u/wk (R–A)", { width: widths[5], header: true }),
+      cell("Als besparing ingeboekt (R–A)", { width: widths[6], header: true }),
     ],
   });
 
@@ -109,8 +102,12 @@ function rolSummaryTable(rollen) {
           shaded,
         }),
         cell(
-          `${eur(r.scenarios.realistisch.kostenBesparingPerJaar)} – ${eur(r.scenarios.agressief.kostenBesparingPerJaar)}`,
+          `${Math.round(r.scenarios.realistisch.automatiseerbareUrenPerWeek)} – ${Math.round(r.scenarios.agressief.automatiseerbareUrenPerWeek)}`,
           { width: widths[5], shaded }
+        ),
+        cell(
+          `${eur(r.scenarios.realistisch.kostenBesparingPerJaar)} – ${eur(r.scenarios.agressief.kostenBesparingPerJaar)}`,
+          { width: widths[6], shaded }
         ),
       ],
     });
@@ -201,6 +198,116 @@ function taakTable(rol) {
 const BAR_TOTAL_WIDTH = 5200; // DXA
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const NO_BORDERS = { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER };
+
+const BESTEMMING_KLEUR = {
+  kostenreductie: "94A3B8",
+  capaciteitsgroei: "6366F1",
+  kwaliteitsverbetering: "10B981",
+  onbepaald: "C7D2FE",
+};
+
+// Waar de vrijgekomen capaciteit naartoe gaat. Zelfde berekening als in de app
+// (calculateCapaciteitBestemming), zodat beide altijd dezelfde cijfers tonen.
+function capaciteitSectie(organisatieTotaal, rollen) {
+  const t = organisatieTotaal.realistisch;
+  const bestemming = calculateCapaciteitBestemming(rollen, "realistisch");
+  const heeftBestemming = bestemming.some((b) => b.waardetype !== "onbepaald");
+  const uren = t.totaalVrijgekomenUrenPerWeek ?? t.totaalFteWeg * 36;
+
+  const out = [
+    paragraph(
+      `Er komt ${t.totaalFteWeg.toFixed(1)} FTE aan capaciteit vrij (${Math.round(uren)} uur per week, realistisch scenario).` +
+        (heeftBestemming ? " Per rol is ingeschat welke bestemming het meest voor de hand ligt:" : ""),
+      { bold: true }
+    ),
+  ];
+
+  if (heeftBestemming) {
+    const maxFte = Math.max(...bestemming.map((b) => b.fte), 0.01);
+    for (const b of bestemming) {
+      const type = getWaardetype(b.waardetype);
+      out.push(
+        paragraph(
+          `${type ? `${type.icon} ${type.label}` : "Nog niet bepaald"} — ${b.fte.toFixed(1)} FTE · ${b.rollen} ${
+            b.rollen === 1 ? "rol" : "rollen"
+          }`,
+          { size: 18, color: "475569" }
+        )
+      );
+      out.push(miniBar(b.fte, maxFte, BESTEMMING_KLEUR[b.waardetype] ?? "94A3B8"));
+    }
+    out.push(
+      paragraph(
+        "Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.",
+        { italics: true, size: 18, color: "64748B" }
+      )
+    );
+  }
+
+  return out;
+}
+
+// Het financiële beeld bewust ná en naast de capaciteit, met de voorwaarde erbij.
+function financieelAlinea(organisatieTotaal) {
+  return paragraph(
+    `Financieel beeld. Als de vrijgekomen uren volledig als besparing worden ingeboekt, is dat ${eur(
+      organisatieTotaal.realistisch.totaalKostenBesparingPerJaar
+    )} tot ${eur(
+      organisatieTotaal.agressief.totaalKostenBesparingPerJaar
+    )} per jaar (realistisch tot agressief). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.`,
+    { italics: true, size: 18, color: "64748B" }
+  );
+}
+
+// Het soort werk dat de organisatie doet, nu en straks.
+function taakprofielSectie(rollen) {
+  const p = calculateTaakprofiel(rollen, "realistisch");
+  if (!p.heeftData) return [];
+
+  const max = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
+  const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
+  const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
+  const pp = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pp`;
+
+  const out = [
+    heading("Waar het werk uit bestaat — nu en straks"),
+    paragraph(
+      "Het aandeel van alle werkuren per taakcategorie. Automatisering raakt categorieën ongelijk, dus de samenstelling verschuift: werk dat moeilijk te automatiseren is wordt een groter deel van het geheel, ook als het in absolute uren krimpt. Grijs is nu, paars na de transformatie.",
+      { italics: true, size: 18, color: "64748B" }
+    ),
+  ];
+
+  if (groeiers.length > 0) {
+    out.push(
+      paragraph(
+        `Het zwaartepunt verschuift naar ${groeiers[0].label.toLowerCase()} (${pp(groeiers[0].verschuiving)})` +
+          (krimpers.length > 0 ? `, ten koste van ${krimpers[0].label.toLowerCase()} (${pp(krimpers[0].verschuiving)})` : "") +
+          ".",
+        { bold: true }
+      )
+    );
+  }
+
+  for (const c of p.categorieen) {
+    out.push(
+      paragraph(
+        `${c.label} — ${Math.round(c.aandeelNu * 100)}% → ${Math.round(c.aandeelStraks * 100)}% (${pp(c.verschuiving)})`,
+        { size: 18, color: "475569" }
+      )
+    );
+    out.push(miniBar(c.aandeelNu, max, "94A3B8"));
+    out.push(miniBar(c.aandeelStraks, max, "6366F1"));
+  }
+
+  out.push(
+    paragraph(`In totaal ${Math.round(p.urenNu)} → ${Math.round(p.urenStraks)} uur per week.`, {
+      italics: true,
+      size: 18,
+      color: "64748B",
+    })
+  );
+  return out;
+}
 
 function miniBar(value, maxValue, colorHex) {
   const filled = Math.max(Math.round((value / maxValue) * BAR_TOTAL_WIDTH), 40);
@@ -571,13 +678,10 @@ export async function generateReportDocx(results) {
       `De organisatie telt momenteel ${organisatieTotaal.realistisch.totaalFteHuidig} FTE verdeeld over ${rollen.length} geanalyseerde rollen. ` +
         `Op basis van de functieprofielen is de automatiseerbare capaciteit geschat op ${pct(
           organisatieTotaal.realistisch.reductiePercentageOrganisatie
-        )} (realistisch scenario) tot ${pct(
-          organisatieTotaal.agressief.reductiePercentageOrganisatie
-        )} (agressief scenario), overeenkomend met een geschatte jaarlijkse besparing van ${eur(
-          organisatieTotaal.realistisch.totaalKostenBesparingPerJaar
-        )} tot ${eur(organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}.`
+        )} (realistisch scenario) tot ${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)} (agressief scenario).`
     ),
-    ...(waardetypeSummarySentence(rollen) ? [paragraph(waardetypeSummarySentence(rollen))] : []),
+    ...capaciteitSectie(organisatieTotaal, rollen),
+    financieelAlinea(organisatieTotaal),
     ...(sectorAnalyse
       ? [
           paragraph(
@@ -608,6 +712,8 @@ export async function generateReportDocx(results) {
           ),
         ]
       : []),
+
+    ...taakprofielSectie(rollen),
 
     heading("Detail per rol — taakverdeling & competenties"),
     ...rollen.flatMap((r) => [

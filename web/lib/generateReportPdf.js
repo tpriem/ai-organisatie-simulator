@@ -1,6 +1,8 @@
 import { buildOrgChartData } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
-import { WAARDETYPES, getWaardetype } from "../../src/config.js";
+import { getWaardetype } from "../../src/config.js";
+import { calculateCapaciteitBestemming } from "../../src/calculate.js";
+import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 
 /**
  * Vercel's serverless functions kunnen geen volledige, lokaal-geïnstalleerde Chromium
@@ -46,22 +48,115 @@ function pct(n) {
   return `${Math.round(n * 100)}%`;
 }
 
-function waardetypeSummarySentence(rollen) {
-  const parts = WAARDETYPES.map((w) => ({
-    ...w,
-    count: rollen.filter((r) => r.waardetype === w.id).length,
-  })).filter((w) => w.count > 0);
-  if (parts.length === 0) return null;
-  const clauses = parts.map((w) => `${w.count} rol${w.count === 1 ? "" : "len"} ${w.label.toLowerCase()}`);
-  return `Van de vrijgekomen capaciteit is de meest passende lezing: ${clauses.join(", ")}.`;
-}
-
 function waardetypeLine(rol) {
   const w = getWaardetype(rol.waardetype);
   if (!w) return "";
   return `<p><strong>${w.icon} ${esc(w.label)}</strong>${
     rol.waardetypeToelichting ? ` — ${esc(rol.waardetypeToelichting)}` : ""
   }</p>`;
+}
+
+// Balk met een eigen waardetekst, voor percentages en gecombineerde cijfers. bar()
+// hierboven toont altijd één getal met twee decimalen en past daar niet bij.
+function barTekst(label, tekst, breedtePct, colorClass) {
+  const breedte = Math.max(Math.min(breedtePct, 100), 1.5);
+  return `
+    <div class="bar-row">
+      <span class="bar-label-wide">${esc(label)}</span>
+      <div class="bar-track"><div class="bar-fill ${colorClass}" style="width:${breedte}%"></div></div>
+      <span class="bar-value" style="width:130px;">${tekst}</span>
+    </div>`;
+}
+
+const BESTEMMING_KLASSE = {
+  kostenreductie: "c-slate",
+  capaciteitsgroei: "c-indigo",
+  kwaliteitsverbetering: "c-emerald",
+  onbepaald: "c-indigo-light",
+};
+
+// Waar de vrijgekomen capaciteit naartoe gaat. Zelfde berekening als in de app
+// (calculateCapaciteitBestemming), zodat beide altijd dezelfde cijfers tonen.
+function capaciteitBlock(organisatieTotaal, rollen) {
+  const t = organisatieTotaal.realistisch;
+  const bestemming = calculateCapaciteitBestemming(rollen, "realistisch");
+  const heeftBestemming = bestemming.some((b) => b.waardetype !== "onbepaald");
+
+  const uren = t.totaalVrijgekomenUrenPerWeek ?? t.totaalFteWeg * 36;
+  const kop = `<p><strong>${t.totaalFteWeg.toFixed(1)} FTE</strong> aan capaciteit komt vrij (${Math.round(
+    uren
+  )} uur per week, realistisch scenario).`;
+
+  const rijen = heeftBestemming
+    ? bestemming
+        .map((b) => {
+          const type = getWaardetype(b.waardetype);
+          const label = type ? `${type.icon} ${type.label}` : "Nog niet bepaald";
+          return barTekst(
+            label,
+            `${b.fte.toFixed(1)} FTE · ${b.rollen} ${b.rollen === 1 ? "rol" : "rollen"}`,
+            b.aandeel * 100,
+            BESTEMMING_KLASSE[b.waardetype] ?? "c-slate"
+          );
+        })
+        .join("")
+    : "";
+
+  return `${kop}${
+    heeftBestemming ? " Per rol is ingeschat welke bestemming het meest voor de hand ligt:" : ""
+  }</p>
+  ${rijen}
+  ${
+    heeftBestemming
+      ? `<p class="disclaimer">Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.</p>`
+      : ""
+  }`;
+}
+
+// Het financiële beeld bewust ná en naast de capaciteit, met de voorwaarde erbij.
+function financieelBlock(organisatieTotaal) {
+  return `<p class="disclaimer"><strong>Financieel beeld.</strong> Als de vrijgekomen uren volledig als besparing worden ingeboekt, is dat ${eur(
+    organisatieTotaal.realistisch.totaalKostenBesparingPerJaar
+  )}–${eur(
+    organisatieTotaal.agressief.totaalKostenBesparingPerJaar
+  )} per jaar (realistisch–agressief). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.</p>`;
+}
+
+// Het soort werk dat de organisatie doet, nu en straks.
+function taakprofielBlock(rollen) {
+  const p = calculateTaakprofiel(rollen, "realistisch");
+  if (!p.heeftData) return "";
+
+  const max = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
+  const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
+  const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
+  const pp = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pp`;
+
+  const conclusie =
+    groeiers.length > 0
+      ? `<p>Het zwaartepunt verschuift naar <strong>${esc(groeiers[0].label.toLowerCase())}</strong> (${pp(
+          groeiers[0].verschuiving
+        )})${
+          krimpers.length > 0
+            ? `, ten koste van <strong>${esc(krimpers[0].label.toLowerCase())}</strong> (${pp(krimpers[0].verschuiving)})`
+            : ""
+        }.</p>`
+      : "";
+
+  const rijen = p.categorieen
+    .map(
+      (c) =>
+        barTekst(c.label, `${Math.round(c.aandeelNu * 100)}% → ${Math.round(c.aandeelStraks * 100)}%`, (c.aandeelNu / max) * 100, "c-slate") +
+        barTekst("", `${pp(c.verschuiving)}`, (c.aandeelStraks / max) * 100, "c-indigo")
+    )
+    .join("");
+
+  return `
+  <h2>Waar het werk uit bestaat — nu en straks</h2>
+  <p class="disclaimer">Het aandeel van alle werkuren per taakcategorie. Automatisering raakt categorieën ongelijk, dus de samenstelling verschuift: werk dat moeilijk te automatiseren is wordt een groter deel van het geheel, ook als het in absolute uren krimpt. Grijs is nu, paars na de transformatie.</p>
+  ${conclusie}
+  ${rijen}
+  <p class="disclaimer">In totaal ${Math.round(p.urenNu)} → ${Math.round(p.urenStraks)} uur per week.</p>`;
 }
 
 function bar(label, value, maxValue, colorClass) {
@@ -246,10 +341,11 @@ function listBlock(title, items, colorClass) {
 }
 
 /**
- * Genereert het gecombineerde eindrapport als PDF-buffer via Puppeteer.
+ * Bouwt de HTML van het eindrapport. Los van het renderen, zodat de inhoud te toetsen is
+ * zonder Chromium te starten — dat laatste is op Vercel en lokaal een kwetsbare stap.
  * @param {object} results - het resultaat-object zoals opgeslagen in results.json
  */
-export async function generateReportPdf(results) {
+export function buildReportHtml(results) {
   const {
     bedrijfsnaam,
     scope,
@@ -334,9 +430,10 @@ export async function generateReportPdf(results) {
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-label">FTE totaal</div><div class="stat-value">${organisatieTotaal.realistisch.totaalFteHuidig}</div></div>
     <div class="stat-card"><div class="stat-label">Automatiseerbaar</div><div class="stat-value">${pct(organisatieTotaal.realistisch.reductiePercentageOrganisatie)}–${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)}</div></div>
-    <div class="stat-card"><div class="stat-label">Besparing/jaar</div><div class="stat-value">${eur(organisatieTotaal.realistisch.totaalKostenBesparingPerJaar)}–${eur(organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}</div></div>
+    <div class="stat-card"><div class="stat-label">Capaciteit die vrijkomt</div><div class="stat-value">${organisatieTotaal.realistisch.totaalFteWeg.toFixed(1)} FTE</div></div>
   </div>
-  ${waardetypeSummarySentence(rollen) ? `<p>${esc(waardetypeSummarySentence(rollen))}</p>` : ""}
+  ${capaciteitBlock(organisatieTotaal, rollen)}
+  ${financieelBlock(organisatieTotaal)}
   ${
     sectorAnalyse
       ? `<div class="urgency-banner urgency-${sectorAnalyse.urgentie.startsWith("Hoog") ? "hoog" : sectorAnalyse.urgentie.startsWith("Gemiddeld") ? "gemiddeld" : "laag"}">
@@ -347,13 +444,14 @@ export async function generateReportPdf(results) {
 
   <h2>Interne transformatie — overzicht per rol</h2>
   <table>
-    <thead><tr><th>Rol</th><th>FTE</th><th>Uren/wk</th><th>Kosten/uur</th><th>Reductie (R–A)</th><th>Besparing/jaar (R–A)</th></tr></thead>
+    <thead><tr><th>Rol</th><th>FTE</th><th>Uren/wk</th><th>Kosten/uur</th><th>Reductie (R–A)</th><th>Vrijkomend u/wk (R–A)</th><th>Als besparing ingeboekt (R–A)</th></tr></thead>
     <tbody>
       ${rollen
         .map(
           (r) => `<tr>
         <td>${esc(r.roleLabel ?? r.rolnaam)}</td><td>${r.fte}</td><td>${r.urenPerWeek}</td><td>${eur(r.kostenPerUur)}</td>
         <td>${pct(r.scenarios.realistisch.reductiePercentage)} – ${pct(r.scenarios.agressief.reductiePercentage)}</td>
+        <td>${Math.round(r.scenarios.realistisch.automatiseerbareUrenPerWeek)} – ${Math.round(r.scenarios.agressief.automatiseerbareUrenPerWeek)}</td>
         <td>${eur(r.scenarios.realistisch.kostenBesparingPerJaar)} – ${eur(r.scenarios.agressief.kostenBesparingPerJaar)}</td>
       </tr>`
         )
@@ -432,6 +530,8 @@ export async function generateReportPdf(results) {
           .join("")
   }
 
+  ${taakprofielBlock(rollen)}
+
   <h2>Detail per rol — taakverdeling &amp; competenties</h2>
   ${rollen
     .map(
@@ -498,6 +598,15 @@ export async function generateReportPdf(results) {
 </body>
 </html>`;
 
+  return html;
+}
+
+/**
+ * Genereert het gecombineerde eindrapport als PDF-buffer via Puppeteer.
+ * @param {object} results - het resultaat-object zoals opgeslagen in results.json
+ */
+export async function generateReportPdf(results) {
+  const html = buildReportHtml(results);
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
