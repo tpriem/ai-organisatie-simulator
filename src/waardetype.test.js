@@ -124,8 +124,8 @@ test("de herkomst telt handmatige keuzes en wie afwijkt van Claude", () => {
     stelWaardetypeIn(rol("B"), "kostenreductie", { nu: NU }), // bevestigt Claude
     rol("C"),
   ];
-  assert.deepEqual(waardetypeHerkomst(rollen), { totaal: 3, handmatig: 2, afwijkend: 1 });
-  assert.deepEqual(waardetypeHerkomst(null), { totaal: 0, handmatig: 0, afwijkend: 0 });
+  assert.deepEqual(waardetypeHerkomst(rollen), { totaal: 3, handmatig: 2, afwijkend: 1, bevestigd: 1 });
+  assert.deepEqual(waardetypeHerkomst(null), { totaal: 0, handmatig: 0, afwijkend: 0, bevestigd: 0 });
 });
 
 test("een bijgestuurde rol verschuift de bestemmingsverdeling van de capaciteit", () => {
@@ -147,4 +147,93 @@ test("een bijgestuurde rol verschuift de bestemmingsverdeling van de capaciteit"
   assert.equal(bVoor.length, 1);
   assert.equal(bNa.length, 2, "nu twee bestemmingen");
   assert.ok(bNa.some((b) => b.waardetype === "kwaliteitsverbetering" && b.rollen === 1));
+});
+
+// ── Welke rollen moeten bevestigd worden ──────────────────────────────────────────────
+
+import { rollenDieBevestigingVragen, bevestigtInschatting } from "./waardetype.js";
+
+const metCapaciteit = (rolnaam, fteWeg, extra = {}) => ({
+  rolnaam,
+  roleId: rolnaam,
+  waardetype: "kostenreductie",
+  scenarios: { realistisch: { fteWeg } },
+  ...extra,
+});
+
+test("de kleinste groep die samen de helft van de capaciteit draagt", () => {
+  // Zoals bij Voorbeeld BV: de grootste rol haalt de helft niet alleen, dus er is een tweede
+  // nodig. Totaal 6 FTE: 2,5 is 42%, samen met de volgende 83%.
+  const r = rollenDieBevestigingVragen([
+    metCapaciteit("Klein", 0.5),
+    metCapaciteit("Groot", 2.5),
+    metCapaciteit("Middel", 2.5),
+    metCapaciteit("Heel klein", 0.5),
+  ]);
+  assert.deepEqual(r.rollen.map((x) => x.rolnaam), ["Groot", "Middel"]);
+  assert.ok(r.aandeelGedekt >= 0.5);
+  assert.ok(!r.rollen.some((x) => x.rolnaam === "Klein"), "de kleine rollen horen er niet bij");
+});
+
+test("een rol die alleen al meer dan de helft draagt staat er alleen", () => {
+  const r = rollenDieBevestigingVragen([metCapaciteit("Reus", 8), metCapaciteit("A", 1), metCapaciteit("B", 1)]);
+  assert.deepEqual(r.rollen.map((x) => x.rolnaam), ["Reus"]);
+  assert.ok(Math.abs(r.rollen[0].aandeel - 0.8) < 1e-9);
+});
+
+test("gelijke rollen geven een vaste uitkomst, ongeacht de volgorde", () => {
+  const a = rollenDieBevestigingVragen([metCapaciteit("B", 2), metCapaciteit("A", 2), metCapaciteit("C", 2), metCapaciteit("D", 2)]);
+  const b = rollenDieBevestigingVragen([metCapaciteit("D", 2), metCapaciteit("C", 2), metCapaciteit("A", 2), metCapaciteit("B", 2)]);
+  assert.deepEqual(a.rollen.map((x) => x.rolnaam), b.rollen.map((x) => x.rolnaam));
+});
+
+test("een bevestigde rol blijft in de groep, maar telt als bevestigd", () => {
+  // De groep hangt af van de capaciteit, niet van wat al is gedaan; anders verschuift de
+  // lijst telkens zodra iemand iets bevestigt.
+  const rollen = [stelWaardetypeIn(metCapaciteit("Groot", 4), "kostenreductie", { nu: NU }), metCapaciteit("Middel", 2.5), metCapaciteit("Klein", 0.5)];
+  const r = rollenDieBevestigingVragen(rollen);
+  const groot = r.rollen.find((x) => x.rolnaam === "Groot");
+  assert.equal(groot.bevestigd, true);
+  assert.equal(r.rollen.find((x) => x.rolnaam === "Middel")?.bevestigd ?? false, false);
+});
+
+test("het onbevestigde aandeel daalt zodra een rol is bevestigd", () => {
+  const voor = rollenDieBevestigingVragen([metCapaciteit("Groot", 4), metCapaciteit("Middel", 2.5)]);
+  const na = rollenDieBevestigingVragen([stelWaardetypeIn(metCapaciteit("Groot", 4), "kostenreductie", { nu: NU }), metCapaciteit("Middel", 2.5)]);
+  assert.ok(na.onbevestigdAandeel < voor.onbevestigdAandeel);
+  assert.equal(voor.alleBevestigd, false);
+});
+
+test("alles bevestigd betekent geen openstaande vraag", () => {
+  const rollen = [stelWaardetypeIn(metCapaciteit("Groot", 6), "kwaliteitsverbetering", { nu: NU }), metCapaciteit("Klein", 1)];
+  const r = rollenDieBevestigingVragen(rollen);
+  assert.equal(r.alleBevestigd, true);
+  assert.equal(r.onbevestigdAandeel, 0);
+});
+
+test("rollen zonder vrijgekomen capaciteit tellen niet mee", () => {
+  const r = rollenDieBevestigingVragen([metCapaciteit("Nul", 0), metCapaciteit("Echt", 3)]);
+  assert.deepEqual(r.rollen.map((x) => x.rolnaam), ["Echt"]);
+});
+
+test("zonder rollen of zonder capaciteit is er niets te bevestigen en geen fout", () => {
+  for (const invoer of [[], null, undefined, [metCapaciteit("Nul", 0)]]) {
+    const r = rollenDieBevestigingVragen(invoer);
+    assert.deepEqual(r.rollen, []);
+    assert.equal(r.alleBevestigd, true);
+  }
+});
+
+test("de drempel is instelbaar", () => {
+  const rollen = [metCapaciteit("A", 5), metCapaciteit("B", 3), metCapaciteit("C", 2)];
+  assert.equal(rollenDieBevestigingVragen(rollen, { drempel: 0.5 }).rollen.length, 1);
+  assert.equal(rollenDieBevestigingVragen(rollen, { drempel: 0.9 }).rollen.length, 3);
+});
+
+test("bevestigen van wat Claude al koos is iets anders dan aanpassen", () => {
+  const bevestigd = stelWaardetypeIn(rol("A", "kostenreductie"), "kostenreductie", { nu: NU });
+  const aangepast = stelWaardetypeIn(rol("A", "kostenreductie"), "capaciteitsgroei", { nu: NU });
+  assert.equal(bevestigtInschatting(bevestigd), true);
+  assert.equal(bevestigtInschatting(aangepast), false);
+  assert.equal(bevestigtInschatting(rol("A")), false, "een rol zonder handmatige keuze bevestigt niets");
 });

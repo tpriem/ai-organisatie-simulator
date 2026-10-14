@@ -100,5 +100,76 @@ export function waardetypeHerkomst(rollen) {
     handmatig: handmatig.length,
     // Waar de handmatige keuze afwijkt van wat Claude had gekozen.
     afwijkend: handmatig.filter((r) => r.waardetypeAI && r.waardetypeAI !== r.waardetype).length,
+    // Waar de adviseur de inschatting van Claude alleen heeft bevestigd.
+    bevestigd: handmatig.filter(bevestigtInschatting).length,
+  };
+}
+
+/**
+ * Bevestigt de adviseur alleen de inschatting van Claude, of wijkt de keuze ervan af?
+ * Dat verschil telt voor de lezer: "bevestigd" is iets anders dan "aangepast".
+ */
+export function bevestigtInschatting(rol) {
+  return isHandmatig(rol) && rol.waardetypeAI != null && rol.waardetypeAI === rol.waardetype;
+}
+
+/**
+ * Welke rollen moet een adviseur het waardetype van laten bevestigen?
+ *
+ * Gemeten: het waardetype is per rol meestal stabiel (vijf van zes rollen gaven in tien
+ * runs steeds hetzelfde antwoord), maar de bestemmingsverdeling in het kopgetal is dat
+ * niet, omdat de capaciteit zich concentreert. Eén rol met 40% van de vrijgekomen
+ * capaciteit wisselde één keer in tien runs, en de verdeling sprong daardoor van 71% naar
+ * 31% kwaliteitsverbetering. Een wissel bij een kleine rol beweegt het kopgetal nauwelijks;
+ * bij een grote rol keert hij het verhaal om.
+ *
+ * Dus niet alle rollen, maar de kleinste groep die samen de helft van de capaciteit
+ * draagt. Dat is de plek waar menselijke bevestiging het meeste oplevert.
+ *
+ * @param {object[]} rollen
+ * @param {object} opties
+ * @param {string} opties.scenario
+ * @param {number} opties.drempel aandeel van de totale capaciteit dat de groep samen moet dragen
+ * @returns {{ totaalFte, drempel, rollen, aandeelGedekt, onbevestigdAandeel, alleBevestigd }}
+ */
+export function rollenDieBevestigingVragen(rollen, { scenario = "realistisch", drempel = 0.5 } = {}) {
+  const lijst = (rollen ?? [])
+    .map((rol) => ({ rol, fte: rol.scenarios?.[scenario]?.fteWeg ?? 0 }))
+    .filter((x) => x.fte > 0);
+  const totaalFte = lijst.reduce((s, x) => s + x.fte, 0);
+
+  if (totaalFte <= 0) {
+    return { totaalFte: 0, drempel, rollen: [], aandeelGedekt: 0, onbevestigdAandeel: 0, alleBevestigd: true };
+  }
+
+  const idVan = (rol) => String(rol.roleId ?? rol.rolnaam);
+  // Grootste eerst; bij gelijke capaciteit op naam, zodat de uitkomst niet van volgorde afhangt.
+  const gesorteerd = [...lijst].sort((a, b) => b.fte - a.fte || idVan(a.rol).localeCompare(idVan(b.rol)));
+
+  const gekozen = [];
+  let som = 0;
+  for (const x of gesorteerd) {
+    if (som / totaalFte >= drempel) break;
+    gekozen.push(x);
+    som += x.fte;
+  }
+
+  const uit = gekozen.map((x) => ({
+    roleId: x.rol.roleId ?? x.rol.rolnaam,
+    rolnaam: x.rol.rolnaam,
+    roleLabel: x.rol.roleLabel ?? x.rol.rolnaam,
+    fteWeg: x.fte,
+    aandeel: x.fte / totaalFte,
+    bevestigd: isHandmatig(x.rol),
+  }));
+  const onbevestigd = uit.filter((r) => !r.bevestigd);
+
+  return {
+    totaalFte,
+    drempel,
+    rollen: uit,
+    aandeelGedekt: som / totaalFte,
+    onbevestigdAandeel: onbevestigd.reduce((s, r) => s + r.aandeel, 0),
+    alleBevestigd: onbevestigd.length === 0,
   };
 }

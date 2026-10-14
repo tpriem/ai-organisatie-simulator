@@ -13,7 +13,12 @@ import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.
 import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
 import { calculateMobiliteit } from "../../../../../src/mobiliteit.js";
 import { calculateScanDekking, matchKwaliteit } from "../../../../../src/scanDekking.js";
-import { isHandmatig, waardetypeHerkomst } from "../../../../../src/waardetype.js";
+import {
+  isHandmatig,
+  waardetypeHerkomst,
+  rollenDieBevestigingVragen,
+  bevestigtInschatting,
+} from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
 
@@ -31,6 +36,7 @@ const BESTEMMING_STIJL = {
 export function CapaciteitBestemming({ results }) {
   const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
   const herkomst = useMemo(() => waardetypeHerkomst(results.rollen), [results.rollen]);
+  const bevestiging = useMemo(() => rollenDieBevestigingVragen(results.rollen), [results.rollen]);
   if (bestemming.length === 0) return null;
 
   const alleenOnbepaald = bestemming.every((b) => b.waardetype === "onbepaald");
@@ -69,6 +75,27 @@ export function CapaciteitBestemming({ results }) {
 
       {/* Deze verdeling rust voor een deel op menselijk oordeel zodra een adviseur
           waardetypes heeft bijgestuurd; dat moet de lezer kunnen zien. */}
+      {/* Welke rollen nog bevestigd moeten worden: de kleinste groep die samen de helft van
+          de capaciteit draagt. Bij die rollen keert één afwijkende inschatting de verdeling om. */}
+      {bevestiging.rollen.length > 0 &&
+        (bevestiging.alleBevestigd ? (
+          <p className="mt-3 text-[11px] text-emerald-700">
+            De {bevestiging.rollen.length === 1 ? "rol die" : `${bevestiging.rollen.length} rollen die`} samen de helft
+            van de capaciteit {bevestiging.rollen.length === 1 ? "draagt is" : "dragen zijn"} bevestigd.
+          </p>
+        ) : (
+          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2 text-[11px] text-amber-800">
+            <span className="font-semibold">Nog te bevestigen:</span>{" "}
+            {bevestiging.rollen
+              .filter((r) => !r.bevestigd)
+              .map((r) => `${r.roleLabel} (${Math.round(r.aandeel * 100)}%)`)
+              .join(", ")}{" "}
+            — samen {Math.round(bevestiging.onbevestigdAandeel * 100)}% van de vrijgekomen capaciteit. Eén afwijkende
+            inschatting bij zulke rollen verschuift deze verdeling merkbaar. Open de rol en kies Bevestigen of
+            Bijsturen.
+          </p>
+        ))}
+
       {herkomst.handmatig > 0 && (
         <p className="mt-3 text-[11px] text-slate-500">
           Voor {herkomst.handmatig} van de {herkomst.totaal} {herkomst.totaal === 1 ? "rol" : "rollen"} is de bestemming
@@ -661,7 +688,7 @@ function getOrigineelTaken(role) {
 // wat een organisatie met de vrijgekomen tijd wil is haar keuze, niet die van een
 // taalmodel. Zodra de bestemming het kopgetal van het rapport bepaalt, moet de adviseur
 // die kunnen vastleggen.
-function WaardetypeBeheer({ id, role, onSaved }) {
+function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
   const [open, setOpen] = useState(false);
   const [reden, setReden] = useState("");
   const [bezig, setBezig] = useState(false);
@@ -704,7 +731,7 @@ function WaardetypeBeheer({ id, role, onSaved }) {
             {huidig?.label ?? "Waardetype nog niet bepaald"}
             {handmatig && (
               <span className="ml-1.5 rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
-                handmatig bepaald
+                {bevestigtInschatting(role) ? "bevestigd" : "handmatig bepaald"}
               </span>
             )}
           </p>
@@ -722,6 +749,26 @@ function WaardetypeBeheer({ id, role, onSaved }) {
           {open ? "Sluiten" : "Bijsturen"}
         </button>
       </div>
+
+      {/* Grote rollen vragen om een bevestiging: gemeten dat het waardetype per rol meestal
+          stabiel is, maar dat één wissel bij een rol met veel capaciteit het kopgetal
+          omkeert. Bevestigen kan in één klik; het is dezelfde actie als bijsturen. */}
+      {bevestiging && !bevestiging.bevestigd && huidig && (
+        <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2">
+          <p className="text-[11px] text-amber-800">
+            Deze rol draagt <span className="font-semibold">{Math.round(bevestiging.aandeel * 100)}%</span> van de
+            vrijgekomen capaciteit. Eén afwijkende inschatting verschuift hier het kopgetal merkbaar — bevestig het
+            waardetype of stuur het bij.
+          </p>
+          <button
+            onClick={() => kies(role.waardetype)}
+            disabled={bezig}
+            className="shrink-0 rounded-md bg-white border border-amber-300 px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+          >
+            Bevestigen
+          </button>
+        </div>
+      )}
 
       {open && (
         <div className="mt-2 border-t border-indigo-100 pt-2">
@@ -767,7 +814,7 @@ function WaardetypeBeheer({ id, role, onSaved }) {
   );
 }
 
-function WaardetypeBadge({ waardetype, toelichting, compact = false, handmatig = false }) {
+function WaardetypeBadge({ waardetype, toelichting, compact = false, handmatig = false, bevestigen = null }) {
   const w = getWaardetype(waardetype);
   if (!w) return null;
   if (compact) {
@@ -778,6 +825,14 @@ function WaardetypeBadge({ waardetype, toelichting, compact = false, handmatig =
       >
         {w.icon}
         {handmatig && <span className="text-indigo-500">*</span>}
+        {bevestigen && (
+          <span
+            className="ml-0.5 text-amber-500"
+            title={`Bevestig het waardetype: deze rol draagt ${Math.round(bevestigen.aandeel * 100)}% van de vrijgekomen capaciteit`}
+          >
+            ●
+          </span>
+        )}
       </span>
     );
   }
@@ -1073,7 +1128,7 @@ function VersieHistorie({ id, onHersteld }) {
   );
 }
 
-function TaakTable({ id, role, onSaved }) {
+function TaakTable({ id, role, onSaved, bevestiging = null }) {
   const identifier = role.roleId ?? role.rolnaam;
   const origineelTaken = useMemo(() => getOrigineelTaken(role), [role]);
   const savedTaken = role.takenAangepast ?? origineelTaken;
@@ -1151,7 +1206,7 @@ function TaakTable({ id, role, onSaved }) {
       {/* Opbouw van het rolblok: eerst wat er met het werk gebeurt (tijdbalk en
           taakverdeling), daarna pas wat dat voor competenties betekent. Zo komt de
           onderbouwing vóór de conclusie. */}
-      <WaardetypeBeheer id={id} role={role} onSaved={onSaved} />
+      <WaardetypeBeheer id={id} role={role} onSaved={onSaved} bevestiging={bevestiging} />
       <BeroepsmatchRegel beroepsmatch={role.beroepsmatch} />
       {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
 
@@ -1476,6 +1531,10 @@ export default function ClientWorkspace({ id }) {
     );
 
   const results = client.results;
+  // Bewust geen hook: hierboven staan vroege returns, en hooks na een voorwaardelijke
+  // return geven een crash. De berekening is goedkoop.
+  const bevestiging = rollenDieBevestigingVragen(results?.rollen ?? []);
+  const bevestigingVan = (r) => bevestiging.rollen.find((x) => x.roleId === (r.roleId ?? r.rolnaam)) ?? null;
   const sectorInfo = sector ? getSector(sector) : null;
   const hasAnyAnswer = Object.keys(impact).length > 0 || Object.keys(readiness).length > 0;
 
@@ -2002,7 +2061,13 @@ export default function ClientWorkspace({ id }) {
                           <td className="py-2 px-3 w-4 text-indigo-400">{isOpen ? "▾" : "▸"}</td>
                           <td className="py-2 px-3 font-medium text-slate-800">
                             <span className="inline-flex items-center gap-1.5">
-                              <WaardetypeBadge waardetype={r.waardetype} toelichting={r.waardetypeToelichting} handmatig={isHandmatig(r)} compact />
+                              <WaardetypeBadge
+                                waardetype={r.waardetype}
+                                toelichting={r.waardetypeToelichting}
+                                handmatig={isHandmatig(r)}
+                                bevestigen={bevestigingVan(r)?.bevestigd === false ? bevestigingVan(r) : null}
+                                compact
+                              />
                               {r.roleLabel ?? r.rolnaam}
                             </span>
                           </td>
@@ -2022,6 +2087,7 @@ export default function ClientWorkspace({ id }) {
                                 <TaakTable
                                   id={id}
                                   role={r}
+                                  bevestiging={bevestigingVan(r)}
                                   onSaved={(updated) => setClient((c) => ({ ...c, results: updated }))}
                                 />
                               </div>

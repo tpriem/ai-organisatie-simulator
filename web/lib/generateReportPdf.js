@@ -5,7 +5,13 @@ import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
-import { dekkingZinnen, beroepsmatchRegel, waardetypeHerkomstZin, waardetypeHandmatigRegel } from "../../src/rapportTeksten.js";
+import {
+  dekkingZinnen,
+  beroepsmatchRegel,
+  waardetypeHerkomstZin,
+  waardetypeHandmatigRegel,
+  bevestigingZin,
+} from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
 /**
@@ -115,7 +121,12 @@ function capaciteitBlock(organisatieTotaal, rollen) {
     heeftBestemming
       ? `<p class="disclaimer">Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.${
           waardetypeHerkomstZin(rollen) ? ` ${esc(waardetypeHerkomstZin(rollen))}` : ""
-        }</p>`
+        }</p>
+      ${
+        bevestigingZin(rollen)
+          ? `<p class="disclaimer"${bevestigingZin(rollen).startsWith("Let op") ? ' style="color:#b45309;"' : ""}>${esc(bevestigingZin(rollen))}</p>`
+          : ""
+      }`
       : ""
   }`;
 }

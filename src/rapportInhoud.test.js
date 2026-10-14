@@ -6,8 +6,14 @@ import { calculateTaakprofiel } from "./taakprofiel.js";
 import { calculateCompetentieProfiel } from "./competencyProfile.js";
 import { calculateCompetentieAgenda } from "./competencyAgenda.js";
 import { calculateMobiliteit } from "./mobiliteit.js";
-import { dekkingZinnen, beroepsmatchRegel, waardetypeHerkomstZin, waardetypeHandmatigRegel } from "./rapportTeksten.js";
-import { stelWaardetypeIn } from "./waardetype.js";
+import {
+  dekkingZinnen,
+  beroepsmatchRegel,
+  waardetypeHerkomstZin,
+  waardetypeHandmatigRegel,
+  bevestigingZin,
+} from "./rapportTeksten.js";
+import { stelWaardetypeIn, rollenDieBevestigingVragen } from "./waardetype.js";
 import { nl } from "./formatNl.js";
 import { buildReportHtml } from "../web/lib/generateReportPdf.js";
 import { generateReportDocx } from "../web/lib/generateReport.js";
@@ -75,7 +81,7 @@ function metCompetenties(r) {
   return r;
 }
 
-function fixture({ competenties = true, mislukt = false, handmatig = false } = {}) {
+function fixture({ competenties = true, mislukt = false, handmatig = false, bevestigd = false } = {}) {
   const rollen = [
     rol("Klantenservice medewerker", "Klantenservice", 8, [
       { omschrijving: "Bellen", categorie: "klantcontact", aandeel: 0.7 },
@@ -97,6 +103,13 @@ function fixture({ competenties = true, mislukt = false, handmatig = false } = {
       reden: "Servicekwaliteit is hier het onderscheidend vermogen",
       nu: new Date("2026-10-15T09:00:00.000Z"),
     });
+  }
+  // De adviseur bevestigt het waardetype van de grote rollen zoals het er staat.
+  if (bevestigd) {
+    for (const x of rollenDieBevestigingVragen(rollen).rollen) {
+      const i = rollen.findIndex((r) => (r.roleId ?? r.rolnaam) === x.roleId);
+      rollen[i] = stelWaardetypeIn(rollen[i], rollen[i].waardetype, { nu: new Date("2026-10-15T09:00:00.000Z") });
+    }
   }
   return {
     bedrijfsnaam: "Testklant BV",
@@ -343,4 +356,56 @@ test("het rapport noemt het taalmodel niet bij naam", () => {
   const { rollen } = fixture({ handmatig: true });
   assert.ok(!waardetypeHandmatigRegel(rollen[0]).includes("Claude"));
   assert.ok(!waardetypeHerkomstZin(rollen).includes("Claude"));
+});
+
+// ── Bevestiging van de grote rollen ───────────────────────────────────────────────────
+
+test("de fixture heeft grote rollen die om bevestiging vragen", () => {
+  // Zonder dat zijn de volgende toetsen leeg.
+  const b = rollenDieBevestigingVragen(fixture().rollen);
+  assert.ok(b.rollen.length >= 1);
+  assert.equal(b.alleBevestigd, false);
+});
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: niets bevestigd — het rapport waarschuwt en noemt de rollen met hun aandeel`, async () => {
+    const { results, [formaat]: tekst } = await rapporten();
+    const zin = bevestigingZin(results.rollen);
+    assert.ok(zin.startsWith("Let op"), zin);
+    assert.ok(tekst.includes(zin), "waarschuwing ontbreekt in het rapport");
+    const b = rollenDieBevestigingVragen(results.rollen);
+    assert.ok(zin.includes(`${Math.round(b.onbevestigdAandeel * 100)}%`), "aandeel ontbreekt in de zin");
+  });
+
+  test(`${formaat}: alles bevestigd — het rapport meldt dat zonder waarschuwing`, async () => {
+    const { results, [formaat]: tekst } = await rapporten({ bevestigd: true });
+    const zin = bevestigingZin(results.rollen);
+    assert.ok(zin.includes("door de adviseur bevestigd") && !zin.startsWith("Let op"), zin);
+    assert.ok(tekst.includes(zin));
+    assert.ok(!tekst.includes("nog niet door de adviseur bevestigd"));
+  });
+
+  test(`${formaat}: bevestigen van wat al stond leest als bevestigd, niet als aangepast`, async () => {
+    const { results, [formaat]: tekst } = await rapporten({ bevestigd: true });
+    assert.ok(tekst.includes("Bevestigd door de adviseur."), "regel bij de rol ontbreekt");
+    const zin = waardetypeHerkomstZin(results.rollen);
+    assert.ok(zin.includes("door de adviseur bevestigd"), zin);
+    assert.ok(!zin.includes("afwijkt") && !zin.includes("wijken"), "er is niets afwijkends");
+    assert.ok(!tekst.includes("De inschatting op basis van het functieprofiel was"), "er is niets aangepast");
+  });
+
+  test(`${formaat}: gemengd — één rol aangepast, de rest nog open`, async () => {
+    const { results, [formaat]: tekst } = await rapporten({ handmatig: true });
+    const zin = bevestigingZin(results.rollen);
+    assert.ok(tekst.includes(zin));
+    const b = rollenDieBevestigingVragen(results.rollen);
+    // De aangepaste rol telt als nagelopen: hij staat niet meer in de lijst van open rollen.
+    const aangepast = results.rollen[0].roleLabel;
+    if (!b.alleBevestigd) assert.ok(!zin.includes(aangepast), `${aangepast} is bijgesteld en hoort niet meer open te staan`);
+  });
+}
+
+test("een rapport zonder rollen met capaciteit zegt niets over bevestiging", () => {
+  assert.equal(bevestigingZin([]), null);
+  assert.equal(bevestigingZin(null), null);
 });

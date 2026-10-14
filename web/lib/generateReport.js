@@ -20,7 +20,13 @@ import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
-import { dekkingZinnen, beroepsmatchRegel, waardetypeHerkomstZin, waardetypeHandmatigRegel } from "../../src/rapportTeksten.js";
+import {
+  dekkingZinnen,
+  beroepsmatchRegel,
+  waardetypeHerkomstZin,
+  waardetypeHandmatigRegel,
+  bevestigingZin,
+} from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
@@ -248,6 +254,18 @@ function capaciteitSectie(organisatieTotaal, rollen) {
         { italics: true, size: 18, color: "64748B" }
       )
     );
+    // Hoe stevig is de verdeling: zijn de rollen die samen de helft van de capaciteit
+    // dragen door de adviseur nagelopen?
+    const bevestiging = bevestigingZin(rollen);
+    if (bevestiging) {
+      out.push(
+        paragraph(bevestiging, {
+          italics: true,
+          size: 18,
+          color: bevestiging.startsWith("Let op") ? "B45309" : "64748B",
+        })
+      );
+    }
   }
 
   return out;

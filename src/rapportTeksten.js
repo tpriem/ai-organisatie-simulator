@@ -1,7 +1,7 @@
 import { calculateScanDekking, matchKwaliteit } from "./scanDekking.js";
 import { nl } from "./formatNl.js";
 import { getWaardetype } from "./config.js";
-import { isHandmatig, waardetypeHerkomst } from "./waardetype.js";
+import { isHandmatig, waardetypeHerkomst, bevestigtInschatting, rollenDieBevestigingVragen } from "./waardetype.js";
 
 /**
  * Teksten over dekking en bewijskracht, voor de rapporten.
@@ -82,11 +82,18 @@ export function dekkingZinnen(results) {
 export function waardetypeHerkomstZin(rollen) {
   const h = waardetypeHerkomst(rollen);
   if (h.handmatig === 0) return null;
+  const rollenTekst = `${h.totaal} ${h.totaal === 1 ? "rol" : "rollen"}`;
+
+  // Alleen bevestigd is iets anders dan aangepast: het eerste zegt dat een mens de
+  // inschatting heeft nagelopen en onderschrijft, het tweede dat hij een andere keuze maakte.
+  if (h.afwijkend === 0 && h.bevestigd === h.handmatig) {
+    return `Voor ${h.handmatig} van de ${rollenTekst} is de bestemming door de adviseur bevestigd.`;
+  }
   return (
-    `Voor ${h.handmatig} van de ${h.totaal} ${h.totaal === 1 ? "rol" : "rollen"} is de bestemming handmatig bepaald` +
+    `Voor ${h.handmatig} van de ${rollenTekst} is de bestemming handmatig vastgelegd` +
     (h.afwijkend > 0
-      ? `; ${h.afwijkend} daarvan wijkt af van de inschatting op basis van het functieprofiel.`
-      : ", in lijn met de inschatting op basis van het functieprofiel.")
+      ? `; daarvan ${h.afwijkend === 1 ? "wijkt 1" : `wijken ${h.afwijkend}`} af van de inschatting op basis van het functieprofiel.`
+      : ".")
   );
 }
 
@@ -96,9 +103,38 @@ export function waardetypeHerkomstZin(rollen) {
  */
 export function waardetypeHandmatigRegel(rol) {
   if (!isHandmatig(rol)) return null;
+  if (bevestigtInschatting(rol)) return "Bevestigd door de adviseur.";
   const ai = getWaardetype(rol.waardetypeAI);
   const huidig = getWaardetype(rol.waardetype);
   return ai && huidig && ai.id !== huidig.id
     ? `Handmatig bepaald. De inschatting op basis van het functieprofiel was: ${ai.label.toLowerCase()}.`
     : "Handmatig bepaald.";
+}
+
+/**
+ * Zegt het rapport hoe stevig de bestemming van de grote rollen is.
+ *
+ * Het waardetype is per rol meestal stabiel, maar de verdeling in het kopgetal is dat niet
+ * als de capaciteit zich concentreert: bij één rol met 40% van de capaciteit sprong de
+ * verdeling in een van tien runs van 71% naar 31% kwaliteitsverbetering. Of de rollen die
+ * samen de helft dragen door een mens zijn nagelopen, bepaalt dus hoeveel gewicht de
+ * lezer aan die verdeling kan geven — en hoort in het rapport te staan.
+ *
+ * @returns {string|null}
+ */
+export function bevestigingZin(rollen) {
+  const b = rollenDieBevestigingVragen(rollen);
+  if (b.rollen.length === 0) return null;
+
+  if (b.alleBevestigd) {
+    return b.rollen.length === 1
+      ? "De bestemming van de rol die de helft van de vrijgekomen capaciteit draagt is door de adviseur bevestigd."
+      : `De bestemming van de ${b.rollen.length} rollen die samen de helft van de vrijgekomen capaciteit dragen is door de adviseur bevestigd.`;
+  }
+
+  const open = b.rollen.filter((r) => !r.bevestigd);
+  return (
+    `Let op: de bestemming van ${open.map((r) => r.roleLabel).join(", ")} is een inschatting op basis van het functieprofiel en nog niet door de adviseur bevestigd; ` +
+    `${open.length === 1 ? "deze rol draagt" : "deze rollen dragen"} samen ${Math.round(b.onbevestigdAandeel * 100)}% van de vrijgekomen capaciteit.`
+  );
 }
