@@ -12,8 +12,9 @@ import { calculateCompetentieProfiel, driedeling } from "../../../../../src/comp
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
 import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
 import { calculateMobiliteit } from "../../../../../src/mobiliteit.js";
-import { calculateScanDekking } from "../../../../../src/scanDekking.js";
+import { calculateScanDekking, matchKwaliteit } from "../../../../../src/scanDekking.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
+import { nl } from "../../../../../src/formatNl.js";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
 // die de analyse blootlegt: kostenreductie levert een eenmalig voordeel dat
@@ -52,7 +53,7 @@ export function CapaciteitBestemming({ results }) {
                   {type ? `${type.icon} ${type.label}` : "Nog niet bepaald"}
                 </span>
                 <span className="text-xs text-slate-500 shrink-0">
-                  {b.fte.toFixed(1)} FTE · {Math.round(b.urenPerWeek)} u/week ·{" "}
+                  {nl(b.fte, 1)} FTE · {Math.round(b.urenPerWeek)} u/week ·{" "}
                   {b.rollen} {b.rollen === 1 ? "rol" : "rollen"}
                 </span>
               </div>
@@ -78,8 +79,8 @@ const MATCH_KLEUR = {
 // die rol niet — zonder foutmelding. Daarom hoort dit zichtbaar te zijn bij de rol zelf.
 function BeroepsmatchRegel({ beroepsmatch }) {
   if (!beroepsmatch?.label) return null;
-  const kwaliteit =
-    typeof beroepsmatch.score !== "number" ? null : beroepsmatch.score >= 0.8 ? "sterk" : beroepsmatch.score >= 0.5 ? "matig" : "zwak";
+  // Dezelfde indeling als in de rapporten en het dekkingspaneel; één bron voor de drempels.
+  const kwaliteit = matchKwaliteit(beroepsmatch.score);
   const stijl = MATCH_KLEUR[kwaliteit] ?? { stip: "bg-slate-300", tekst: "text-slate-400" };
 
   return (
@@ -88,7 +89,7 @@ function BeroepsmatchRegel({ beroepsmatch }) {
       <span className="font-medium text-slate-600">{beroepsmatch.label}</span>
       <span className={`inline-flex items-center gap-1 ${stijl.tekst}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${stijl.stip}`} />
-        match {beroepsmatch.score.toFixed(2)}
+        match {nl(beroepsmatch.score, 2)}
       </span>
       {kwaliteit !== "sterk" && <span className="text-amber-700">— controleer of dit de juiste rol is</span>}
     </p>
@@ -127,7 +128,7 @@ export function Mobiliteit({ results }) {
           <div key={h.roleId} className="rounded-lg border border-slate-200 p-3">
             <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
               <p className="text-sm font-medium text-slate-800">{h.roleLabel}</p>
-              <p className="text-xs text-slate-500">{h.vrijgekomenFte.toFixed(2)} FTE komt vrij</p>
+              <p className="text-xs text-slate-500">{nl(h.vrijgekomenFte, 2)} FTE komt vrij</p>
             </div>
 
             <div className="flex items-center gap-3 mb-1.5">
@@ -182,7 +183,7 @@ export function Taakprofiel({ results }) {
   const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
   const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
 
-  const pp = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pp`;
+  const pp = (v) => `${v > 0 ? "+" : "−"}${nl(Math.abs(v * 100), 1)} pp`;
 
   return (
     <Section title="Waar het werk uit bestaat — nu en straks" icon="🧭">
@@ -225,7 +226,7 @@ export function Taakprofiel({ results }) {
               </div>
             </div>
             <span className="text-[11px] text-slate-500 w-24 text-right shrink-0 tabular-nums">
-              {(c.aandeelNu * 100).toFixed(0)}% → {(c.aandeelStraks * 100).toFixed(0)}%
+              {nl((c.aandeelNu * 100), 0)}% → {nl((c.aandeelStraks * 100), 0)}%
             </span>
             <span
               className={`text-[11px] w-20 text-right shrink-0 tabular-nums ${
@@ -315,8 +316,8 @@ export function CompetentieAgenda({ results }) {
                   <td className="py-2 px-3 text-right text-slate-600 cursor-help" title={c.rollen.join("\n")}>
                     {c.aantalRollen}
                   </td>
-                  <td className="py-2 px-3 text-right text-slate-600">{c.fte.toFixed(1)}</td>
-                  <td className="py-2 px-3 text-right text-slate-600">{c.gemiddeldBelang.toFixed(1)}</td>
+                  <td className="py-2 px-3 text-right text-slate-600">{nl(c.fte, 1)}</td>
+                  <td className="py-2 px-3 text-right text-slate-600">{nl(c.gemiddeldBelang, 1)}</td>
                 </tr>
               );
             })}
@@ -380,7 +381,7 @@ export function ScanDekking({ results }) {
             {d.zwakkeMatches.map((m) => (
               <li key={m.roleId} className="text-[11px] text-amber-800">
                 <span className="font-medium">{m.roleLabel}</span> → {m.beroep}{" "}
-                <span className="text-amber-600">(match {m.score.toFixed(2)})</span>
+                <span className="text-amber-600">(match {nl(m.score, 2)})</span>
               </li>
             ))}
           </ul>
@@ -513,7 +514,7 @@ function OrgChartBar({ label, value, maxValue, colorClass }) {
       <div className="flex-1 h-5 rounded bg-slate-100 overflow-hidden">
         <div className={`h-full rounded ${colorClass}`} style={{ width: `${widthPct}%` }} />
       </div>
-      <span className="w-14 shrink-0 text-right text-xs font-medium text-slate-700">{value.toFixed(2)}</span>
+      <span className="w-14 shrink-0 text-right text-xs font-medium text-slate-700">{nl(value, 2)}</span>
     </div>
   );
 }
@@ -547,7 +548,7 @@ function HierarchieKnoop({ knoop, maxFte }) {
         <div className="flex items-baseline justify-between gap-3">
           <p className="text-sm font-medium text-slate-800">{knoop.rolnaam}</p>
           <p className="text-xs text-slate-500 shrink-0">
-            {knoop.fteHuidig.toFixed(1)} → {knoop.fteRealistisch.toFixed(2)} FTE
+            {nl(knoop.fteHuidig, 1)} → {nl(knoop.fteRealistisch, 2)} FTE
             {krimp > 0 && <span className="text-slate-400"> · −{krimp}%</span>}
           </p>
         </div>
@@ -557,7 +558,7 @@ function HierarchieKnoop({ knoop, maxFte }) {
         {stuurtAan && (
           <p className="text-[11px] text-slate-400 mt-0.5">
             stuurt {knoop.spanDirect} {knoop.spanDirect === 1 ? "rol" : "rollen"} aan ·{" "}
-            {knoop.spanTotaalHuidig.toFixed(1)} → {knoop.spanTotaalRealistisch.toFixed(2)} FTE onder zich
+            {nl(knoop.spanTotaalHuidig, 1)} → {nl(knoop.spanTotaalRealistisch, 2)} FTE onder zich
             {spanKrimp > 0 && ` (−${spanKrimp}%)`}
           </p>
         )}
@@ -583,7 +584,7 @@ function OrgChartAfdeling({ afdeling, maxAfdelingFte, maxFte }) {
         <div className="flex items-baseline justify-between gap-3 mb-2">
           <p className="text-sm font-semibold text-slate-800">{afdeling.afdeling}</p>
           <p className="text-xs text-slate-500 shrink-0">
-            {afdeling.fteHuidig.toFixed(1)} → {afdeling.fteRealistisch.toFixed(2)} FTE
+            {nl(afdeling.fteHuidig, 1)} → {nl(afdeling.fteRealistisch, 2)} FTE
             {krimp > 0 && <span className="text-slate-400"> · −{krimp}%</span>}
           </p>
         </div>
@@ -1036,7 +1037,7 @@ function TaakTable({ id, role, onSaved }) {
         <span className="font-medium text-slate-700">
           {Math.round(liveResult.scenarios.realistisch.automatiseerbareUrenPerWeek)} uur per week
         </span>{" "}
-        vrij ({liveResult.scenarios.realistisch.fteWeg.toFixed(2)} FTE), agressief{" "}
+        vrij ({nl(liveResult.scenarios.realistisch.fteWeg, 2)} FTE), agressief{" "}
         {Math.round(liveResult.scenarios.agressief.automatiseerbareUrenPerWeek)} uur.
       </p>
       <p className="text-[11px] text-slate-400 mb-2">
@@ -1635,8 +1636,8 @@ export default function ClientWorkspace({ id }) {
                     <tr className="bg-slate-50 border-t border-slate-200 font-medium text-slate-700">
                       <td className="py-1.5 px-3">Totaal / gewogen gem.</td>
                       <td className="py-1.5 px-3"></td>
-                      <td className="py-1.5 px-3">{client.rosterCheck.totalen.totaalFte.toFixed(1)}</td>
-                      <td className="py-1.5 px-3">{client.rosterCheck.totalen.gewogenUrenPerWeek.toFixed(1)}</td>
+                      <td className="py-1.5 px-3">{nl(client.rosterCheck.totalen.totaalFte, 1)}</td>
+                      <td className="py-1.5 px-3">{nl(client.rosterCheck.totalen.gewogenUrenPerWeek, 1)}</td>
                       <td className="py-1.5 px-3">
                         {new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(
                           client.rosterCheck.totalen.gewogenKostenPerUur
@@ -1684,8 +1685,8 @@ export default function ClientWorkspace({ id }) {
                           <tr key={s.afdeling} className="border-b border-slate-100 last:border-0">
                             <td className="py-1.5 px-3 text-slate-700 font-medium">{s.afdeling}</td>
                             <td className="py-1.5 px-3">{s.aantalRollen}</td>
-                            <td className="py-1.5 px-3">{s.totaalFte.toFixed(1)}</td>
-                            <td className="py-1.5 px-3">{s.gewogenUrenPerWeek.toFixed(1)}</td>
+                            <td className="py-1.5 px-3">{nl(s.totaalFte, 1)}</td>
+                            <td className="py-1.5 px-3">{nl(s.gewogenUrenPerWeek, 1)}</td>
                             <td className="py-1.5 px-3">
                               {new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR" }).format(
                                 s.gewogenKostenPerUur
@@ -1795,9 +1796,7 @@ export default function ClientWorkspace({ id }) {
               />
               <StatCard
                 label="Automatiseerbaar"
-                value={`${(results.organisatieTotaal.realistisch.reductiePercentageOrganisatie * 100).toFixed(
-                  0
-                )}–${(results.organisatieTotaal.agressief.reductiePercentageOrganisatie * 100).toFixed(0)}%`}
+                value={`${nl((results.organisatieTotaal.realistisch.reductiePercentageOrganisatie * 100), 0)}–${nl((results.organisatieTotaal.agressief.reductiePercentageOrganisatie * 100), 0)}%`}
                 sub="realistisch – agressief"
               />
               {/* De kop-KPI is de vrijgekomen capaciteit, niet de besparing. Dezelfde
@@ -1805,7 +1804,7 @@ export default function ClientWorkspace({ id }) {
                   in plaats van 'm te beantwoorden met kostenreductie. */}
               <StatCard
                 label="Capaciteit die vrijkomt"
-                value={`${results.organisatieTotaal.realistisch.totaalFteWeg.toFixed(1)} FTE`}
+                value={`${nl(results.organisatieTotaal.realistisch.totaalFteWeg, 1)} FTE`}
                 sub={`${Math.round(
                   results.organisatieTotaal.realistisch.totaalVrijgekomenUrenPerWeek ??
                     results.organisatieTotaal.realistisch.totaalFteWeg * 36
@@ -1846,7 +1845,7 @@ export default function ClientWorkspace({ id }) {
                     <span className={`mt-1 h-2.5 w-2.5 rounded-full shrink-0 ${c.dot}`} />
                     <div>
                       <p className={`text-sm font-semibold ${c.text}`}>
-                        Eindscore {results.sectorAnalyse.eindscore.toFixed(1)} / 5 — {results.sectorAnalyse.urgentie}
+                        Eindscore {nl(results.sectorAnalyse.eindscore, 1)} / 5 — {results.sectorAnalyse.urgentie}
                       </p>
                       <p className="text-sm text-slate-600 mt-1">{results.sectorAnalyse.positionering}</p>
                     </div>
@@ -1883,10 +1882,10 @@ export default function ClientWorkspace({ id }) {
                           </td>
                           <td className="py-2 px-3">{r.fte}</td>
                           <td className="py-2 px-3">
-                            {r.fte} → <span className="font-medium">{r.scenarios.realistisch.fteOver.toFixed(2)}</span>
+                            {r.fte} → <span className="font-medium">{nl(r.scenarios.realistisch.fteOver, 2)}</span>
                           </td>
                           <td className="py-2 px-3">
-                            {r.fte} → <span className="font-medium">{r.scenarios.agressief.fteOver.toFixed(2)}</span>
+                            {r.fte} → <span className="font-medium">{nl(r.scenarios.agressief.fteOver, 2)}</span>
                           </td>
                         </tr>
                         {isOpen && (
@@ -1958,9 +1957,9 @@ export default function ClientWorkspace({ id }) {
                         <tr key={s.afdeling} className="border-b border-slate-100 last:border-0">
                           <td className="py-1.5 px-3 text-slate-700 font-medium">{s.afdeling}</td>
                           <td className="py-1.5 px-3">{s.aantalRollen}</td>
-                          <td className="py-1.5 px-3">{s.scenarios.realistisch.totaalFteHuidig.toFixed(1)}</td>
-                          <td className="py-1.5 px-3">{s.scenarios.realistisch.totaalFteOver.toFixed(2)}</td>
-                          <td className="py-1.5 px-3">{s.scenarios.agressief.totaalFteOver.toFixed(2)}</td>
+                          <td className="py-1.5 px-3">{nl(s.scenarios.realistisch.totaalFteHuidig, 1)}</td>
+                          <td className="py-1.5 px-3">{nl(s.scenarios.realistisch.totaalFteOver, 2)}</td>
+                          <td className="py-1.5 px-3">{nl(s.scenarios.agressief.totaalFteOver, 2)}</td>
                           <td className="py-1.5 px-3">
                             €{Math.round(s.scenarios.realistisch.totaalKostenBesparingPerJaar / 1000)}k–€
                             {Math.round(s.scenarios.agressief.totaalKostenBesparingPerJaar / 1000)}k
@@ -2014,7 +2013,7 @@ export default function ClientWorkspace({ id }) {
                       <div className="flex items-baseline justify-between gap-3">
                         <p className="text-sm font-semibold">Hele organisatie</p>
                         <p className="text-sm">
-                          {chart.organisatie.fteHuidig.toFixed(1)} → {chart.organisatie.fteRealistisch.toFixed(2)} FTE
+                          {nl(chart.organisatie.fteHuidig, 1)} → {nl(chart.organisatie.fteRealistisch, 2)} FTE
                           {orgKrimp > 0 && <span className="text-indigo-200"> · −{orgKrimp}%</span>}
                         </p>
                       </div>

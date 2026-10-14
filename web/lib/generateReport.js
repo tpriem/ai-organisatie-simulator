@@ -21,6 +21,7 @@ import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
 import { dekkingZinnen, beroepsmatchRegel } from "../../src/rapportTeksten.js";
+import { nl } from "../../src/formatNl.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -144,9 +145,9 @@ function subtotalenTable(subtotalenPerAfdeling) {
       children: [
         cell(s.afdeling, { width: widths[0], shaded }),
         cell(String(s.aantalRollen), { width: widths[1], shaded }),
-        cell(s.scenarios.realistisch.totaalFteHuidig.toFixed(1), { width: widths[2], shaded }),
-        cell(s.scenarios.realistisch.totaalFteOver.toFixed(2), { width: widths[3], shaded }),
-        cell(s.scenarios.agressief.totaalFteOver.toFixed(2), { width: widths[4], shaded }),
+        cell(nl(s.scenarios.realistisch.totaalFteHuidig, 1), { width: widths[2], shaded }),
+        cell(nl(s.scenarios.realistisch.totaalFteOver, 2), { width: widths[3], shaded }),
+        cell(nl(s.scenarios.agressief.totaalFteOver, 2), { width: widths[4], shaded }),
         cell(
           `${eur(s.scenarios.realistisch.totaalKostenBesparingPerJaar)} – ${eur(s.scenarios.agressief.totaalKostenBesparingPerJaar)}`,
           { width: widths[5], shaded }
@@ -219,7 +220,7 @@ function capaciteitSectie(organisatieTotaal, rollen) {
 
   const out = [
     paragraph(
-      `Er komt ${t.totaalFteWeg.toFixed(1)} FTE aan capaciteit vrij (${Math.round(uren)} uur per week, realistisch scenario).` +
+      `Er komt ${nl(t.totaalFteWeg, 1)} FTE aan capaciteit vrij (${Math.round(uren)} uur per week, realistisch scenario).` +
         (heeftBestemming ? " Per rol is ingeschat welke bestemming het meest voor de hand ligt:" : ""),
       { bold: true }
     ),
@@ -231,7 +232,7 @@ function capaciteitSectie(organisatieTotaal, rollen) {
       const type = getWaardetype(b.waardetype);
       out.push(
         paragraph(
-          `${type ? `${type.icon} ${type.label}` : "Nog niet bepaald"} — ${b.fte.toFixed(1)} FTE · ${b.rollen} ${
+          `${type ? `${type.icon} ${type.label}` : "Nog niet bepaald"} — ${nl(b.fte, 1)} FTE · ${b.rollen} ${
             b.rollen === 1 ? "rol" : "rollen"
           }`,
           { size: 18, color: "475569" }
@@ -270,7 +271,7 @@ function taakprofielSectie(rollen) {
   const max = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
   const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
   const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
-  const pp = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pp`;
+  const pp = (v) => `${v > 0 ? "+" : "−"}${nl(Math.abs(v * 100), 1)} pp`;
 
   const out = [
     heading("Waar het werk uit bestaat — nu en straks"),
@@ -351,11 +352,11 @@ function krimpPct(nu, straks) {
 }
 
 function fteBalken(out, huidig, realistisch, agressief, schaal) {
-  out.push(paragraph(`Huidig — ${huidig.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(paragraph(`Huidig — ${nl(huidig, 2)} FTE`, { size: 16, color: "64748B" }));
   out.push(miniBar(huidig, schaal, "94A3B8"));
-  out.push(paragraph(`Realistisch — ${realistisch.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(paragraph(`Realistisch — ${nl(realistisch, 2)} FTE`, { size: 16, color: "64748B" }));
   out.push(miniBar(realistisch, schaal, "6366F1"));
-  out.push(paragraph(`Agressief — ${agressief.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(paragraph(`Agressief — ${nl(agressief, 2)} FTE`, { size: 16, color: "64748B" }));
   out.push(miniBar(agressief, schaal, "C7D2FE"));
 }
 
@@ -370,7 +371,7 @@ function hierarchieKnoopWord(out, knoop, maxFte, diepte = 0) {
       children: [
         new TextRun({
           text:
-            `${knoop.rolnaam} — ${knoop.fteHuidig.toFixed(1)} → ${knoop.fteRealistisch.toFixed(2)} FTE` +
+            `${knoop.rolnaam} — ${nl(knoop.fteHuidig, 1)} → ${nl(knoop.fteRealistisch, 2)} FTE` +
             (krimp > 0 ? ` (−${krimp}%)` : ""),
           bold: true,
           size: 20,
@@ -388,7 +389,7 @@ function hierarchieKnoopWord(out, knoop, maxFte, diepte = 0) {
           new TextRun({
             text:
               `stuurt ${knoop.spanDirect} ${knoop.spanDirect === 1 ? "rol" : "rollen"} aan · ` +
-              `${knoop.spanTotaalHuidig.toFixed(1)} → ${knoop.spanTotaalRealistisch.toFixed(2)} FTE onder zich` +
+              `${nl(knoop.spanTotaalHuidig, 1)} → ${nl(knoop.spanTotaalRealistisch, 2)} FTE onder zich` +
               (spanKrimp > 0 ? ` (−${spanKrimp}%)` : ""),
             size: 16,
             color: "94A3B8",
@@ -398,9 +399,9 @@ function hierarchieKnoopWord(out, knoop, maxFte, diepte = 0) {
     );
   }
 
-  out.push(paragraph(`Huidig — ${knoop.fteHuidig.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(paragraph(`Huidig — ${nl(knoop.fteHuidig, 2)} FTE`, { size: 16, color: "64748B" }));
   out.push(miniBar(knoop.fteHuidig, maxFte, "94A3B8"));
-  out.push(paragraph(`Realistisch — ${knoop.fteRealistisch.toFixed(2)} FTE`, { size: 16, color: "64748B" }));
+  out.push(paragraph(`Realistisch — ${nl(knoop.fteRealistisch, 2)} FTE`, { size: 16, color: "64748B" }));
   out.push(miniBar(knoop.fteRealistisch, maxFte, "6366F1"));
 
   for (const kind of knoop.kinderen) hierarchieKnoopWord(out, kind, maxFte, diepte + 1);
@@ -450,7 +451,7 @@ function organogramSection(rollen) {
   const orgKrimp = krimpPct(chart.organisatie.fteHuidig, chart.organisatie.fteRealistisch);
   out.push(
     paragraph(
-      `Hele organisatie: ${chart.organisatie.fteHuidig.toFixed(1)} → ${chart.organisatie.fteRealistisch.toFixed(2)} FTE` +
+      `Hele organisatie: ${nl(chart.organisatie.fteHuidig, 1)} → ${nl(chart.organisatie.fteRealistisch, 2)} FTE` +
         (orgKrimp > 0 ? ` (−${orgKrimp}%)` : "") +
         ` — ${chart.afdelingen.length} afdelingen, ${chart.rollen.length} rollen`,
       { bold: true, size: 20 }
@@ -465,7 +466,7 @@ function organogramSection(rollen) {
         children: [
           new TextRun({
             text:
-              `${a.afdeling} — ${a.fteHuidig.toFixed(1)} → ${a.fteRealistisch.toFixed(2)} FTE` +
+              `${a.afdeling} — ${nl(a.fteHuidig, 1)} → ${nl(a.fteRealistisch, 2)} FTE` +
               (krimp > 0 ? ` (−${krimp}%)` : ""),
             bold: true,
             size: 22,
@@ -557,8 +558,8 @@ function ontwikkelagendaSectie(rollen) {
         cell(c.naam, { width: widths[0], shaded }),
         cell(TRAINBAARHEID_LABEL[c.trainbaarheid] ?? "onbekend", { width: widths[1], shaded }),
         cell(String(c.aantalRollen), { width: widths[2], shaded }),
-        cell(c.fte.toFixed(1), { width: widths[3], shaded }),
-        cell(c.gemiddeldBelang.toFixed(1), { width: widths[4], shaded }),
+        cell(nl(c.fte, 1), { width: widths[3], shaded }),
+        cell(nl(c.gemiddeldBelang, 1), { width: widths[4], shaded }),
       ],
     });
   });
@@ -627,7 +628,7 @@ function mobiliteitSectie(rollen) {
     out.push(
       new Paragraph({
         spacing: { before: 200, after: 60 },
-        children: [new TextRun({ text: `${h.roleLabel} — ${h.vrijgekomenFte.toFixed(2)} FTE komt vrij`, bold: true, size: 20 })],
+        children: [new TextRun({ text: `${h.roleLabel} — ${nl(h.vrijgekomenFte, 2)} FTE komt vrij`, bold: true, size: 20 })],
       })
     );
     out.push(paragraph(`Blijven, in de veranderde rol — ${h.blijvenOverlapPct}% aansluiting`, { size: 18, color: "475569" }));
@@ -814,9 +815,7 @@ export async function generateReportDocx(results) {
     ...(sectorAnalyse
       ? [
           paragraph(
-            `Op sectorniveau (${sectorAnalyse.sector.sector}) komt de AI-impact eindscore uit op ${sectorAnalyse.eindscore.toFixed(
-              1
-            )} van de 5. ${sectorAnalyse.positionering}. Inschatting van de urgentie: ${sectorAnalyse.urgentie}.`
+            `Op sectorniveau (${sectorAnalyse.sector.sector}) komt de AI-impact eindscore uit op ${nl(sectorAnalyse.eindscore, 1)} van de 5. ${sectorAnalyse.positionering}. Inschatting van de urgentie: ${sectorAnalyse.urgentie}.`
           ),
         ]
       : []),
@@ -854,9 +853,7 @@ export async function generateReportDocx(results) {
     heading("Detail per rol — taakverdeling & competenties"),
     ...rollen.flatMap((r) => [
       heading(
-        `${r.roleLabel ?? r.rolnaam} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(
-          2
-        )} agressief)`,
+        `${r.roleLabel ?? r.rolnaam} (${r.fte} FTE → ${nl(r.scenarios.realistisch.fteOver, 2)} realistisch / ${nl(r.scenarios.agressief.fteOver, 2)} agressief)`,
         HeadingLevel.HEADING_2
       ),
       ...(getWaardetype(r.waardetype)
@@ -946,9 +943,9 @@ export async function generateReportDocx(results) {
       paragraph(
         `Sector: ${sectorAnalyse.sector.sector} (niveau ${sectorAnalyse.sector.niveau}) — risico ${sectorAnalyse.sector.risico}/5, kans ${sectorAnalyse.sector.kans}/5.`
       ),
-      paragraph(`Impactscore (positioneringsvragen): ${sectorAnalyse.impactScore?.toFixed(1) ?? "-"} / 5`),
-      paragraph(`Readinessscore (positioneringsvragen): ${sectorAnalyse.readinessScore?.toFixed(1) ?? "-"} / 5`),
-      paragraph(`Eindscore: ${sectorAnalyse.eindscore.toFixed(1)} / 5`, { bold: true }),
+      paragraph(`Impactscore (positioneringsvragen): ${nl(sectorAnalyse.impactScore, 1) ?? "-"} / 5`),
+      paragraph(`Readinessscore (positioneringsvragen): ${nl(sectorAnalyse.readinessScore, 1) ?? "-"} / 5`),
+      paragraph(`Eindscore: ${nl(sectorAnalyse.eindscore, 1)} / 5`, { bold: true }),
       paragraph(`Positionering t.o.v. sectorgemiddelde: ${sectorAnalyse.positionering}`),
       paragraph(`Strategische urgentie: ${sectorAnalyse.urgentie}`, { bold: true })
     );

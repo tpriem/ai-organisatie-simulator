@@ -6,6 +6,7 @@ import { calculateTaakprofiel } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
 import { dekkingZinnen, beroepsmatchRegel } from "../../src/rapportTeksten.js";
+import { nl } from "../../src/formatNl.js";
 
 /**
  * Vercel's serverless functions kunnen geen volledige, lokaal-geïnstalleerde Chromium
@@ -86,7 +87,7 @@ function capaciteitBlock(organisatieTotaal, rollen) {
   const heeftBestemming = bestemming.some((b) => b.waardetype !== "onbepaald");
 
   const uren = t.totaalVrijgekomenUrenPerWeek ?? t.totaalFteWeg * 36;
-  const kop = `<p><strong>${t.totaalFteWeg.toFixed(1)} FTE</strong> aan capaciteit komt vrij (${Math.round(
+  const kop = `<p><strong>${nl(t.totaalFteWeg, 1)} FTE</strong> aan capaciteit komt vrij (${Math.round(
     uren
   )} uur per week, realistisch scenario).`;
 
@@ -97,7 +98,7 @@ function capaciteitBlock(organisatieTotaal, rollen) {
           const label = type ? `${type.icon} ${type.label}` : "Nog niet bepaald";
           return barTekst(
             label,
-            `${b.fte.toFixed(1)} FTE · ${b.rollen} ${b.rollen === 1 ? "rol" : "rollen"}`,
+            `${nl(b.fte, 1)} FTE · ${b.rollen} ${b.rollen === 1 ? "rol" : "rollen"}`,
             b.aandeel * 100,
             BESTEMMING_KLASSE[b.waardetype] ?? "c-slate"
           );
@@ -133,7 +134,7 @@ function taakprofielBlock(rollen) {
   const max = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
   const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
   const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
-  const pp = (v) => `${v > 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)} pp`;
+  const pp = (v) => `${v > 0 ? "+" : "−"}${nl(Math.abs(v * 100), 1)} pp`;
 
   const conclusie =
     groeiers.length > 0
@@ -190,7 +191,7 @@ function ontwikkelagendaBlock(rollen) {
       return `<tr>
         <td>${esc(c.naam)}</td>
         <td><i class="tier-stip ${klasse}"></i>${c.trainbaarheid ? `${esc(c.trainbaarheid)} trainbaar` : "onbekend"}</td>
-        <td>${c.aantalRollen}</td><td>${c.fte.toFixed(1)}</td><td>${c.gemiddeldBelang.toFixed(1)}</td>
+        <td>${c.aantalRollen}</td><td>${nl(c.fte, 1)}</td><td>${nl(c.gemiddeldBelang, 1)}</td>
       </tr>`;
     })
     .join("");
@@ -231,7 +232,7 @@ function mobiliteitBlock(rollen) {
         .map((a) => barTekst(`→ ${a.roleLabel}`, `${a.overlapPct}% · ${Math.round(a.verhouding * 100)}% hiervan`, a.overlapPct, "c-slate"))
         .join("");
       return `<div class="role-block">
-      <p style="font-weight:bold;font-size:11px;margin:0 0 3px;">${esc(h.roleLabel)} — ${h.vrijgekomenFte.toFixed(2)} FTE komt vrij</p>
+      <p style="font-weight:bold;font-size:11px;margin:0 0 3px;">${esc(h.roleLabel)} — ${nl(h.vrijgekomenFte, 2)} FTE komt vrij</p>
       ${barTekst("Blijven, in de veranderde rol", `${h.blijvenOverlapPct}% aansluiting`, h.blijvenOverlapPct, "c-indigo")}
       ${alt || `<p class="disclaimer" style="margin:2px 0;">Geen enkele andere rol komt in de buurt.</p>`}
       ${
@@ -262,7 +263,7 @@ function bar(label, value, maxValue, colorClass) {
     <div class="bar-row">
       <span class="bar-label">${esc(label)}</span>
       <div class="bar-track"><div class="bar-fill ${colorClass}" style="width:${widthPct}%"></div></div>
-      <span class="bar-value">${value.toFixed(2)}</span>
+      <span class="bar-value">${nl(value, 2)}</span>
     </div>`;
 }
 
@@ -311,14 +312,12 @@ function hierarchieKnoop(knoop, maxFte, diepte = 0) {
   return `<div style="margin-left:${inspringen}px;border-left:${
     diepte > 0 ? "1px solid #e2e8f0" : "none"
   };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;">
-    <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${knoop.fteHuidig.toFixed(
-      1
-    )} → ${knoop.fteRealistisch.toFixed(2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
+    <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${nl(knoop.fteHuidig, 1)} → ${nl(knoop.fteRealistisch, 2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
     ${
       knoop.kinderen.length
         ? `<p style="font-size:9px;color:#94a3b8;margin:0 0 3px;">stuurt ${knoop.spanDirect} ${
             knoop.spanDirect === 1 ? "rol" : "rollen"
-          } aan · ${knoop.spanTotaalHuidig.toFixed(1)} → ${knoop.spanTotaalRealistisch.toFixed(2)} FTE onder zich${
+          } aan · ${nl(knoop.spanTotaalHuidig, 1)} → ${nl(knoop.spanTotaalRealistisch, 2)} FTE onder zich${
             spanKrimp > 0 ? ` (−${spanKrimp}%)` : ""
           }</p>`
         : ""
@@ -348,9 +347,7 @@ function afdelingBlok(afdeling, orgChart) {
           .join("");
 
   return `<div class="role-block">
-    <p style="font-weight:bold;font-size:12px;margin-bottom:4px;">${esc(afdeling.afdeling)} — ${afdeling.fteHuidig.toFixed(
-      1
-    )} → ${afdeling.fteRealistisch.toFixed(2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
+    <p style="font-weight:bold;font-size:12px;margin-bottom:4px;">${esc(afdeling.afdeling)} — ${nl(afdeling.fteHuidig, 1)} → ${nl(afdeling.fteRealistisch, 2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
     ${bar("Huidig", afdeling.fteHuidig, orgChart.maxAfdelingFte, "c-slate")}
     ${bar("Realistisch", afdeling.fteRealistisch, orgChart.maxAfdelingFte, "c-indigo")}
     ${bar("Agressief", afdeling.fteAgressief, orgChart.maxAfdelingFte, "c-indigo-light")}
@@ -527,14 +524,14 @@ export function buildReportHtml(results) {
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-label">FTE totaal</div><div class="stat-value">${organisatieTotaal.realistisch.totaalFteHuidig}</div></div>
     <div class="stat-card"><div class="stat-label">Automatiseerbaar</div><div class="stat-value">${pct(organisatieTotaal.realistisch.reductiePercentageOrganisatie)}–${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)}</div></div>
-    <div class="stat-card"><div class="stat-label">Capaciteit die vrijkomt</div><div class="stat-value">${organisatieTotaal.realistisch.totaalFteWeg.toFixed(1)} FTE</div></div>
+    <div class="stat-card"><div class="stat-label">Capaciteit die vrijkomt</div><div class="stat-value">${nl(organisatieTotaal.realistisch.totaalFteWeg, 1)} FTE</div></div>
   </div>
   ${capaciteitBlock(organisatieTotaal, rollen)}
   ${financieelBlock(organisatieTotaal)}
   ${
     sectorAnalyse
       ? `<div class="urgency-banner urgency-${sectorAnalyse.urgentie.startsWith("Hoog") ? "hoog" : sectorAnalyse.urgentie.startsWith("Gemiddeld") ? "gemiddeld" : "laag"}">
-    <strong>Eindscore ${sectorAnalyse.eindscore.toFixed(1)} / 5 — ${esc(sectorAnalyse.urgentie)}</strong><br/>${esc(sectorAnalyse.positionering)}
+    <strong>Eindscore ${nl(sectorAnalyse.eindscore, 1)} / 5 — ${esc(sectorAnalyse.urgentie)}</strong><br/>${esc(sectorAnalyse.positionering)}
   </div>`
       : ""
   }
@@ -579,9 +576,9 @@ export function buildReportHtml(results) {
           .map(
             (s) => `<tr>
           <td>${esc(s.afdeling)}</td><td>${s.aantalRollen}</td>
-          <td>${s.scenarios.realistisch.totaalFteHuidig.toFixed(1)}</td>
-          <td>${s.scenarios.realistisch.totaalFteOver.toFixed(2)}</td>
-          <td>${s.scenarios.agressief.totaalFteOver.toFixed(2)}</td>
+          <td>${nl(s.scenarios.realistisch.totaalFteHuidig, 1)}</td>
+          <td>${nl(s.scenarios.realistisch.totaalFteOver, 2)}</td>
+          <td>${nl(s.scenarios.agressief.totaalFteOver, 2)}</td>
           <td>${eur(s.scenarios.realistisch.totaalKostenBesparingPerJaar)} – ${eur(s.scenarios.agressief.totaalKostenBesparingPerJaar)}</td>
         </tr>`
           )
@@ -612,9 +609,7 @@ export function buildReportHtml(results) {
     orgChart.hierarchie
       ? orgChart.hierarchie.top.map((k) => hierarchieKnoop(k, orgChart.maxFte)).join("")
       : orgChart.heeftAfdelingen
-      ? `<p style="font-weight:bold;font-size:12px;margin:8px 0 2px;">Hele organisatie: ${orgChart.organisatie.fteHuidig.toFixed(
-          1
-        )} → ${orgChart.organisatie.fteRealistisch.toFixed(2)} FTE${
+      ? `<p style="font-weight:bold;font-size:12px;margin:8px 0 2px;">Hele organisatie: ${nl(orgChart.organisatie.fteHuidig, 1)} → ${nl(orgChart.organisatie.fteRealistisch, 2)} FTE${
           krimpPct(orgChart.organisatie.fteHuidig, orgChart.organisatie.fteRealistisch) > 0
             ? ` (−${krimpPct(orgChart.organisatie.fteHuidig, orgChart.organisatie.fteRealistisch)}%)`
             : ""
@@ -642,7 +637,7 @@ export function buildReportHtml(results) {
   ${rollen
     .map(
       (r) => `<div class="role-block">
-      <h3>${esc(r.roleLabel ?? r.rolnaam)} (${r.fte} FTE → ${r.scenarios.realistisch.fteOver.toFixed(2)} realistisch / ${r.scenarios.agressief.fteOver.toFixed(2)} agressief)</h3>
+      <h3>${esc(r.roleLabel ?? r.rolnaam)} (${r.fte} FTE → ${nl(r.scenarios.realistisch.fteOver, 2)} realistisch / ${nl(r.scenarios.agressief.fteOver, 2)} agressief)</h3>
       ${waardetypeLine(r)}
       ${beroepsmatchRegel(r.beroepsmatch) ? `<p class="disclaimer">${esc(beroepsmatchRegel(r.beroepsmatch))}</p>` : ""}
       <table>
@@ -679,9 +674,9 @@ export function buildReportHtml(results) {
     sectorAnalyse
       ? `<h2>Sectorpositionering</h2>
     <p>Sector: ${esc(sectorAnalyse.sector.sector)} (niveau ${sectorAnalyse.sector.niveau}) — risico ${sectorAnalyse.sector.risico}/5, kans ${sectorAnalyse.sector.kans}/5.</p>
-    <p>Impactscore (positioneringsvragen): ${sectorAnalyse.impactScore?.toFixed(1) ?? "-"} / 5</p>
-    <p>Readinessscore (positioneringsvragen): ${sectorAnalyse.readinessScore?.toFixed(1) ?? "-"} / 5</p>
-    <p><strong>Eindscore: ${sectorAnalyse.eindscore.toFixed(1)} / 5</strong></p>
+    <p>Impactscore (positioneringsvragen): ${nl(sectorAnalyse.impactScore, 1) ?? "-"} / 5</p>
+    <p>Readinessscore (positioneringsvragen): ${nl(sectorAnalyse.readinessScore, 1) ?? "-"} / 5</p>
+    <p><strong>Eindscore: ${nl(sectorAnalyse.eindscore, 1)} / 5</strong></p>
     <p>Positionering t.o.v. sectorgemiddelde: ${esc(sectorAnalyse.positionering)}</p>
     <p><strong>Strategische urgentie: ${esc(sectorAnalyse.urgentie)}</strong></p>`
       : ""

@@ -126,14 +126,14 @@ async function rapporten(opties) {
 for (const formaat of ["pdf", "docx"]) {
   test(`${formaat}: het kopgetal is vrijgekomen capaciteit, niet besparing`, async () => {
     const { results, [formaat]: tekst } = await rapporten();
-    const fte = results.organisatieTotaal.realistisch.totaalFteWeg.toFixed(1);
+    const fte = nl(results.organisatieTotaal.realistisch.totaalFteWeg, 1);
     assert.ok(tekst.includes(`${fte} FTE aan capaciteit`), `kopzin "${fte} FTE aan capaciteit" ontbreekt`);
   });
 
   test(`${formaat}: elke bestemming uit de berekening staat in het rapport`, async () => {
     const { results, [formaat]: tekst } = await rapporten();
     for (const b of calculateCapaciteitBestemming(results.rollen, "realistisch")) {
-      assert.ok(tekst.includes(`${b.fte.toFixed(1)} FTE`), `${b.waardetype}: ${b.fte.toFixed(1)} FTE ontbreekt`);
+      assert.ok(tekst.includes(`${nl(b.fte, 1)} FTE`), `${b.waardetype}: ${nl(b.fte, 1)} FTE ontbreekt`);
     }
   });
 
@@ -282,3 +282,16 @@ test("zonder beroepsmatch geen regel en geen fout", () => {
   assert.equal(beroepsmatchRegel({}), null);
   assert.deepEqual(dekkingZinnen({}).heeftIets, false);
 });
+
+// ── Getalnotatie ──────────────────────────────────────────────────────────────────────
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: getallen met decimalen staan met een komma, niet met een punt`, async () => {
+    // Nederlandse rapporten voor Nederlandse lezers: "6,4 FTE", niet "6.4 FTE". Zoekt naar
+    // een decimale punt tussen cijfers, met uitzondering van datums (dd.mm.jjjj) en
+    // duizendtallen met een punt (1.234.567), die er wel horen te staan.
+    const { [formaat]: tekst } = await rapporten();
+    const verdacht = [...tekst.matchAll(/(?<![\d.])\d{1,3}\.\d{1,2}(?![\d.])\s*(FTE|%|pp|uur)/g)].map((m) => m[0]);
+    assert.deepEqual(verdacht, [], `decimale punt gevonden: ${verdacht.slice(0, 3).join(" | ")}`);
+  });
+}
