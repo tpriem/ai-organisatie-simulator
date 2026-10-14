@@ -18,6 +18,8 @@ import { buildOrgChartData } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
+import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
+import { calculateMobiliteit } from "../../src/mobiliteit.js";
 
 const HEADER_FILL = "1E293B"; // slate-800
 const LIGHT_FILL = "F1F5F9"; // slate-100
@@ -528,6 +530,132 @@ const TRAINBAARHEID_LABEL = {
   laag: "laag trainbaar",
 };
 
+// De ontwikkelbehoefte opgeteld over alle rollen. Zelfde berekening als in de app.
+function ontwikkelagendaSectie(rollen) {
+  const agenda = calculateCompetentieAgenda(rollen, "realistisch");
+  if (agenda.competenties.length === 0) return [];
+
+  const breed = agenda.competenties.filter((c) => c.aantalRollen > 1);
+  const nietTrainbaar = agenda.competenties.filter((c) => c.trainbaarheid === "laag");
+
+  const widths = [4300, 1700, 800, 800, 800];
+  const kop = new TableRow({
+    tableHeader: true,
+    children: [
+      cell("Competentie", { width: widths[0], header: true }),
+      cell("Ontwikkelbaar", { width: widths[1], header: true }),
+      cell("Rollen", { width: widths[2], header: true }),
+      cell("FTE", { width: widths[3], header: true }),
+      cell("Belang", { width: widths[4], header: true }),
+    ],
+  });
+  const rijen = agenda.competenties.map((c, i) => {
+    const shaded = i % 2 === 1;
+    return new TableRow({
+      children: [
+        cell(c.naam, { width: widths[0], shaded }),
+        cell(TRAINBAARHEID_LABEL[c.trainbaarheid] ?? "onbekend", { width: widths[1], shaded }),
+        cell(String(c.aantalRollen), { width: widths[2], shaded }),
+        cell(c.fte.toFixed(1), { width: widths[3], shaded }),
+        cell(c.gemiddeldBelang.toFixed(1), { width: widths[4], shaded }),
+      ],
+    });
+  });
+
+  return [
+    heading("Ontwikkelagenda — organisatiebreed"),
+    paragraph(
+      "De competenties die ná de transformatie nieuw nodig zijn, opgeteld over alle rollen en gewogen naar de FTE die overblijft. Een competentie die in meerdere rollen terugkomt is één programma, geen reeks losse gesprekken.",
+      { italics: true, size: 18, color: "64748B" }
+    ),
+    paragraph(
+      `${agenda.competenties.length} competenties zijn nieuw nodig, waarvan ${breed.length} in meerdere rollen.` +
+        (agenda.aandeelNietTrainbaar === null
+          ? ""
+          : ` ${Math.round(agenda.aandeelNietTrainbaar * 100)}% van de totale ontwikkelbehoefte is niet met training op te lossen (${nietTrainbaar.length} van de ${agenda.competenties.length} competenties).`),
+      { bold: true }
+    ),
+    new Table({
+      width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
+      columnWidths: widths,
+      borders: tableBorders(),
+      rows: [kop, ...rijen],
+    }),
+    ...(nietTrainbaar.length > 0
+      ? [
+          paragraph(
+            `${nietTrainbaar.length === 1 ? "Eén competentie" : `${nietTrainbaar.length} competenties`} in deze lijst ${
+              nietTrainbaar.length === 1 ? "is" : "zijn"
+            } laag trainbaar — disposities in plaats van vaardigheden. Die los je niet op met een opleidingsbudget; de vraag is of ze al in huis zijn. Toets daarop bij de huidige bezetting.`,
+            { italics: true, size: 18, color: "64748B" }
+          ),
+        ]
+      : []),
+  ];
+}
+
+// Waar kunnen de mensen heen bij wie capaciteit vrijkomt? Als vergelijking met blijven,
+// niet als ranglijst: een ranglijst suggereert keuzevrijheid die de data niet draagt.
+function mobiliteitSectie(rollen) {
+  const m = calculateMobiliteit(rollen, { maxPerRol: 2 });
+  if (!m.heeftData) return [];
+
+  const metAlt = m.herkomsten.filter((h) => h.alternatieven.length > 0);
+  const beste = Math.max(0, ...metAlt.map((h) => h.alternatieven[0].verhouding));
+
+  const out = [
+    heading("Waar kunnen deze mensen heen?"),
+    paragraph(
+      "Per rol waar capaciteit vrijkomt: hoe goed het huidige profiel aansluit op de eigen rol ná de transformatie, en hoe het dichtstbijzijnde alternatief daarbij afsteekt. Competenties zijn vergelijkbaar doordat alle rollen uit dezelfde ESCO-woordenschat putten.",
+      { italics: true, size: 18, color: "64748B" }
+    ),
+  ];
+
+  if (beste > 0 && beste < 0.6) {
+    out.push(
+      paragraph(
+        `In deze organisatie is doorgroeien in de eigen, veranderde rol overal kansrijker dan overstappen — het beste alternatief komt nergens boven ${Math.round(
+          beste * 100
+        )}% van die aansluiting uit. Dat wijst op sterk gespecialiseerde rollen: reken niet op interne doorstroom als vanzelfsprekende uitweg.`,
+        { bold: true }
+      )
+    );
+  }
+
+  for (const h of m.herkomsten) {
+    out.push(
+      new Paragraph({
+        spacing: { before: 200, after: 60 },
+        children: [new TextRun({ text: `${h.roleLabel} — ${h.vrijgekomenFte.toFixed(2)} FTE komt vrij`, bold: true, size: 20 })],
+      })
+    );
+    out.push(paragraph(`Blijven, in de veranderde rol — ${h.blijvenOverlapPct}% aansluiting`, { size: 18, color: "475569" }));
+    out.push(miniBar(h.blijvenOverlapPct, 100, "6366F1"));
+    for (const a of h.alternatieven) {
+      out.push(
+        paragraph(`→ ${a.roleLabel} — ${a.overlapPct}% · ${Math.round(a.verhouding * 100)}% hiervan`, {
+          size: 18,
+          color: "64748B",
+        })
+      );
+      out.push(miniBar(a.overlapPct, 100, "94A3B8"));
+    }
+    if (h.alternatieven.length === 0) {
+      out.push(paragraph("Geen enkele andere rol komt in de buurt.", { italics: true, size: 18, color: "64748B" }));
+    }
+    if (h.blijvenNietTrainbaarPct > 0) {
+      out.push(
+        paragraph(
+          `Van wat deze rol straks extra nodig heeft is ${h.blijvenNietTrainbaarPct}% niet met training te overbruggen — toetsing van de huidige bezetting is daar nodig.`,
+          { italics: true, size: 18, color: "64748B" }
+        )
+      );
+    }
+  }
+
+  return out;
+}
+
 function competentieProfielTable(items) {
   const widths = [4200, 1500, 2000];
   const headerRow = new TableRow({
@@ -714,6 +842,8 @@ export async function generateReportDocx(results) {
       : []),
 
     ...taakprofielSectie(rollen),
+    ...mobiliteitSectie(rollen),
+    ...ontwikkelagendaSectie(rollen),
 
     heading("Detail per rol — taakverdeling & competenties"),
     ...rollen.flatMap((r) => [
