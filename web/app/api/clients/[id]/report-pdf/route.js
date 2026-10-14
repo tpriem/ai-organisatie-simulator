@@ -2,6 +2,11 @@ import { getClientMeta, readResults } from "@/lib/clientStore";
 import { generateReportPdf } from "@/lib/generateReportPdf";
 import { meldStoring } from "@/lib/alert";
 
+// De PDF is door de nieuwe secties ruim verdubbeld in rendertijd (1,8s naar 4,7s voor zes
+// rollen) en groeit mee met het aantal rollen. Expliciet een ruime limiet, in plaats van
+// te leunen op een platformstandaard die ik voor dit project niet kan nazien.
+export const maxDuration = 60;
+
 function safeFileSegment(name) {
   return name.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
 }

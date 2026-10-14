@@ -2,6 +2,11 @@ import { getClientMeta, readResults } from "@/lib/clientStore";
 import { generateReportDocx } from "@/lib/generateReport";
 import { meldStoring } from "@/lib/alert";
 
+// Het rapport is door de nieuwe secties groter geworden en groeit mee met het aantal
+// rollen. Expliciet een ruime limiet, in plaats van te leunen op een platformstandaard
+// die voor dit project niet is na te zien. (Word is snel; dit is voor grote klanten.)
+export const maxDuration = 60;
+
 function safeFileSegment(name) {
   return name.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "");
 }
