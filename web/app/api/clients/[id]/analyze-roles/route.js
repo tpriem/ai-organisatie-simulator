@@ -9,6 +9,7 @@ import {
 } from "@/lib/clientStore";
 import { meldStoring } from "@/lib/alert";
 import { neemHandmatigeWaardetypesOver } from "../../../../../../src/waardetype.js";
+import { neemAangepasteTakenOver } from "../../../../../../src/takenOvername.js";
 import { parseRoster } from "../../../../../../src/parseRoster.js";
 import { parseProfileFiles, matchRosterToProfiles, roleLabel } from "../../../../../../src/parseProfiles.js";
 import { roleId } from "../../../../../../src/roleIdentity.js";
@@ -116,7 +117,13 @@ export async function POST(request, { params }) {
     })
   );
 
-  const roleResults = uitkomsten.filter((u) => u.ok).map((u) => u.roleResult);
+  // Een aangepaste taakverdeling van de adviseur gaat mee naar de nieuwe analyse. Dat
+  // verandert de capaciteit, dus het gebeurt vóór de organisatietotalen worden berekend.
+  const vorigeResultaten = await readResults(id).catch(() => null);
+  const roleResults = neemAangepasteTakenOver(
+    uitkomsten.filter((u) => u.ok).map((u) => u.roleResult),
+    vorigeResultaten?.rollen
+  );
   const mislukteRollen = uitkomsten.filter((u) => !u.ok).map((u) => u.mislukt);
 
   if (mislukteRollen.length > 0) {
@@ -147,7 +154,6 @@ export async function POST(request, { params }) {
   // Een nieuwe analyse begint helemaal opnieuw en zou handmatig bepaalde waardetypes
   // stilzwijgend weggooien. Dat is een bewuste menselijke beslissing, dus die nemen we
   // over; de nieuwe inschatting van Claude blijft zichtbaar naast de keuze.
-  const vorigeResultaten = await readResults(id).catch(() => null);
   const rollenMetKeuzes = neemHandmatigeWaardetypesOver(roleResults, vorigeResultaten?.rollen);
 
   const results = {

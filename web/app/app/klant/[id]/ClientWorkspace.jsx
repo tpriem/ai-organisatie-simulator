@@ -829,6 +829,27 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
   );
 }
 
+// Na een nieuwe analyse: wat is er met de eerder aangepaste taakverdeling gebeurd?
+function TakenOvernameMelding({ role }) {
+  if (role.takenAangepastVervallen) {
+    return (
+      <p className="mb-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-[11px] text-amber-800">
+        Je eerder aangepaste taakverdeling voor deze rol is niet overgenomen: {role.takenAangepastVervallen.reden} De
+        eerdere versie staat in de versiehistorie.
+      </p>
+    );
+  }
+  if (role.takenAangepastOvername === "categorie") {
+    return (
+      <p className="mb-2 text-[11px] text-slate-500">
+        Je aangepaste taakverdeling is overgenomen per categorie; de taken zelf zijn bij de nieuwe analyse opnieuw
+        geformuleerd. Controleer de aandelen hieronder.
+      </p>
+    );
+  }
+  return null;
+}
+
 function Spinner() {
   return (
     <span
@@ -1232,6 +1253,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
           onderbouwing vóór de conclusie. */}
       <WaardetypeBeheer id={id} role={role} onSaved={onSaved} bevestiging={bevestiging} />
       <BeroepsmatchRegel beroepsmatch={role.beroepsmatch} />
+      <TakenOvernameMelding role={role} />
       {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
 
       {/* Capaciteit voorop, bedrag als detail. Bij een rol met waardetype
