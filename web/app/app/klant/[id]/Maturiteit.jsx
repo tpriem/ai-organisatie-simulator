@@ -21,7 +21,7 @@ import {
 // van de analyse van functies, op één plek na: de realisatievoorwaarden (analyse I) lezen de
 // vrijgekomen capaciteit uit die analyse.
 
-const NIVEAU_KLEUR = ["bg-slate-300", "bg-indigo-400", "bg-indigo-500", "bg-indigo-500", "bg-indigo-600", "bg-emerald-500"];
+const NIVEAU_KLEUR = ["bg-slate-300", "bg-indigo-300", "bg-indigo-400", "bg-indigo-500", "bg-indigo-600", "bg-hod-cyan"];
 const rolNaam = (id) => ROLLEN.find((r) => r.id === id)?.naam ?? id;
 const ANTWOORD_LABEL = Object.fromEntries(ANTWOORDEN.map((a) => [a.waarde, a.label]));
 
