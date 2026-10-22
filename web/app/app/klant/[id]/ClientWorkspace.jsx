@@ -21,6 +21,7 @@ import {
 } from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
+import Maturiteit from "./Maturiteit";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
 // die de analyse blootlegt: kostenreductie levert een eenmalig voordeel dat
@@ -1735,6 +1736,12 @@ export default function ClientWorkspace({ id }) {
             done={hasAnyAnswer}
           />
           <TabButton
+            active={activeTab === "maturiteit"}
+            onClick={() => setActiveTab("maturiteit")}
+            icon="🧭"
+            label="AI Maturity"
+          />
+          <TabButton
             active={activeTab === "resultaten"}
             onClick={() => setActiveTab("resultaten")}
             icon="📊"
@@ -1979,6 +1986,9 @@ export default function ClientWorkspace({ id }) {
           ))}
         </Section>
         )}
+
+        {/* Tab: AI Maturity (SEI) */}
+        {activeTab === "maturiteit" && <Maturiteit id={id} />}
 
         {/* Tab: Resultaten */}
         {activeTab === "resultaten" && (
