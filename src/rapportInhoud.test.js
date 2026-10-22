@@ -15,6 +15,7 @@ import {
 } from "./rapportTeksten.js";
 import { stelWaardetypeIn, rollenDieBevestigingVragen } from "./waardetype.js";
 import { nl } from "./formatNl.js";
+import { buildOrgChartData, organogramTeksten } from "../web/lib/orgChartData.js";
 import { buildReportHtml } from "../web/lib/generateReportPdf.js";
 import { generateReportDocx } from "../web/lib/generateReport.js";
 
@@ -424,5 +425,36 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(met.includes(volwassenheidVerwijzingZin), "verwijzing ontbreekt");
     assert.ok(!zonder.includes(volwassenheidVerwijzingZin), "verwijzing hoort er niet te staan zonder meting");
     assert.ok(!/volwassenheidsrapport/.test(zonder));
+  });
+}
+
+// ── Organogram: capaciteit per rol en afdeling, geen formatie ─────────────────────────
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: het organogram toont de vrijgekomen capaciteit van de hele organisatie`, async () => {
+    const { results, [formaat]: tekst } = await rapporten();
+    const o = buildOrgChartData(results.rollen).organisatie;
+    assert.ok(tekst.includes("Organogram — waar de capaciteit vrijkomt"), "kop ontbreekt");
+    assert.ok(
+      tekst.includes(`Hele organisatie: ${nl(o.fteHuidig, 1)} FTE, waarvan ${nl(o.fteVrij, 1)} FTE`),
+      "totaalregel met vrijgekomen capaciteit ontbreekt"
+    );
+  });
+
+  test(`${formaat}: elke afdeling staat in het organogram met haar vrijgekomen capaciteit`, async () => {
+    const { results, [formaat]: tekst } = await rapporten();
+    const chart = buildOrgChartData(results.rollen);
+    const t = organogramTeksten(chart);
+    for (const a of chart.afdelingen) {
+      assert.ok(tekst.includes(`${a.afdeling} — ${t.onderdeel(a)}`), `afdeling ${a.afdeling} ontbreekt of klopt niet`);
+    }
+  });
+
+  test(`${formaat}: het organogram spreekt niet meer over wie er overblijft`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    const deel = tekst.slice(tekst.indexOf("Organogram — waar de capaciteit vrijkomt"));
+    const organogram = deel.slice(0, deel.indexOf("Waar het werk uit bestaat") > 0 ? deel.indexOf("Waar het werk uit bestaat") : 4000);
+    assert.doesNotMatch(organogram, /overgebleven|na transformatie/i);
+    assert.doesNotMatch(organogram, /\d,\d+ → \d,\d+ FTE/);
   });
 }

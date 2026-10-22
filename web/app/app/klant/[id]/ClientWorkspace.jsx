@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { buildOrgChartData } from "@/lib/orgChartData";
 import { calculateRole, calculateCapaciteitBestemming, calculateRolBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel, driedeling } from "../../../../../src/competencyProfile.js";
@@ -20,19 +19,10 @@ import {
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl, euroKort } from "../../../../../src/formatNl.js";
 import Aanlevering from "./Aanlevering";
+import Organogram from "./Organogram";
+import { BESTEMMING_STIJL } from "./bestemmingStijl";
 import KlantOpzet from "./KlantOpzet";
 import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
-
-// Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
-// die de analyse blootlegt: kostenreductie levert een eenmalig voordeel dat
-// wegconcurreert zodra AI gemeengoed is, capaciteit die naar kwaliteit of volume gaat
-// stapelt. Zonder deze uitsplitsing leest "6,6 FTE komt vrij" automatisch als besparing.
-const BESTEMMING_STIJL = {
-  kostenreductie: { balk: "bg-slate-400", tekst: "text-slate-700" },
-  capaciteitsgroei: { balk: "bg-indigo-500", tekst: "text-indigo-700" },
-  kwaliteitsverbetering: { balk: "bg-emerald-500", tekst: "text-emerald-700" },
-  onbepaald: { balk: "bg-slate-200", tekst: "text-slate-400" },
-};
 
 export function CapaciteitBestemming({ results }) {
   const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
@@ -535,119 +525,6 @@ function StatCard({ label, value, sub, noot }) {
       <p className="text-2xl font-bold text-slate-900">{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
       {noot && <p className="mt-auto pt-2 text-[11px] leading-snug text-slate-400">{noot}</p>}
-    </div>
-  );
-}
-
-function OrgChartBar({ label, value, maxValue, colorClass }) {
-  const widthPct = Math.max((value / maxValue) * 100, 2);
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-24 shrink-0 text-xs text-slate-400">{label}</span>
-      <div className="flex-1 h-5 rounded bg-slate-100 overflow-hidden">
-        <div className={`h-full rounded ${colorClass}`} style={{ width: `${widthPct}%` }} />
-      </div>
-      <span className="w-14 shrink-0 text-right text-xs font-medium text-slate-700">{nl(value, 2)}</span>
-    </div>
-  );
-}
-
-function OrgChartRole({ rol, maxFte }) {
-  return (
-    <div className="py-3 border-b border-slate-100 last:border-0">
-      <p className="text-sm font-medium text-slate-800 mb-2">{rol.rolnaam}</p>
-      <div className="space-y-1.5">
-        <OrgChartBar label="Huidig" value={rol.fteHuidig} maxValue={maxFte} colorClass="bg-slate-400" />
-        <OrgChartBar label="Realistisch" value={rol.fteRealistisch} maxValue={maxFte} colorClass="bg-indigo-500" />
-        <OrgChartBar label="Agressief" value={rol.fteAgressief} maxValue={maxFte} colorClass="bg-indigo-300" />
-      </div>
-    </div>
-  );
-}
-
-function krimpPct(nu, straks) {
-  if (!nu) return 0;
-  return Math.round(((nu - straks) / nu) * 100);
-}
-
-function HierarchieKnoop({ knoop, maxFte }) {
-  const krimp = krimpPct(knoop.fteHuidig, knoop.fteRealistisch);
-  const stuurtAan = knoop.kinderen.length > 0;
-  const spanKrimp = krimpPct(knoop.spanTotaalHuidig, knoop.spanTotaalRealistisch);
-
-  return (
-    <div className="border-l border-slate-200 pl-3 ml-1">
-      <div className="py-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-sm font-medium text-slate-800">{knoop.rolnaam}</p>
-          <p className="text-xs text-slate-500 shrink-0">
-            {nl(knoop.fteHuidig, 1)} → {nl(knoop.fteRealistisch, 2)} FTE
-            {krimp > 0 && <span className="text-slate-400"> · −{krimp}%</span>}
-          </p>
-        </div>
-
-        {/* De aansturing is hier het interessante getal: krimpt de span sterk, dan is de
-            vraag of deze laag nog nodig is. */}
-        {stuurtAan && (
-          <p className="text-[11px] text-slate-400 mt-0.5">
-            stuurt {knoop.spanDirect} {knoop.spanDirect === 1 ? "rol" : "rollen"} aan ·{" "}
-            {nl(knoop.spanTotaalHuidig, 1)} → {nl(knoop.spanTotaalRealistisch, 2)} FTE onder zich
-            {spanKrimp > 0 && ` (−${spanKrimp}%)`}
-          </p>
-        )}
-
-        <div className="mt-1.5 space-y-1">
-          <OrgChartBar label="Huidig" value={knoop.fteHuidig} maxValue={maxFte} colorClass="bg-slate-400" />
-          <OrgChartBar label="Realistisch" value={knoop.fteRealistisch} maxValue={maxFte} colorClass="bg-indigo-500" />
-        </div>
-      </div>
-
-      {knoop.kinderen.map((k) => (
-        <HierarchieKnoop key={k.roleId} knoop={k} maxFte={maxFte} />
-      ))}
-    </div>
-  );
-}
-
-function OrgChartAfdeling({ afdeling, maxAfdelingFte, maxFte }) {
-  const krimp = krimpPct(afdeling.fteHuidig, afdeling.fteRealistisch);
-  return (
-    <div className="mb-5 rounded-lg border border-slate-200 overflow-hidden">
-      <div className="bg-slate-50 px-3 py-2.5 border-b border-slate-200">
-        <div className="flex items-baseline justify-between gap-3 mb-2">
-          <p className="text-sm font-semibold text-slate-800">{afdeling.afdeling}</p>
-          <p className="text-xs text-slate-500 shrink-0">
-            {nl(afdeling.fteHuidig, 1)} → {nl(afdeling.fteRealistisch, 2)} FTE
-            {krimp > 0 && <span className="text-slate-400"> · −{krimp}%</span>}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <OrgChartBar label="Huidig" value={afdeling.fteHuidig} maxValue={maxAfdelingFte} colorClass="bg-slate-400" />
-          <OrgChartBar
-            label="Realistisch"
-            value={afdeling.fteRealistisch}
-            maxValue={maxAfdelingFte}
-            colorClass="bg-indigo-500"
-          />
-          <OrgChartBar
-            label="Agressief"
-            value={afdeling.fteAgressief}
-            maxValue={maxAfdelingFte}
-            colorClass="bg-indigo-300"
-          />
-        </div>
-      </div>
-
-      {/* Rollen ingesprongen onder hun afdeling, geschaald op de grootste rol zodat ze
-          onderling vergelijkbaar blijven. Bij één rol zijn de balken identiek aan die
-          van de afdeling; dan alleen de naam, want herhaling voegt niets toe. */}
-      <div className="px-3 pl-6">
-        {afdeling.rollen.length === 1 ? (
-          <p className="py-2.5 text-xs text-slate-500">{afdeling.rollen[0].rolnaam}</p>
-        ) : (
-          afdeling.rollen.map((r) => <OrgChartRole key={r.roleId} rol={r} maxFte={maxFte} />)
-        )}
-      </div>
     </div>
   );
 }
@@ -2216,71 +2093,8 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         )}
 
         {results && (
-          <Section title="Organogram — voor & na" icon="🏢">
-            {(() => {
-              const chart = buildOrgChartData(results.rollen);
-              const orgKrimp = krimpPct(chart.organisatie.fteHuidig, chart.organisatie.fteRealistisch);
-              return (
-                <>
-                  <p className="text-xs text-slate-400 mb-4">
-                    {chart.hierarchie
-                      ? `Opgebouwd uit de rapportagelijnen in het roster — ${chart.hierarchie.lagen} ${
-                          chart.hierarchie.lagen === 1 ? "laag" : "lagen"
-                        }. Per rol: FTE nu versus overgebleven na transformatie, en hoeveel FTE eronder hangt.`
-                      : chart.heeftAfdelingen
-                        ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
-                        : "Geen afdelingen in het roster — dit toont FTE per rol, huidig vs. overgebleven na transformatie, geschaald t.o.v. de grootste rol."}
-                  </p>
-
-                  {/* Rommelige rostergegevens niet stil wegpoetsen: als een rapportagelijn
-                      niet klopt, hoort de gebruiker dat te zien. */}
-                  {chart.hierarchie?.problemen?.length > 0 && (
-                    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2">
-                      <p className="text-xs font-semibold text-amber-800">
-                        Let op bij de rapportagelijnen in het roster
-                      </p>
-                      <ul className="mt-1 space-y-0.5">
-                        {chart.hierarchie.problemen.map((p, i) => (
-                          <li key={i} className="text-[11px] text-amber-700">
-                            {p}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {chart.heeftAfdelingen && (
-                    <div className="mb-5 rounded-lg bg-indigo-600 text-white px-4 py-3">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <p className="text-sm font-semibold">Hele organisatie</p>
-                        <p className="text-sm">
-                          {nl(chart.organisatie.fteHuidig, 1)} → {nl(chart.organisatie.fteRealistisch, 2)} FTE
-                          {orgKrimp > 0 && <span className="text-indigo-200"> · −{orgKrimp}%</span>}
-                        </p>
-                      </div>
-                      <p className="text-[11px] text-indigo-200 mt-0.5">
-                        {chart.afdelingen.length} afdelingen, {chart.rollen.length} rollen
-                      </p>
-                    </div>
-                  )}
-
-                  {chart.hierarchie
-                    ? chart.hierarchie.top.map((k) => (
-                        <HierarchieKnoop key={k.roleId} knoop={k} maxFte={chart.maxFte} />
-                      ))
-                    : chart.heeftAfdelingen
-                      ? chart.afdelingen.map((a) => (
-                          <OrgChartAfdeling
-                            key={a.afdeling}
-                            afdeling={a}
-                            maxAfdelingFte={chart.maxAfdelingFte}
-                            maxFte={chart.maxFte}
-                          />
-                        ))
-                      : chart.rollen.map((r) => <OrgChartRole key={r.roleId} rol={r} maxFte={chart.maxFte} />)}
-                </>
-              );
-            })()}
+          <Section title="Organogram — waar de capaciteit vrijkomt" icon="🏢">
+            <Organogram rollen={results.rollen} />
           </Section>
         )}
 

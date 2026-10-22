@@ -1,4 +1,4 @@
-import { buildOrgChartData } from "./orgChartData.js";
+import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, BESTEMMING_VOLGORDE } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
 import { getWaardetype } from "../../src/config.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
@@ -313,61 +313,106 @@ function competentieTop5Block(title, items) {
       .join("")}`;
 }
 
-function krimpPct(nu, straks) {
-  if (!nu) return 0;
-  return Math.round(((nu - straks) / nu) * 100);
+const BESTEMMING_HEX = { kostenreductie: "#94a3b8", capaciteitsgroei: "#6366f1", kwaliteitsverbetering: "#10b981", onbepaald: "#c7d2fe" };
+
+/** Eén balk: het gekleurde deel komt vrij (per bestemming), de rest blijft. */
+function stapelBalk(fteHuidig, vrijPerType) {
+  const segmenten = balkSegmenten(fteHuidig, vrijPerType)
+    .map((sg) => `<div style="width:${(sg.aandeel * 100).toFixed(2)}%;background:${BESTEMMING_HEX[sg.soort] ?? BESTEMMING_HEX.onbepaald};"></div>`)
+    .join("");
+  return `<div class="stapel">${segmenten}</div>`;
+}
+
+function bestemmingRegel(vrijPerType) {
+  const namen = BESTEMMING_VOLGORDE.filter((t) => (vrijPerType?.[t] ?? 0) > 0).map((t) => {
+    const w = getWaardetype(t);
+    return `<span style="color:${BESTEMMING_HEX[t] === "#c7d2fe" ? "#64748b" : BESTEMMING_HEX[t]};">${w ? `${w.icon} ${esc(w.label)}` : "nog niet bepaald"}</span>`;
+  });
+  return namen.length ? `<p style="font-size:9px;margin:0 0 2px;">${namen.join(" &nbsp; ")}</p>` : "";
+}
+
+function legendaOrganogram() {
+  const stip = (kleur, tekst) => `<span><span class="tier-stip" style="background:${kleur};"></span>${tekst}</span>`;
+  return `<div class="tier-legenda" style="margin:0 0 8px;">
+    ${stip("#e2e8f0", "blijft")}<span>komt vrij en kan naar:</span>
+    ${["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"].map((t) => stip(BESTEMMING_HEX[t], esc(getWaardetype(t).label.toLowerCase()))).join("")}
+  </div>`;
 }
 
 /** Eén rol in de rapportagestructuur, met wie eronder hangt. */
-function hierarchieKnoop(knoop, maxFte, diepte = 0) {
-  const krimp = krimpPct(knoop.fteHuidig, knoop.fteRealistisch);
-  const spanKrimp = krimpPct(knoop.spanTotaalHuidig, knoop.spanTotaalRealistisch);
+function hierarchieKnoop(knoop, teksten, diepte = 0) {
   const inspringen = diepte * 14;
-
   return `<div style="margin-left:${inspringen}px;border-left:${
     diepte > 0 ? "1px solid #e2e8f0" : "none"
-  };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;">
-    <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${nl(knoop.fteHuidig, 1)} → ${nl(knoop.fteRealistisch, 2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
-    ${
-      knoop.kinderen.length
-        ? `<p style="font-size:9px;color:#94a3b8;margin:0 0 3px;">stuurt ${knoop.spanDirect} ${
-            knoop.spanDirect === 1 ? "rol" : "rollen"
-          } aan · ${nl(knoop.spanTotaalHuidig, 1)} → ${nl(knoop.spanTotaalRealistisch, 2)} FTE onder zich${
-            spanKrimp > 0 ? ` (−${spanKrimp}%)` : ""
-          }</p>`
-        : ""
-    }
-    ${bar("Huidig", knoop.fteHuidig, maxFte, "c-slate")}
-    ${bar("Realistisch", knoop.fteRealistisch, maxFte, "c-indigo")}
-    ${knoop.kinderen.map((k) => hierarchieKnoop(k, maxFte, diepte + 1)).join("")}
+  };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;page-break-inside:avoid;">
+    <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${teksten.onderdeel(knoop)}</p>
+    ${stapelBalk(knoop.fteHuidig, knoop.vrijPerType)}
+    ${bestemmingRegel(knoop.vrijPerType)}
+    ${knoop.kinderen.map((k) => hierarchieKnoop(k, teksten, diepte + 1)).join("")}
   </div>`;
 }
 
 /** Eén afdeling in het organogram, met de rollen eronder. */
-function afdelingBlok(afdeling, orgChart) {
-  const krimp = krimpPct(afdeling.fteHuidig, afdeling.fteRealistisch);
-  // Bij één rol zijn de rolbalken identiek aan die van de afdeling; dan alleen de naam.
+function afdelingBlok(afdeling, teksten) {
+  // Bij één rol zou de rolbalk die van de afdeling herhalen; dan alleen de naam.
   const rollen =
     afdeling.rollen.length === 1
       ? `<p style="font-size:10px;color:#64748b;margin:4px 0 0 14px;">${esc(afdeling.rollen[0].rolnaam)}</p>`
       : afdeling.rollen
           .map(
             (r) => `<div style="margin:6px 0 0 14px;">
-        <p style="font-size:10px;margin:0 0 3px;">${esc(r.rolnaam)}</p>
-        ${bar("Huidig", r.fteHuidig, orgChart.maxFte, "c-slate")}
-        ${bar("Realistisch", r.fteRealistisch, orgChart.maxFte, "c-indigo")}
-        ${bar("Agressief", r.fteAgressief, orgChart.maxFte, "c-indigo-light")}
+        <p style="font-size:10px;margin:0 0 2px;">${esc(r.rolnaam)} — ${teksten.onderdeel(r)}</p>
+        ${stapelBalk(r.fteHuidig, r.vrijPerType)}
+        ${bestemmingRegel(r.vrijPerType)}
       </div>`
           )
           .join("");
 
   return `<div class="role-block">
-    <p style="font-weight:bold;font-size:12px;margin-bottom:4px;">${esc(afdeling.afdeling)} — ${nl(afdeling.fteHuidig, 1)} → ${nl(afdeling.fteRealistisch, 2)} FTE${krimp > 0 ? ` (−${krimp}%)` : ""}</p>
-    ${bar("Huidig", afdeling.fteHuidig, orgChart.maxAfdelingFte, "c-slate")}
-    ${bar("Realistisch", afdeling.fteRealistisch, orgChart.maxAfdelingFte, "c-indigo")}
-    ${bar("Agressief", afdeling.fteAgressief, orgChart.maxAfdelingFte, "c-indigo-light")}
+    <p style="font-weight:bold;font-size:12px;margin-bottom:2px;">${esc(afdeling.afdeling)} — ${teksten.onderdeel(afdeling)}</p>
+    ${stapelBalk(afdeling.fteHuidig, afdeling.vrijPerType)}
+    ${bestemmingRegel(afdeling.vrijPerType)}
     ${rollen}
   </div>`;
+}
+
+function organogramBlok(orgChart) {
+  const teksten = organogramTeksten(orgChart);
+  const regels = aansturingRegels(orgChart.hierarchie);
+  const o = orgChart.organisatie;
+  return `<p class="disclaimer">${esc(teksten.uitleg)}</p>
+  ${
+    orgChart.hierarchie?.problemen?.length
+      ? `<p class="disclaimer" style="color:#92400e;">Let op bij de rapportagelijnen: ${orgChart.hierarchie.problemen.map(esc).join(" ")}</p>`
+      : ""
+  }
+  <p style="font-weight:bold;font-size:12px;margin:8px 0 2px;">${esc(teksten.totaal)}</p>
+  ${stapelBalk(o.fteHuidig, o.vrijPerType)}
+  ${bestemmingRegel(o.vrijPerType)}
+  ${legendaOrganogram()}
+  ${
+    orgChart.hierarchie
+      ? orgChart.hierarchie.top.map((k) => hierarchieKnoop(k, teksten)).join("")
+      : orgChart.heeftAfdelingen
+        ? orgChart.afdelingen.map((a) => afdelingBlok(a, teksten)).join("")
+        : orgChart.rollen
+            .map(
+              (r) => `<div class="role-block">
+      <p style="font-weight:bold;font-size:12px;margin-bottom:2px;">${esc(r.rolnaam)} — ${teksten.onderdeel(r)}</p>
+      ${stapelBalk(r.fteHuidig, r.vrijPerType)}
+      ${bestemmingRegel(r.vrijPerType)}
+    </div>`
+            )
+            .join("")
+  }
+  ${
+    regels.length
+      ? `<div class="role-block" style="margin-top:10px;">
+    <p style="font-weight:bold;font-size:11px;margin:0 0 4px;">Aansturing</p>
+    ${regels.map((r) => `<p style="font-size:10px;margin:0 0 4px;">${esc(r.tekst)}</p>`).join("")}
+  </div>`
+      : ""
+  }`;
 }
 
 const TIER_KLASSE = { hoog: "c-emerald", midden: "c-blue", laag: "c-orange" };
@@ -468,7 +513,6 @@ export function buildReportHtml(results) {
   } = results;
   const datum = new Date(gegenereerdOp).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" });
   const orgChart = buildOrgChartData(rollen);
-  const { maxFte, rollen: chartRollen } = orgChart;
   const scopeSuffix = scope === "afdeling" && scopeLabel ? ` — ${esc(scopeLabel)}` : "";
 
   const html = `<!doctype html>
@@ -498,6 +542,7 @@ export function buildReportHtml(results) {
   .bar-track { flex: 1; height: 14px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 3px; }
   .bar-value { width: 40px; text-align: right; font-size: 9px; font-weight: bold; flex-shrink: 0; }
+  .stapel { display: flex; height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; margin: 2px 0 3px; }
   .c-slate { background: #94a3b8; } .c-indigo { background: #6366f1; } .c-indigo-light { background: #c7d2fe; }
   .c-emerald { background: #10b981; } .c-blue { background: #3b82f6; } .c-orange { background: #f97316; }
   .profiel-grid { display: flex; gap: 16px; }
@@ -591,46 +636,8 @@ export function buildReportHtml(results) {
       : ""
   }
 
-  <h2>Organogram — voor &amp; na</h2>
-  <p class="disclaimer">${
-    orgChart.hierarchie
-      ? `Opgebouwd uit de rapportagelijnen in het roster — ${orgChart.hierarchie.lagen} ${
-          orgChart.hierarchie.lagen === 1 ? "laag" : "lagen"
-        }. Per rol: FTE nu versus overgebleven na transformatie, en hoeveel FTE eronder hangt.`
-      : orgChart.heeftAfdelingen
-        ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
-        : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol."
-  }</p>
-  ${
-    orgChart.hierarchie?.problemen?.length
-      ? `<p class="disclaimer" style="color:#92400e;">Let op bij de rapportagelijnen: ${orgChart.hierarchie.problemen
-          .map(esc)
-          .join(" ")}</p>`
-      : ""
-  }
-  ${
-    orgChart.hierarchie
-      ? orgChart.hierarchie.top.map((k) => hierarchieKnoop(k, orgChart.maxFte)).join("")
-      : orgChart.heeftAfdelingen
-      ? `<p style="font-weight:bold;font-size:12px;margin:8px 0 2px;">Hele organisatie: ${nl(orgChart.organisatie.fteHuidig, 1)} → ${nl(orgChart.organisatie.fteRealistisch, 2)} FTE${
-          krimpPct(orgChart.organisatie.fteHuidig, orgChart.organisatie.fteRealistisch) > 0
-            ? ` (−${krimpPct(orgChart.organisatie.fteHuidig, orgChart.organisatie.fteRealistisch)}%)`
-            : ""
-        }</p>
-    <p class="disclaimer" style="margin:0 0 8px;">${orgChart.afdelingen.length} afdelingen, ${
-          orgChart.rollen.length
-        } rollen</p>` + orgChart.afdelingen.map((a) => afdelingBlok(a, orgChart)).join("")
-      : chartRollen
-          .map(
-            (r) => `<div class="role-block">
-      <p style="font-weight:bold;font-size:12px;margin-bottom:4px;">${esc(r.rolnaam)}</p>
-      ${bar("Huidig", r.fteHuidig, maxFte, "c-slate")}
-      ${bar("Realistisch", r.fteRealistisch, maxFte, "c-indigo")}
-      ${bar("Agressief", r.fteAgressief, maxFte, "c-indigo-light")}
-    </div>`
-          )
-          .join("")
-  }
+  <h2>Organogram — waar de capaciteit vrijkomt</h2>
+  ${organogramBlok(orgChart)}
 
   ${taakprofielBlock(rollen)}
   ${mobiliteitBlock(rollen)}

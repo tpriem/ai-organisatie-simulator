@@ -14,7 +14,7 @@ import {
   HeightRule,
 } from "docx";
 import { getWaardetype } from "../../src/config.js";
-import { buildOrgChartData } from "./orgChartData.js";
+import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, BESTEMMING_VOLGORDE } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateTaakprofiel } from "../../src/taakprofiel.js";
@@ -367,151 +367,120 @@ function miniBar(value, maxValue, colorHex) {
   });
 }
 
-function krimpPct(nu, straks) {
-  if (!nu) return 0;
-  return Math.round(((nu - straks) / nu) * 100);
+/** Eén balk: het gekleurde deel komt vrij (per bestemming), de rest blijft. */
+function stapelBalk(fteHuidig, vrijPerType) {
+  const segmenten = balkSegmenten(fteHuidig, vrijPerType);
+  let breedtes = segmenten.map((sg) => Math.max(Math.round(sg.aandeel * BAR_TOTAL_WIDTH), 40));
+  const gebruikt = breedtes.reduce((t, b) => t + b, 0);
+  if (gebruikt > BAR_TOTAL_WIDTH) breedtes = breedtes.map((b) => Math.floor((b * BAR_TOTAL_WIDTH) / gebruikt));
+  const rest = BAR_TOTAL_WIDTH - breedtes.reduce((t, b) => t + b, 0);
+
+  const cel = (breedte, kleur) =>
+    new TableCell({
+      width: { size: breedte, type: WidthType.DXA },
+      shading: { type: ShadingType.CLEAR, fill: kleur },
+      borders: NO_BORDERS,
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+      children: [new Paragraph({ children: [] })],
+    });
+  const cellen = [...segmenten.map((sg, i) => cel(breedtes[i], BESTEMMING_KLEUR[sg.soort] ?? BESTEMMING_KLEUR.onbepaald))];
+  if (rest > 0) cellen.push(cel(rest, LIGHT_FILL));
+
+  return new Table({
+    width: { size: BAR_TOTAL_WIDTH, type: WidthType.DXA },
+    columnWidths: [...breedtes, ...(rest > 0 ? [rest] : [])],
+    borders: NO_BORDERS,
+    rows: [new TableRow({ children: cellen, height: { value: 200, rule: HeightRule.ATLEAST } })],
+  });
 }
 
-function fteBalken(out, huidig, realistisch, agressief, schaal) {
-  out.push(paragraph(`Huidig — ${nl(huidig, 2)} FTE`, { size: 16, color: "64748B" }));
-  out.push(miniBar(huidig, schaal, "94A3B8"));
-  out.push(paragraph(`Realistisch — ${nl(realistisch, 2)} FTE`, { size: 16, color: "64748B" }));
-  out.push(miniBar(realistisch, schaal, "6366F1"));
-  out.push(paragraph(`Agressief — ${nl(agressief, 2)} FTE`, { size: 16, color: "64748B" }));
-  out.push(miniBar(agressief, schaal, "C7D2FE"));
+function bestemmingParagraaf(vrijPerType, indent = 0) {
+  const namen = BESTEMMING_VOLGORDE.filter((t) => (vrijPerType?.[t] ?? 0) > 0).map((t) => {
+    const w = getWaardetype(t);
+    return w ? w.label : "nog niet bepaald";
+  });
+  if (!namen.length) return null;
+  return new Paragraph({
+    spacing: { before: 20, after: 60 },
+    indent: { left: indent },
+    children: [new TextRun({ text: namen.join(" · "), size: 16, color: "64748B" })],
+  });
 }
 
-function hierarchieKnoopWord(out, knoop, maxFte, diepte = 0) {
-  const krimp = krimpPct(knoop.fteHuidig, knoop.fteRealistisch);
-  const spanKrimp = krimpPct(knoop.spanTotaalHuidig, knoop.spanTotaalRealistisch);
+function legendaParagraaf() {
+  const kleurBlok = (hex, label) => [
+    new TextRun({ text: "■ ", color: hex, size: 18 }),
+    new TextRun({ text: label + "   ", size: 16, color: "64748B" }),
+  ];
+  return new Paragraph({
+    spacing: { after: 120 },
+    children: [
+      ...kleurBlok("CBD5E1", "blijft"),
+      new TextRun({ text: "komt vrij en kan naar:  ", size: 16, color: "94A3B8" }),
+      ...["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"].flatMap((t) =>
+        kleurBlok(BESTEMMING_KLEUR[t], getWaardetype(t).label.toLowerCase())
+      ),
+    ],
+  });
+}
 
+function onderdeelKop(out, tekst, x, { indent = 0, size = 20, before = 160 } = {}) {
   out.push(
     new Paragraph({
-      spacing: { before: 160, after: 40 },
-      indent: { left: diepte * 280 },
-      children: [
-        new TextRun({
-          text:
-            `${knoop.rolnaam} — ${nl(knoop.fteHuidig, 1)} → ${nl(knoop.fteRealistisch, 2)} FTE` +
-            (krimp > 0 ? ` (−${krimp}%)` : ""),
-          bold: true,
-          size: 20,
-        }),
-      ],
+      spacing: { before, after: 40 },
+      indent: { left: indent },
+      children: [new TextRun({ text: tekst, bold: true, size })],
+      keepNext: true,
     })
   );
+  out.push(stapelBalk(x.fteHuidig, x.vrijPerType));
+  const best = bestemmingParagraaf(x.vrijPerType);
+  if (best) out.push(best);
+}
 
-  if (knoop.kinderen.length) {
-    out.push(
-      new Paragraph({
-        spacing: { after: 40 },
-        indent: { left: diepte * 280 },
-        children: [
-          new TextRun({
-            text:
-              `stuurt ${knoop.spanDirect} ${knoop.spanDirect === 1 ? "rol" : "rollen"} aan · ` +
-              `${nl(knoop.spanTotaalHuidig, 1)} → ${nl(knoop.spanTotaalRealistisch, 2)} FTE onder zich` +
-              (spanKrimp > 0 ? ` (−${spanKrimp}%)` : ""),
-            size: 16,
-            color: "94A3B8",
-          }),
-        ],
-      })
-    );
-  }
-
-  out.push(paragraph(`Huidig — ${nl(knoop.fteHuidig, 2)} FTE`, { size: 16, color: "64748B" }));
-  out.push(miniBar(knoop.fteHuidig, maxFte, "94A3B8"));
-  out.push(paragraph(`Realistisch — ${nl(knoop.fteRealistisch, 2)} FTE`, { size: 16, color: "64748B" }));
-  out.push(miniBar(knoop.fteRealistisch, maxFte, "6366F1"));
-
-  for (const kind of knoop.kinderen) hierarchieKnoopWord(out, kind, maxFte, diepte + 1);
+function hierarchieKnoopWord(out, knoop, teksten, diepte = 0) {
+  onderdeelKop(out, `${knoop.rolnaam} — ${teksten.onderdeel(knoop)}`, knoop, { indent: diepte * 280 });
+  for (const kind of knoop.kinderen) hierarchieKnoopWord(out, kind, teksten, diepte + 1);
 }
 
 function organogramSection(rollen) {
   const chart = buildOrgChartData(rollen);
-  const out = [
-    paragraph(
-      chart.hierarchie
-        ? `Opgebouwd uit de rapportagelijnen in het roster — ${chart.hierarchie.lagen} ${
-            chart.hierarchie.lagen === 1 ? "laag" : "lagen"
-          }. Per rol: FTE nu versus overgebleven na transformatie, en hoeveel FTE eronder hangt.`
-        : chart.heeftAfdelingen
-          ? "Opgebouwd uit de afdelingen in het roster. Het roster bevat geen rapportagelijnen, dus dit toont de organisatie per afdeling — FTE nu versus overgebleven na transformatie."
-          : "Geen afdelingen in het roster — dit toont FTE per rol, huidig versus overgebleven na transformatie, geschaald t.o.v. de grootste rol.",
-      { italics: true, size: 18, color: "64748B" }
-    ),
-  ];
+  const teksten = organogramTeksten(chart);
+  const o = chart.organisatie;
+  const out = [paragraph(teksten.uitleg, { italics: true, size: 18, color: "64748B" })];
+
+  if (chart.hierarchie?.problemen?.length) {
+    out.push(paragraph(`Let op bij de rapportagelijnen: ${chart.hierarchie.problemen.join(" ")}`, { size: 16, color: "92400E" }));
+  }
+
+  onderdeelKop(out, teksten.totaal, o, { size: 22, before: 120 });
+  out.push(legendaParagraaf());
 
   if (chart.hierarchie) {
-    if (chart.hierarchie.problemen.length) {
+    for (const knoop of chart.hierarchie.top) hierarchieKnoopWord(out, knoop, teksten);
+    const regels = aansturingRegels(chart.hierarchie);
+    if (regels.length) {
       out.push(
-        paragraph(`Let op bij de rapportagelijnen: ${chart.hierarchie.problemen.join(" ")}`, {
-          size: 16,
-          color: "92400E",
-        })
+        new Paragraph({ spacing: { before: 240, after: 60 }, children: [new TextRun({ text: "Aansturing", bold: true, size: 20 })], keepNext: true })
       );
+      for (const r of regels) out.push(paragraph(r.tekst, { size: 18 }));
     }
-    for (const knoop of chart.hierarchie.top) hierarchieKnoopWord(out, knoop, chart.maxFte);
     return out;
   }
 
   if (!chart.heeftAfdelingen) {
-    for (const r of chart.rollen) {
-      out.push(
-        new Paragraph({
-          spacing: { before: 200, after: 60 },
-          children: [new TextRun({ text: r.label, bold: true, size: 22 })],
-        })
-      );
-      fteBalken(out, r.fteHuidig, r.fteRealistisch, r.fteAgressief, chart.maxFte);
-    }
+    for (const r of chart.rollen) onderdeelKop(out, `${r.label} — ${teksten.onderdeel(r)}`, r, { size: 20, before: 200 });
     return out;
   }
 
-  const orgKrimp = krimpPct(chart.organisatie.fteHuidig, chart.organisatie.fteRealistisch);
-  out.push(
-    paragraph(
-      `Hele organisatie: ${nl(chart.organisatie.fteHuidig, 1)} → ${nl(chart.organisatie.fteRealistisch, 2)} FTE` +
-        (orgKrimp > 0 ? ` (−${orgKrimp}%)` : "") +
-        ` — ${chart.afdelingen.length} afdelingen, ${chart.rollen.length} rollen`,
-      { bold: true, size: 20 }
-    )
-  );
-
   for (const a of chart.afdelingen) {
-    const krimp = krimpPct(a.fteHuidig, a.fteRealistisch);
-    out.push(
-      new Paragraph({
-        spacing: { before: 240, after: 60 },
-        children: [
-          new TextRun({
-            text:
-              `${a.afdeling} — ${nl(a.fteHuidig, 1)} → ${nl(a.fteRealistisch, 2)} FTE` +
-              (krimp > 0 ? ` (−${krimp}%)` : ""),
-            bold: true,
-            size: 22,
-          }),
-        ],
-      })
-    );
-    fteBalken(out, a.fteHuidig, a.fteRealistisch, a.fteAgressief, chart.maxAfdelingFte);
-
-    // Bij één rol zijn de rolbalken identiek aan die van de afdeling; dan alleen de naam.
+    onderdeelKop(out, `${a.afdeling} — ${teksten.onderdeel(a)}`, a, { size: 22, before: 240 });
+    // Bij één rol zou de rolbalk die van de afdeling herhalen; dan alleen de naam.
     if (a.rollen.length === 1) {
       out.push(paragraph(a.rollen[0].rolnaam, { size: 16, color: "64748B" }));
       continue;
     }
-    for (const r of a.rollen) {
-      out.push(
-        new Paragraph({
-          spacing: { before: 140, after: 40 },
-          indent: { left: 300 },
-          children: [new TextRun({ text: r.rolnaam, size: 18 })],
-        })
-      );
-      fteBalken(out, r.fteHuidig, r.fteRealistisch, r.fteAgressief, chart.maxFte);
-    }
+    for (const r of a.rollen) onderdeelKop(out, `${r.rolnaam} — ${teksten.onderdeel(r)}`, r, { indent: 300, size: 18, before: 140 });
   }
 
   return out;
@@ -841,7 +810,7 @@ export async function generateReportDocx(results) {
       ? [heading("Subtotalen per afdeling", HeadingLevel.HEADING_2), subtotalenTable(subtotalenPerAfdeling)]
       : []),
 
-    heading("Organogram — voor & na"),
+    heading("Organogram — waar de capaciteit vrijkomt"),
     ...organogramSection(rollen),
 
     ...(missingProfiles?.length
