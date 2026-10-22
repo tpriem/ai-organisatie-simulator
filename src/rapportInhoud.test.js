@@ -225,7 +225,7 @@ for (const formaat of ["pdf", "docx"]) {
   });
 }
 
-// ── Blok 3: dekking en beroepsmatch ───────────────────────────────────────────────────
+// ── Blok 3: beroepsmatch en meldingen ───────────────────────────────────────────────────
 
 for (const formaat of ["pdf", "docx"]) {
   test(`${formaat}: bij elke rol staat het ESCO-beroep waaruit de competenties komen`, async () => {
@@ -241,23 +241,22 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(!tekst.includes(`"accountmanager" (match ${nl(1, 2)}). De koppeling sluit minder nauw aan`));
   });
 
-  test(`${formaat}: de dekkingssectie meldt taakdekking en de twijfelgevallen`, async () => {
-    const { results, [formaat]: tekst } = await rapporten();
-    const z = dekkingZinnen(results);
-    assert.ok(tekst.includes("Dekking en betrouwbaarheid"));
-    assert.ok(tekst.includes(z.dekking), "dekkingszin ontbreekt");
-    assert.ok(z.zwak && tekst.includes(z.zwak), "melding over matige koppelingen ontbreekt");
+  test(`${formaat}: er is geen aparte dekkingssectie meer; twijfelgevallen staan per rol`, async () => {
+    // Taakdekking en een lijst koppelingen zeggen een lezer weinig. De matige koppeling staat bij de
+    // rol zelf (zie hierboven); alleen wat de totalen verandert krijgt een melding bovenaan.
+    const { [formaat]: tekst } = await rapporten();
+    assert.ok(!tekst.includes("Dekking en betrouwbaarheid"));
+    assert.ok(!tekst.includes("aan een competentie worden gekoppeld"), "taakdekkingszin staat er nog");
   });
 
-  test(`${formaat}: een mislukte rol wordt gemeld, bij de totalen én in de dekking`, async () => {
+  test(`${formaat}: een mislukte rol wordt gemeld bij de totalen, voor de analyses`, async () => {
     // Zonder deze melding ontbreekt de rol stilzwijgend in alle totalen van een rapport
     // dat naar de klant gaat.
     const { results, [formaat]: tekst } = await rapporten({ mislukt: true });
     const zin = dekkingZinnen(results).mislukt;
     assert.ok(zin, "er hoort een melding te zijn");
-    const voorkomens = tekst.split(zin).length - 1;
-    assert.ok(voorkomens >= 2, `melding staat ${voorkomens}x, verwacht bij de totalen én in de dekking`);
-    assert.ok(tekst.indexOf(zin) < tekst.indexOf("Waar komt de capaciteit vandaan?"), "eerste melding hoort vóór de analyses te staan");
+    assert.equal(tekst.split(zin).length - 1, 1, "de melding hoort één keer te staan");
+    assert.ok(tekst.indexOf(zin) < tekst.indexOf("Waar komt de capaciteit vandaan?"), "melding hoort vóór de analyses te staan");
   });
 
   test(`${formaat}: zonder mislukte rollen staat er geen melding over mislukte rollen`, async () => {

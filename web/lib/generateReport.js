@@ -835,22 +835,6 @@ export async function generateReportDocx(results) {
     )
   );
 
-  // Dekking en betrouwbaarheid: hoe stevig zijn de uitspraken in dit rapport. Teksten
-  // komen uit rapportTeksten.js zodat PDF en Word dezelfde formulering gebruiken.
-  const dekking = dekkingZinnen(results);
-  if (dekking.heeftIets) {
-    children.push(
-      heading("Dekking en betrouwbaarheid", HeadingLevel.HEADING_2),
-      paragraph(
-        "Elke rol wordt gekoppeld aan een beroep uit de ESCO-classificatie; uit dat beroep komt de competentielijst waaruit de analyse kiest. Hoe sterker die koppeling, hoe steviger de competentie-uitspraken over die rol.",
-        { italics: true, size: 18, color: "64748B" }
-      ),
-      ...(dekking.dekking ? [paragraph(dekking.dekking)] : []),
-      ...(dekking.mislukt ? [paragraph(dekking.mislukt, { color: "B45309" })] : []),
-      ...(dekking.zwak ? [paragraph(dekking.zwak)] : [])
-    );
-  }
-
   // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 van de
   // ESCO-gebruiksvoorwaarden schrijft deze zin letterlijk voor voor publicaties), plus
   // de markering van eigen bewerkingen (voorwaarde 2). De trainbaarheidsindeling is

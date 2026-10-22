@@ -174,20 +174,6 @@ function herkomstBlock(rollen) {
   </table>`;
 }
 
-// Hoe volledig en hoe stevig is deze analyse. Teksten komen uit rapportTeksten.js zodat
-// PDF en Word dezelfde formulering gebruiken.
-function dekkingBlock(results) {
-  const z = dekkingZinnen(results);
-  if (!z.heeftIets) return "";
-
-  return `
-  <h2>Dekking en betrouwbaarheid</h2>
-  <p class="disclaimer">Elke rol wordt gekoppeld aan een beroep uit de ESCO-classificatie; uit dat beroep komt de competentielijst waaruit de analyse kiest. Hoe sterker die koppeling, hoe steviger de competentie-uitspraken over die rol.</p>
-  ${z.dekking ? `<p>${esc(z.dekking)}</p>` : ""}
-  ${z.mislukt ? `<p style="color:#b45309;">${esc(z.mislukt)}</p>` : ""}
-  ${z.zwak ? `<p>${esc(z.zwak)}</p>` : ""}`;
-}
-
 // De competenties die de hele organisatie raken. Zelfde berekening en teksten als in de app.
 function ontwikkelagendaBlock(rollen) {
   const agenda = calculateCompetentieAgenda(rollen, "realistisch");
@@ -629,7 +615,6 @@ export function buildReportHtml(results) {
     <p>De uitkomsten geven aanleiding tot verder, verdiepend onderzoek: het toetsen van deze bevindingen aan de praktijk, verfijning op basis van interne kennis en operationele details, en vertaling naar een concreet implementatieplan. Dit rapport is het begin van dat gesprek, niet de afsluiting ervan.</p>
   </div>
 
-  ${dekkingBlock(results)}
 
   ${
     // Verplichte bronvermelding bij hergebruik van ESCO (voorwaarde 1 schrijft deze zin

@@ -17,7 +17,7 @@ import {
   AGENDA_KOLOMMEN,
 } from "../../../../../src/competencyAgenda.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../../../../src/taakprofiel.js";
-import { calculateScanDekking, matchKwaliteit } from "../../../../../src/scanDekking.js";
+import { matchKwaliteit } from "../../../../../src/scanDekking.js";
 import {
   isHandmatig,
   waardetypeHerkomst,
@@ -290,78 +290,6 @@ export function CompetentieAgenda({ results }) {
       )}
 
       {laagZin && <p className="mt-3 text-xs text-amber-700 max-w-3xl">{laagZin}</p>}
-    </Section>
-  );
-}
-
-// Hoe volledig en hoe stevig is deze analyse. Een scan die alleen uitkomsten toont
-// verbergt haar eigen onzekerheid; dit paneel maakt die expliciet, zodat een adviseur
-// weet wat hij wel en niet kan beweren.
-export function ScanDekking({ results }) {
-  const d = useMemo(() => calculateScanDekking(results), [results]);
-  if (!d.heeftMatchdata) return null;
-
-  const allesInOrde =
-    d.zwakkeMatches.length === 0 && d.ontbrekendeProfielen.length === 0 && d.ongematchteTaken === 0;
-
-  return (
-    <Section title="Dekking van deze analyse" icon="🔍">
-      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
-        Elke rol wordt gekoppeld aan een beroep uit de ESCO-classificatie; uit dat beroep komt de competentielijst
-        waaruit de analyse kiest. Hoe sterker die koppeling, hoe steviger de competentie-uitspraken over die rol.
-      </p>
-
-      <div className="grid sm:grid-cols-3 gap-3 mb-5">
-        <StatCard
-          label="Rollen geanalyseerd"
-          value={d.rollen}
-          sub={d.ontbrekendeProfielen.length > 0 ? `${d.ontbrekendeProfielen.length} zonder profiel` : "alle rollen"}
-        />
-        <StatCard
-          label="Taken met competentie"
-          value={d.taakdekking === null ? "—" : `${Math.round(d.taakdekking * 100)}%`}
-          sub={`${d.takenTotaal - d.ongematchteTaken} van ${d.takenTotaal} taken`}
-        />
-        <StatCard
-          label="Matches om te controleren"
-          value={d.zwakkeMatches.length}
-          sub={d.zwakkeMatches.length === 0 ? "alle koppelingen sterk" : "zie hieronder"}
-        />
-      </div>
-
-      {d.zwakkeMatches.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 mb-4">
-          <p className="text-xs font-semibold text-amber-800 mb-1.5">
-            Deze koppelingen zijn niet overtuigend — controleer ze voordat het rapport de deur uit gaat
-          </p>
-          <ul className="space-y-1">
-            {d.zwakkeMatches.map((m) => (
-              <li key={m.roleId} className="text-[11px] text-amber-800">
-                <span className="font-medium">{m.roleLabel}</span> → {m.beroep}{" "}
-                <span className="text-amber-600">(match {nl(m.score, 2)})</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-[11px] text-amber-700 mt-1.5">
-            De competenties van deze rollen komen uit de lijst van het gematchte beroep. Klopt de koppeling niet, dan
-            is de competentie-analyse van die rol onbetrouwbaar — ook al ziet het rapport er compleet uit.
-          </p>
-        </div>
-      )}
-
-      {d.ontbrekendeProfielen.length > 0 && (
-        <p className="text-xs text-slate-500">
-          Niet meegenomen, want geen functieprofiel aangeleverd: {d.ontbrekendeProfielen.join(", ")}. Deze rollen
-          tellen niet mee in de capaciteit, de ontwikkelagenda of het organogram.
-        </p>
-      )}
-
-      {allesInOrde && (
-        <p className="text-xs text-emerald-700">
-          Alle rollen hebben een profiel, alle taken zijn aan een competentie gekoppeld en alle beroepskoppelingen
-          zijn sterk.
-        </p>
-      )}
     </Section>
   );
 }
@@ -1823,6 +1751,35 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               </p>
             </div>
 
+            {/* Rollen die niet in de totalen zitten, direct boven de totalen: wie de kaarten leest moet
+                weten dat ze niet compleet zijn. Verschijnt alleen als er echt iets ontbreekt. */}
+            {results.missingProfiles?.length > 0 && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2">
+                <p className="text-xs font-semibold text-amber-800">Niet meegenomen in de totalen: geen functieprofiel aangeleverd</p>
+                <p className="mt-0.5 text-[11px] text-amber-700">{results.missingProfiles.join(", ")}</p>
+              </div>
+            )}
+
+            {results.mislukteRollen?.length > 0 && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2">
+                <p className="text-xs font-semibold text-red-800">
+                  Niet meegenomen in de totalen: {results.mislukteRollen.length}{" "}
+                  {results.mislukteRollen.length === 1 ? "rol is" : "rollen zijn"} niet geanalyseerd
+                </p>
+                <p className="text-[11px] text-red-700 mt-0.5">
+                  De overige rollen zijn wél volledig. Draai de analyse opnieuw om deze rollen alsnog mee te nemen;
+                  eerder geslaagde rollen blijven behouden.
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {results.mislukteRollen.map((r) => (
+                    <li key={r.roleId ?? r.roleLabel} className="text-[11px] text-red-700">
+                      <span className="font-medium">{r.roleLabel}</span> — {r.fout}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="grid gap-3 mb-5 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label="FTE totaal"
@@ -1928,34 +1885,6 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               </table>
             </div>
 
-            {results.missingProfiles?.length > 0 && (
-              <p className="text-xs text-amber-600 mt-4">
-                Overgeslagen (geen profiel): {results.missingProfiles.join(", ")}
-              </p>
-            )}
-
-            {/* Rollen die de analyse niet haalden. De rest van het rapport klopt wél;
-                deze rollen ontbreken erin en kunnen los opnieuw geprobeerd worden. */}
-            {results.mislukteRollen?.length > 0 && (
-              <div className="mt-4 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2">
-                <p className="text-xs font-semibold text-red-800">
-                  {results.mislukteRollen.length}{" "}
-                  {results.mislukteRollen.length === 1 ? "rol is" : "rollen zijn"} niet geanalyseerd
-                </p>
-                <p className="text-[11px] text-red-700 mt-0.5">
-                  De overige rollen hieronder zijn wél volledig. Draai de analyse opnieuw om deze rollen alsnog mee te
-                  nemen — eerder geslaagde rollen blijven behouden.
-                </p>
-                <ul className="mt-1.5 space-y-1">
-                  {results.mislukteRollen.map((r) => (
-                    <li key={r.roleId ?? r.roleLabel} className="text-[11px] text-red-700">
-                      <span className="font-medium">{r.roleLabel}</span> — {r.fout}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
             {results.subtotalenPerAfdeling?.length > 0 && (
               <div className="mt-6">
                 <p className="text-sm font-medium text-slate-700 mb-2">Subtotalen per afdeling</p>
@@ -2001,7 +1930,6 @@ export default function ClientWorkspace({ id, nieuw = false }) {
 
         <CapaciteitHerkomst results={results} />
         <CompetentieAgenda results={results} />
-        <ScanDekking results={results} />
 
         {results?.aanbevelingen && (
           <Section title="Bevindingen & Aanbevelingen" icon="💡">
