@@ -1,4 +1,4 @@
-import { getCategory, SCENARIOS } from "./config.js";
+import { getCategory, SCENARIOS, WAARDETYPES } from "./config.js";
 import { roleId, roleLabel } from "./roleIdentity.js";
 
 /**
@@ -161,11 +161,14 @@ export function calculateCapaciteitBestemming(roleResults, scenario = "realistis
 
   for (const r of roleResults) {
     const key = r.waardetype || "onbepaald";
-    if (!groepen.has(key)) groepen.set(key, { waardetype: key, rollen: 0, fte: 0, urenPerWeek: 0 });
+    if (!groepen.has(key)) groepen.set(key, { waardetype: key, rollen: 0, fte: 0, urenPerWeek: 0, waardePerJaar: 0 });
     const g = groepen.get(key);
     g.rollen += 1;
     g.fte += r.scenarios[scenario].fteWeg;
     g.urenPerWeek += r.scenarios[scenario].automatiseerbareUrenPerWeek;
+    // De waarde van die uren tegen de kosten per uur. Alleen een besparing als je kiest voor
+    // kostenreductie; bij groei of kwaliteit is het de waarde van extra output of beter werk.
+    g.waardePerJaar += r.scenarios[scenario].kostenBesparingPerJaar;
   }
 
   const totaalFte = [...groepen.values()].reduce((s, g) => s + g.fte, 0);
@@ -173,4 +176,35 @@ export function calculateCapaciteitBestemming(roleResults, scenario = "realistis
   return [...groepen.values()]
     .map((g) => ({ ...g, aandeel: totaalFte > 0 ? g.fte / totaalFte : 0 }))
     .sort((a, b) => b.fte - a.fte);
+}
+
+/**
+ * De bestemming van de capaciteit van één rol: wat er vrijkomt, wat dat waard is, en wat elk van
+ * de drie opties betekent voor deze rol. Dezelfde uren, drie manieren om ze te benoemen.
+ */
+export function calculateRolBestemming(rol, scenario = "realistisch") {
+  const s = rol.scenarios[scenario];
+  const a = rol.scenarios.agressief;
+  const gekozen = rol.waardetype || null;
+  return {
+    fte: s.fteWeg,
+    fteAgressief: a.fteWeg,
+    urenPerWeek: s.automatiseerbareUrenPerWeek,
+    waardePerJaar: s.kostenBesparingPerJaar,
+    waardePerJaarAgressief: a.kostenBesparingPerJaar,
+    gekozen,
+    opties: WAARDETYPES.map((w) => ({
+      waardetype: w.id,
+      label: w.label,
+      icon: w.icon,
+      gekozen: w.id === gekozen,
+      // Alleen het getal dat bij deze optie past.
+      gevolg:
+        w.id === "kostenreductie"
+          ? { soort: "waardePerJaar", waarde: s.kostenBesparingPerJaar }
+          : w.id === "capaciteitsgroei"
+            ? { soort: "outputgroei", waarde: s.outputgroeiPercentage }
+            : { soort: "urenPerWeek", waarde: s.automatiseerbareUrenPerWeek },
+    })),
+  };
 }

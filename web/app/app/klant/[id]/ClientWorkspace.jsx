@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from "rea
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { buildOrgChartData } from "@/lib/orgChartData";
-import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src/calculate.js";
+import { calculateRole, calculateCapaciteitBestemming, calculateRolBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel, driedeling } from "../../../../../src/competencyProfile.js";
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
@@ -18,7 +18,7 @@ import {
   bevestigtInschatting,
 } from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
-import { nl } from "../../../../../src/formatNl.js";
+import { nl, euroKort } from "../../../../../src/formatNl.js";
 import Aanlevering from "./Aanlevering";
 import KlantOpzet from "./KlantOpzet";
 import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
@@ -43,36 +43,62 @@ export function CapaciteitBestemming({ results }) {
   const alleenOnbepaald = bestemming.every((b) => b.waardetype === "onbepaald");
   if (alleenOnbepaald) return null;
 
+  // Alle drie de opties tonen, ook als er geen rol voor is gekozen: het zijn de keuzes van de
+  // organisatie, niet alleen wat er nu uit de inschatting komt.
+  const perType = new Map(bestemming.map((b) => [b.waardetype, b]));
+  const leeg = (w) => ({ waardetype: w, fte: 0, urenPerWeek: 0, rollen: 0, aandeel: 0, waardePerJaar: 0 });
+  const rijen = [...WAARDETYPES.map((w) => perType.get(w.id) ?? leeg(w.id)), ...(perType.has("onbepaald") ? [perType.get("onbepaald")] : [])].sort(
+    (a, b) => (b.rollen > 0) - (a.rollen > 0) || b.fte - a.fte
+  );
+  const UITLEG = {
+    kostenreductie: "De uren verdwijnen uit de kosten.",
+    capaciteitsgroei: "Meer werk met hetzelfde team.",
+    kwaliteitsverbetering: "Tijd voor beter werk.",
+  };
+
   return (
-    <div className="mb-5 rounded-xl border border-slate-200 p-4">
+    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-800">Waar gaat die capaciteit heen?</p>
       <p className="text-xs text-slate-500 mt-0.5 mb-3">
-        Per rol is ingeschat welke bestemming het meest voor de hand ligt. Dit is een vertrekpunt voor het gesprek,
-        geen voorschrift — de keuze is aan de organisatie.
+        Drie opties om de vrijgekomen tijd in te zetten. Per functie is ingeschat welke optie het meest voor de hand ligt;
+        dat is een vertrekpunt voor het gesprek, geen voorschrift. De keuze is aan de organisatie.
       </p>
 
-      <div className="space-y-2.5">
-        {bestemming.map((b) => {
+      <div className="space-y-3">
+        {rijen.map((b) => {
           const type = getWaardetype(b.waardetype);
           const stijl = BESTEMMING_STIJL[b.waardetype] ?? BESTEMMING_STIJL.onbepaald;
+          const gebruikt = b.rollen > 0;
           return (
-            <div key={b.waardetype}>
+            <div key={b.waardetype} className={gebruikt ? "" : "opacity-60"}>
               <div className="flex items-baseline justify-between gap-3 mb-1">
                 <span className={`text-xs font-medium ${stijl.tekst}`}>
                   {type ? `${type.icon} ${type.label}` : "Nog niet bepaald"}
+                  {UITLEG[b.waardetype] && <span className="ml-2 font-normal text-slate-400">{UITLEG[b.waardetype]}</span>}
                 </span>
                 <span className="text-xs text-slate-500 shrink-0">
-                  {nl(b.fte, 1)} FTE · {Math.round(b.urenPerWeek)} u/week ·{" "}
-                  {b.rollen} {b.rollen === 1 ? "rol" : "rollen"}
+                  {gebruikt ? (
+                    <>
+                      {nl(b.fte, 1)} FTE · {Math.round(b.urenPerWeek)} u/week · {b.rollen} {b.rollen === 1 ? "functie" : "functies"} ·{" "}
+                      <span className="font-medium text-slate-700">{euroKort(b.waardePerJaar)} per jaar</span>
+                    </>
+                  ) : (
+                    "geen functies"
+                  )}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className={`h-full ${stijl.balk}`} style={{ width: `${Math.max(b.aandeel * 100, 1.5)}%` }} />
+                <div className={`h-full ${stijl.balk}`} style={{ width: gebruikt ? `${Math.max(b.aandeel * 100, 1.5)}%` : "0%" }} />
               </div>
             </div>
           );
         })}
       </div>
+
+      <p className="mt-3 text-[11px] text-slate-400">
+        De bedragen zijn de waarde van de vrijgekomen uren tegen de kosten per uur. Het is alleen een besparing als die uren daadwerkelijk uit de kosten verdwijnen; bij groei of kwaliteit
+        is het extra output of beter werk.
+      </p>
 
       {/* Deze verdeling rust voor een deel op menselijk oordeel zodra een adviseur
           waardetypes heeft bijgestuurd; dat moet de lezer kunnen zien. */}
@@ -502,12 +528,13 @@ function FileDropLabel({ htmlFor, uploading, label, hint }) {
   );
 }
 
-function StatCard({ label, value, sub }) {
+function StatCard({ label, value, sub, noot }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-medium text-slate-400 mb-1">{label}</p>
       <p className="text-2xl font-bold text-slate-900">{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
+      {noot && <p className="mt-auto pt-2 text-[11px] leading-snug text-slate-400">{noot}</p>}
     </div>
   );
 }
@@ -1140,6 +1167,45 @@ function VersieHistorie({ id, onHersteld }) {
   );
 }
 
+// "Waar gaat de capaciteit heen?" voor één functie: wat er vrijkomt, wat dat waard is, en wat elk
+// van de drie opties voor deze functie betekent. De bediening (bevestigen of bijsturen) staat eronder.
+function RolBestemming({ role, children }) {
+  const b = calculateRolBestemming(role);
+  const gevolg = (o) => {
+    if (o.gevolg.soort === "waardePerJaar") return `Lagere kosten: ${euroKort(o.gevolg.waarde)} per jaar`;
+    if (o.gevolg.soort === "outputgroei") {
+      return o.gevolg.waarde != null ? `Meer output met hetzelfde team: +${nl(o.gevolg.waarde * 100, 0)}%` : "Meer output met hetzelfde team";
+    }
+    return `${Math.round(o.gevolg.waarde)} uur per week naar beter werk`;
+  };
+  return (
+    <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+      <p className="text-sm font-semibold text-slate-800">Waar gaat de capaciteit van deze functie heen?</p>
+      <p className="mt-0.5 mb-3 text-xs text-slate-500">
+        {nl(b.fte, 1)} FTE ({Math.round(b.urenPerWeek)} uur per week) komt vrij, tot {nl(b.fteAgressief, 1)} FTE in het ambitieuze scenario. Dat is{" "}
+        {euroKort(b.waardePerJaar)} per jaar waard ({euroKort(b.waardePerJaarAgressief)} ambitieus).
+      </p>
+      <ul className="space-y-1.5">
+        {b.opties.map((o) => (
+          <li
+            key={o.waardetype}
+            className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${
+              o.gekozen ? "border-indigo-300 bg-indigo-50/60" : "border-slate-200 text-slate-500"
+            }`}
+          >
+            <span className={`font-medium ${o.gekozen ? "text-indigo-800" : "text-slate-600"}`}>
+              {o.icon} {o.label}
+              {o.gekozen && <span className="ml-2 rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">bestemming</span>}
+            </span>
+            <span className="shrink-0 text-right">{gevolg(o)}</span>
+          </li>
+        ))}
+      </ul>
+      {children}
+    </div>
+  );
+}
+
 function TaakTable({ id, role, onSaved, bevestiging = null }) {
   const identifier = role.roleId ?? role.rolnaam;
   const origineelTaken = useMemo(() => getOrigineelTaken(role), [role]);
@@ -1218,7 +1284,11 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
       {/* Opbouw van het rolblok: eerst wat er met het werk gebeurt (tijdbalk en
           taakverdeling), daarna pas wat dat voor competenties betekent. Zo komt de
           onderbouwing vóór de conclusie. */}
-      <WaardetypeBeheer id={id} role={role} onSaved={onSaved} bevestiging={bevestiging} />
+      <RolBestemming role={role}>
+        <div className="mt-3">
+          <WaardetypeBeheer id={id} role={role} onSaved={onSaved} bevestiging={bevestiging} />
+        </div>
+      </RolBestemming>
       <BeroepsmatchRegel beroepsmatch={role.beroepsmatch} />
       <TakenOvernameMelding role={role} />
       {competentieProfiel && <TijdsbestedingsBalk taken={liveResult.scenarios.realistisch.taken} />}
@@ -1975,7 +2045,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-3 mb-5">
+            <div className="grid gap-3 mb-5 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label="FTE totaal"
                 value={results.organisatieTotaal.realistisch.totaalFteHuidig}
@@ -1997,42 +2067,28 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                     results.organisatieTotaal.realistisch.totaalFteWeg * 36
                 )} uur per week`}
               />
+              {/* Het financiële beeld naast de capaciteit: dezelfde uren, uitgedrukt in geld. De
+                  opties om ze in te zetten staan er direct onder. */}
+              <StatCard
+                label="Waarde van die tijd"
+                value={`${euroKort(results.organisatieTotaal.realistisch.totaalKostenBesparingPerJaar)}–${euroKort(results.organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}`}
+                sub="per jaar, realistisch – agressief"
+                noot="Alleen een besparing als de uren uit de kosten verdwijnen."
+              />
             </div>
 
             <CapaciteitBestemming results={results} />
-
-            {/* Financieel beeld bewust ná de bestemmingsvraag: het is één van de drie
-                mogelijke uitkomsten, niet de kop van het rapport. */}
-            <details className="mb-5 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2">
-              <summary className="cursor-pointer text-xs font-medium text-slate-600 hover:text-slate-800">
-                Financieel beeld — wat de capaciteit waard is als je 'm volledig als besparing inboekt
-              </summary>
-              <p className="mt-2 text-xs text-slate-600">
-                €
-                {Math.round(
-                  results.organisatieTotaal.realistisch.totaalKostenBesparingPerJaar / 1000
-                ).toLocaleString("nl-NL")}
-                k – €
-                {Math.round(results.organisatieTotaal.agressief.totaalKostenBesparingPerJaar / 1000).toLocaleString(
-                  "nl-NL"
-                )}
-                k per jaar (realistisch – agressief).
-              </p>
-              <p className="mt-1 text-[11px] text-slate-400">
-                Dit bedrag geldt alleen als de vrijgekomen uren daadwerkelijk uit de kosten verdwijnen. Zet je ze in
-                voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.
-              </p>
-            </details>
 
             <div className="rounded-lg border border-slate-200 overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-400 bg-slate-50 border-b border-slate-200">
                     <th className="py-2 px-3 font-medium"></th>
-                    <th className="py-2 px-3 font-medium">Rol</th>
+                    <th className="py-2 px-3 font-medium">Functie</th>
                     <th className="py-2 px-3 font-medium">FTE</th>
-                    <th className="py-2 px-3 font-medium">Realistisch</th>
-                    <th className="py-2 px-3 font-medium">Agressief</th>
+                    <th className="py-2 px-3 font-medium">Vrijkomend</th>
+                    <th className="py-2 px-3 font-medium">Bestemming</th>
+                    <th className="py-2 px-3 font-medium text-right">Waarde per jaar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2045,30 +2101,37 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                           className="border-b border-slate-100 last:border-0 cursor-pointer hover:bg-indigo-50/50 transition-colors"
                         >
                           <td className="py-2 px-3 w-4 text-indigo-400">{isOpen ? "▾" : "▸"}</td>
-                          <td className="py-2 px-3 font-medium text-slate-800">
-                            <span className="inline-flex items-center gap-1.5">
-                              <WaardetypeBadge
-                                waardetype={r.waardetype}
-                                toelichting={r.waardetypeToelichting}
-                                handmatig={isHandmatig(r)}
-                                bevestigen={bevestigingVan(r)?.bevestigd === false ? bevestigingVan(r) : null}
-                                compact
-                              />
-                              {r.roleLabel ?? r.rolnaam}
-                            </span>
-                          </td>
+                          <td className="py-2 px-3 font-medium text-slate-800">{r.roleLabel ?? r.rolnaam}</td>
                           <td className="py-2 px-3">{r.fte}</td>
-                          <td className="py-2 px-3">
-                            {r.fte} → <span className="font-medium">{nl(r.scenarios.realistisch.fteOver, 2)}</span>
+                          <td className="py-2 px-3 whitespace-nowrap">
+                            <span className="font-medium">{nl(r.scenarios.realistisch.fteWeg, 1)} FTE</span>
+                            <span className="text-slate-400"> · {Math.round(r.scenarios.realistisch.automatiseerbareUrenPerWeek)} u/wk</span>
                           </td>
-                          <td className="py-2 px-3">
-                            {r.fte} → <span className="font-medium">{nl(r.scenarios.agressief.fteOver, 2)}</span>
+                          <td className="py-2 px-3 text-slate-700">
+                            {getWaardetype(r.waardetype) ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <WaardetypeBadge
+                                  waardetype={r.waardetype}
+                                  toelichting={r.waardetypeToelichting}
+                                  handmatig={isHandmatig(r)}
+                                  bevestigen={bevestigingVan(r)?.bevestigd === false ? bevestigingVan(r) : null}
+                                  compact
+                                />
+                                {getWaardetype(r.waardetype).label}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">Nog niet bepaald</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-right whitespace-nowrap">
+                            <span className="font-medium">{euroKort(r.scenarios.realistisch.kostenBesparingPerJaar)}</span>
+                            <span className="text-slate-400"> – {euroKort(r.scenarios.agressief.kostenBesparingPerJaar)}</span>
                           </td>
                         </tr>
                         {isOpen && (
                           <tr>
                             <td></td>
-                            <td colSpan={4} className="pb-4 px-3">
+                            <td colSpan={5} className="pb-4 px-3">
                               <div className="rounded-lg bg-slate-50 p-3">
                                 <TaakTable
                                   id={id}

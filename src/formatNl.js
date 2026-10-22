@@ -13,3 +13,15 @@ export function nl(waarde, decimalen = 1) {
     maximumFractionDigits: decimalen,
   }).format(waarde);
 }
+
+/**
+ * Een bedrag in euro's, kort: "€420k" of "€1,2 mln". Voor kaarten en tabellen waar een precies
+ * bedrag schijnnauwkeurigheid zou geven: het zijn inschattingen.
+ */
+export function euroKort(bedrag) {
+  if (typeof bedrag !== "number" || !Number.isFinite(bedrag)) return "—";
+  const abs = Math.abs(bedrag);
+  if (abs >= 1_000_000) return `€${nl(bedrag / 1_000_000, 1)} mln`;
+  if (abs >= 1000) return `€${Math.round(bedrag / 1000).toLocaleString("nl-NL")}k`;
+  return `€${Math.round(bedrag).toLocaleString("nl-NL")}`;
+}

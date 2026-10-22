@@ -65,3 +65,47 @@ test("het agressieve scenario levert meer capaciteit op dan het realistische", (
 test("zonder rollen geen verdeling", () => {
   assert.deepEqual(calculateCapaciteitBestemming([]), []);
 });
+
+import { calculateRolBestemming } from "./calculate.js";
+import { euroKort } from "./formatNl.js";
+
+test("de bestemming telt ook de waarde van de uren per bestemming op", () => {
+  const a = rol("Klantenservice", { fte: 4, waardetype: "kostenreductie" });
+  const b = rol("Accountmanager", { fte: 2, waardetype: "capaciteitsgroei" });
+  const uit = calculateCapaciteitBestemming([a, b], "realistisch");
+  const kosten = uit.find((g) => g.waardetype === "kostenreductie");
+  assert.ok(Math.abs(kosten.waardePerJaar - a.scenarios.realistisch.kostenBesparingPerJaar) < 1e-6);
+  const som = uit.reduce((s, g) => s + g.waardePerJaar, 0);
+  assert.ok(Math.abs(som - (a.scenarios.realistisch.kostenBesparingPerJaar + b.scenarios.realistisch.kostenBesparingPerJaar)) < 1e-6);
+});
+
+test("per rol: vrijkomende capaciteit, waarde en de drie opties met hun eigen getal", () => {
+  const r = rol("Klantenservice", { fte: 4, waardetype: "kwaliteitsverbetering" });
+  const uit = calculateRolBestemming(r);
+  const s = r.scenarios.realistisch;
+  assert.equal(uit.fte, s.fteWeg);
+  assert.equal(uit.urenPerWeek, s.automatiseerbareUrenPerWeek);
+  assert.equal(uit.waardePerJaar, s.kostenBesparingPerJaar);
+  assert.ok(uit.waardePerJaarAgressief > uit.waardePerJaar);
+  assert.deepEqual(uit.opties.map((o) => o.waardetype), ["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"]);
+  assert.deepEqual(uit.opties.filter((o) => o.gekozen).map((o) => o.waardetype), ["kwaliteitsverbetering"]);
+  const per = (id) => uit.opties.find((o) => o.waardetype === id).gevolg;
+  assert.deepEqual(per("kostenreductie"), { soort: "waardePerJaar", waarde: s.kostenBesparingPerJaar });
+  assert.deepEqual(per("capaciteitsgroei"), { soort: "outputgroei", waarde: s.outputgroeiPercentage });
+  assert.deepEqual(per("kwaliteitsverbetering"), { soort: "urenPerWeek", waarde: s.automatiseerbareUrenPerWeek });
+});
+
+test("een rol zonder gekozen bestemming heeft geen gekozen optie", () => {
+  const uit = calculateRolBestemming(rol("Oud", { fte: 1 }));
+  assert.equal(uit.gekozen, null);
+  assert.ok(uit.opties.every((o) => !o.gekozen));
+});
+
+test("kort eurobedrag: duizendtallen als k, miljoenen als mln, en geen schijnnauwkeurigheid", () => {
+  assert.equal(euroKort(420_400), "€420k");
+  assert.equal(euroKort(999), "€999");
+  assert.equal(euroKort(1_200_000), "€1,2 mln");
+  assert.equal(euroKort(1_960_000), "€2,0 mln");
+  assert.equal(euroKort(NaN), "—");
+  assert.equal(euroKort(undefined), "—");
+});
