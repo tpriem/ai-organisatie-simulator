@@ -227,20 +227,11 @@ export function MaturiteitProvider({ id, children }) {
     if (uit.invullerId) setActief(uit.invullerId);
     return uit;
   };
-  const vernieuwLink = async (invullerId) => {
-    const lijst = await (await fetch(`/api/clients/${id}/links`)).json();
-    const link = (lijst.links ?? []).find((l) => l.invullerId === invullerId && l.actief);
-    if (!link) return { fout: "Er is geen actieve link voor deze invuller." };
-    return linkAanroep({ method: "POST", body: JSON.stringify({ actie: "vernieuw", linkId: link.id }) });
-  };
+  const vernieuwLink = (invullerId) => linkAanroep({ method: "POST", body: JSON.stringify({ actie: "vernieuw", invullerId }) });
   const verwijderLinkInvuller = async (invullerId) => {
-    const lijst = await (await fetch(`/api/clients/${id}/links`)).json();
-    for (const link of (lijst.links ?? []).filter((l) => l.invullerId === invullerId && !l.ingetrokken)) {
-      const uit = await linkAanroep({ method: "DELETE", body: JSON.stringify({ linkId: link.id, verwijderInvuller: true }) });
-      if (uit.fout) return uit;
-    }
-    setActief(ADVISEUR);
-    return { ok: true };
+    const uit = await linkAanroep({ method: "DELETE", body: JSON.stringify({ invullerId }) });
+    if (!uit.fout) setActief(ADVISEUR);
+    return uit;
   };
 
   const profiel = useMemo(() => (huidig ? berekenProfiel(huidig) : null), [huidig]);

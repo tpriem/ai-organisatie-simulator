@@ -28,12 +28,17 @@ export async function POST(request, { params }) {
 
   try {
     // Een nieuwe link voor dezelfde invuller, bijvoorbeeld als de eerste kwijt is.
+    // Een nieuwe link voor een bestaande invuller. Werkt ook als er geen (actieve) link meer is,
+    // bijvoorbeeld nadat het aanmaken ooit halverwege is mislukt: de invuller blijft leidend.
     if (body.actie === "vernieuw") {
+      const { huidig } = await readMaturiteit(id);
       const links = await readLinks(id);
       const oud = links.find((l) => l.id === body.linkId && l.type === "invuller");
-      if (!oud) return NextResponse.json({ error: "Link niet gevonden" }, { status: 404 });
-      await trekLinkIn(id, oud.id);
-      const { link, token } = await maakLink(id, { type: "invuller", rol: oud.rol, label: oud.label, invullerId: oud.invullerId });
+      const invullerId = body.invullerId ?? oud?.invullerId;
+      const invuller = huidig.invullers.find((i) => i.id === invullerId && i.bron === "link");
+      if (!invuller) return NextResponse.json({ error: "Invuller niet gevonden" }, { status: 404 });
+      for (const l of links.filter((x) => x.type === "invuller" && x.invullerId === invullerId && !x.ingetrokken)) await trekLinkIn(id, l.id);
+      const { link, token } = await maakLink(id, { type: "invuller", rol: invuller.rol, label: invuller.label, invullerId });
       return NextResponse.json({ link: publiekeWeergave(link), url: `${siteOrigin(request)}/${pad.invuller}/${token}` });
     }
 
@@ -52,8 +57,15 @@ export async function POST(request, { params }) {
       }
       const label = String(body.label ?? "").trim().slice(0, 60);
       const invullerId = `${body.rol}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-      await voegLinkInvullerToe(id, { invullerId, rol: body.rol, label });
+      // Eerst de link, dan de invuller. Mislukt het tweede, dan trekken we de link weer in: er blijft
+      // nooit een invuller zonder link of een link zonder invuller achter.
       const { link, token } = await maakLink(id, { type: "invuller", rol: body.rol, label, invullerId });
+      try {
+        await voegLinkInvullerToe(id, { invullerId, rol: body.rol, label });
+      } catch (err) {
+        await trekLinkIn(id, link.id).catch(() => {});
+        throw err;
+      }
       return NextResponse.json({ link: publiekeWeergave(link), invullerId, url: `${siteOrigin(request)}/${pad.invuller}/${token}` });
     }
 
@@ -68,9 +80,16 @@ export async function POST(request, { params }) {
 export async function DELETE(request, { params }) {
   const { id } = await params;
   if (!(await getClientMeta(id))) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
-  const { linkId, verwijderInvuller } = await request.json();
+  const { linkId, invullerId, verwijderInvuller } = await request.json();
 
   try {
+    // Een invuller met al zijn links en antwoorden weghalen, ook als er geen link meer van over is.
+    if (invullerId) {
+      const links = await readLinks(id);
+      for (const l of links.filter((x) => x.type === "invuller" && x.invullerId === invullerId && !x.ingetrokken)) await trekLinkIn(id, l.id);
+      await verwijderLinkInvuller(id, invullerId);
+      return NextResponse.json({ ok: true });
+    }
     const link = await trekLinkIn(id, linkId);
     if (!link) return NextResponse.json({ error: "Link niet gevonden" }, { status: 404 });
     if (verwijderInvuller && link.type === "invuller" && link.invullerId) await verwijderLinkInvuller(id, link.invullerId);
