@@ -103,15 +103,10 @@ function summarizeRoles(roleResults) {
 }
 
 /**
- * Genereert organisatiebrede bevindingen en aanbevelingen op basis van alle rol-analyses
- * en (optioneel) de sector-positionering.
+ * Genereert organisatiebrede bevindingen en aanbevelingen op basis van alle rol-analyses.
  */
-export async function generateAanbevelingen(bedrijfsnaam, roleResults, sectorAnalyse) {
+export async function generateAanbevelingen(bedrijfsnaam, roleResults) {
   const anthropic = getClient();
-
-  const sectorContext = sectorAnalyse
-    ? `\n\nSectorcontext: ${sectorAnalyse.sector.sector}, eindscore ${sectorAnalyse.eindscore.toFixed(1)}/5, urgentie: ${sectorAnalyse.urgentie}. Positionering: ${sectorAnalyse.positionering}`
-    : "";
 
   const message = await anthropic.messages.create({
     model: CLAUDE_MODEL,
@@ -124,7 +119,7 @@ export async function generateAanbevelingen(bedrijfsnaam, roleResults, sectorAna
         content: `Je bent een organisatieadviseur die op basis van een AI-transformatie-analyse van "${bedrijfsnaam ?? "deze organisatie"}" bevindingen en aanbevelingen opstelt.
 
 Rol-analyses (realistisch scenario, tenzij anders vermeld):
-${summarizeRoles(roleResults)}${sectorContext}
+${summarizeRoles(roleResults)}
 
 Instructies:
 1. Schrijf een korte samenvatting van de belangrijkste bevindingen.

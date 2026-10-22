@@ -24,7 +24,7 @@ const dictionaries = {
       heroTitleHighlight: "jullie organisatie",
       heroTitlePost: "het eerst?",
       heroText:
-        "Een gerichte simulatie op basis van jullie rollen, taken en sector — die laat zien welke functies verschuiven, welke competenties belangrijker worden, en waar het gesprek over automatisering het eerst gevoerd moet worden.",
+        "Een gerichte simulatie op basis van jullie rollen en taken — die laat zien welke functies verschuiven, welke competenties belangrijker worden, en waar het gesprek over automatisering het eerst gevoerd moet worden.",
       cta: "Neem contact op",
       resultsHeading: "Wat de simulatie",
       resultsHeadingHighlight: "oplevert",
@@ -41,8 +41,9 @@ const dictionaries = {
       howHeading: "Hoe het werkt",
       step1Title: "Roster & functieprofielen aanleveren",
       step1Text: "Jullie rollen met FTE, uren en kosten, plus de bijbehorende functieprofielen. Wij verzorgen de verwerking.",
-      step2Title: "Positionering in de sector",
-      step2Text: "Een korte set vragen over sectorrisico en -kans, en hoe klaar de organisatie is voor verandering.",
+      step2Title: "Volwassenheidsscan",
+      step2Text:
+        "Een gestructureerde vragenlijst over hoe ver de organisatie is met AI: strategie, mensen, werkprocessen, risico, data, techniek en leveranciers.",
       step3Title: "Analyse & rapport",
       step3Text:
         "Binnen enkele dagen een rapport (Word/PDF) met bevindingen, aanbevelingen en een organogram — als vertrekpunt voor het gesprek, niet als eindoordeel.",
@@ -84,7 +85,7 @@ const dictionaries = {
       heroTitleHighlight: "your organization",
       heroTitlePost: "first?",
       heroText:
-        "A focused simulation based on your roles, tasks and sector — showing which roles are shifting, which competencies are becoming more important, and where the conversation about automation needs to start.",
+        "A focused simulation based on your roles and tasks — showing which roles are shifting, which competencies are becoming more important, and where the conversation about automation needs to start.",
       cta: "Get in touch",
       resultsHeading: "What the simulation",
       resultsHeadingHighlight: "delivers",
@@ -101,8 +102,9 @@ const dictionaries = {
       howHeading: "How it works",
       step1Title: "Provide roster & role profiles",
       step1Text: "Your roles with FTE, hours and costs, plus the matching role profiles. We handle the processing.",
-      step2Title: "Positioning within the sector",
-      step2Text: "A short set of questions on sector risk and opportunity, and how ready the organization is for change.",
+      step2Title: "Maturity scan",
+      step2Text:
+        "A structured questionnaire on how far the organization has come with AI: strategy, people, workflows, risk, data, engineering, operations and suppliers.",
       step3Title: "Analysis & report",
       step3Text:
         "Within a few days, a report (Word/PDF) with findings, recommendations and an org chart — as a starting point for the conversation, not a final verdict.",

@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { SECTORS, getSector } from "@/lib/sectors";
-import { IMPACT_QUESTIONS, READINESS_QUESTIONS } from "@/lib/questions";
 import { buildOrgChartData } from "@/lib/orgChartData";
 import { calculateRole, calculateCapaciteitBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
@@ -485,34 +483,6 @@ function StepChip({ done, label }) {
   );
 }
 
-function ScaleQuestion({ question, value, onChange }) {
-  return (
-    <div className="py-3 border-b border-slate-100 last:border-0">
-      <p className="text-sm text-slate-700 mb-2">{question.text}</p>
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-400 w-8">laag</span>
-        <div className="flex gap-1.5">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => onChange(question.id, n)}
-              className={`h-8 w-8 rounded-lg text-sm font-medium border transition-colors ${
-                value === n
-                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
-                  : "bg-white text-slate-500 border-slate-300 hover:border-indigo-300 hover:text-indigo-600"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-        <span className="text-[10px] text-slate-400 w-8 text-right">hoog</span>
-      </div>
-    </div>
-  );
-}
-
 function FileDropLabel({ htmlFor, uploading, label, hint }) {
   return (
     <label
@@ -528,12 +498,6 @@ function FileDropLabel({ htmlFor, uploading, label, hint }) {
       {hint && <span className="text-xs text-slate-400">{hint}</span>}
     </label>
   );
-}
-
-function urgencyColor(urgentie) {
-  if (urgentie?.startsWith("Hoog")) return { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" };
-  if (urgentie?.startsWith("Gemiddeld")) return { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" };
-  return { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" };
 }
 
 function StatCard({ label, value, sub }) {
@@ -1390,9 +1354,6 @@ export default function ClientWorkspace({ id }) {
   const [allClients, setAllClients] = useState([]);
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [sector, setSector] = useState("");
-  const [impact, setImpact] = useState({});
-  const [readiness, setReadiness] = useState({});
   const [scope, setScope] = useState("bedrijf");
   const [scopeLabel, setScopeLabel] = useState("");
   const [savingAnswers, setSavingAnswers] = useState(false);
@@ -1417,9 +1378,6 @@ export default function ClientWorkspace({ id }) {
     if (clientRes.ok) {
       const data = await clientRes.json();
       setClient(data);
-      setSector(data.answers.sector ?? "");
-      setImpact(data.answers.impact ?? {});
-      setReadiness(data.answers.readiness ?? {});
       setScope(data.answers.scope ?? "bedrijf");
       setScopeLabel(data.answers.scopeLabel ?? "");
     }
@@ -1432,7 +1390,7 @@ export default function ClientWorkspace({ id }) {
   }, [load]);
 
   async function saveAnswers(partial) {
-    const payload = { sector, impact, readiness, scope, scopeLabel, ...partial };
+    const payload = { scope, scopeLabel, ...partial };
     setSavingAnswers(true);
     await fetch(`/api/clients/${id}/answers`, {
       method: "POST",
@@ -1440,24 +1398,6 @@ export default function ClientWorkspace({ id }) {
       body: JSON.stringify(payload),
     });
     setSavingAnswers(false);
-  }
-
-  function handleSectorChange(e) {
-    const value = e.target.value;
-    setSector(value);
-    saveAnswers({ sector: value });
-  }
-
-  function handleImpactChange(qid, value) {
-    const next = { ...impact, [qid]: value };
-    setImpact(next);
-    saveAnswers({ impact: next });
-  }
-
-  function handleReadinessChange(qid, value) {
-    const next = { ...readiness, [qid]: value };
-    setReadiness(next);
-    saveAnswers({ readiness: next });
   }
 
   function handleScopeChange(value) {
@@ -1583,8 +1523,6 @@ export default function ClientWorkspace({ id }) {
   // return geven een crash. De berekening is goedkoop.
   const bevestiging = rollenDieBevestigingVragen(results?.rollen ?? []);
   const bevestigingVan = (r) => bevestiging.rollen.find((x) => x.roleId === (r.roleId ?? r.rolnaam)) ?? null;
-  const sectorInfo = sector ? getSector(sector) : null;
-  const hasAnyAnswer = Object.keys(impact).length > 0 || Object.keys(readiness).length > 0;
 
   return (
     <div className="flex-1 bg-slate-50">
@@ -1642,11 +1580,6 @@ export default function ClientWorkspace({ id }) {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{client.naam}</h1>
-            {sectorInfo && (
-              <span className="inline-flex items-center gap-1.5 mt-1.5 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
-                {sectorInfo.sector}
-              </span>
-            )}
           </div>
           <button
             onClick={handleDeleteClient}
@@ -1697,7 +1630,6 @@ export default function ClientWorkspace({ id }) {
         <div className="flex flex-wrap gap-2 mb-6">
           <StepChip done={!!client.rosterFileName} label="Roster" />
           <StepChip done={client.profileFiles?.length > 0} label="Functieprofielen" />
-          <StepChip done={hasAnyAnswer} label="Positioneringsvragen" />
           <MaturiteitIngevuld>{(klaar) => <StepChip done={klaar} label="AI-volwassenheid" />}</MaturiteitIngevuld>
           <StepChip done={!!results} label="Analyse" />
         </div>
@@ -1730,13 +1662,6 @@ export default function ClientWorkspace({ id }) {
             icon="📁"
             label="Input"
             done={!!client.rosterFileName && client.profileFiles?.length > 0}
-          />
-          <TabButton
-            active={activeTab === "positionering"}
-            onClick={() => setActiveTab("positionering")}
-            icon="🎯"
-            label="Positionering"
-            done={hasAnyAnswer}
           />
           <MaturiteitIngevuld>
             {(klaar) => (
@@ -1960,41 +1885,6 @@ export default function ClientWorkspace({ id }) {
         </Section>
         )}
 
-        {/* Tab: Positionering */}
-        {activeTab === "positionering" && (
-        <Section title="Deel 2 — Sector & positionering" icon="🎯">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Sector</label>
-            <select
-              value={sector}
-              onChange={handleSectorChange}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">— Kies een sector —</option>
-              {SECTORS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  Niveau {s.niveau} — {s.sector} (risico {s.risico}, kans {s.kans})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mt-5 mb-1">
-            Impact-vragen · 20%
-          </h3>
-          {IMPACT_QUESTIONS.map((q) => (
-            <ScaleQuestion key={q.id} question={q} value={impact[q.id]} onChange={handleImpactChange} />
-          ))}
-
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mt-5 mb-1">
-            Readiness-vragen · 10%
-          </h3>
-          {READINESS_QUESTIONS.map((q) => (
-            <ScaleQuestion key={q.id} question={q} value={readiness[q.id]} onChange={handleReadinessChange} />
-          ))}
-        </Section>
-        )}
-
         {/* Tab: AI-volwassenheid (vragenlijst) */}
         {activeTab === "maturiteit" && (
           <MaturiteitVragen
@@ -2036,7 +1926,7 @@ export default function ClientWorkspace({ id }) {
         ) : !results ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
               <p className="text-sm text-slate-500 mb-1">Nog geen analyse uitgevoerd.</p>
-              <p className="text-xs text-slate-400">Vul Input en Positionering in en klik bovenaan op "Analyseer".</p>
+              <p className="text-xs text-slate-400">Vul Input in en klik bovenaan op "Analyseer".</p>
             </div>
           ) : (
           <>
@@ -2118,22 +2008,6 @@ export default function ClientWorkspace({ id }) {
                 voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.
               </p>
             </details>
-
-            {results.sectorAnalyse &&
-              (() => {
-                const c = urgencyColor(results.sectorAnalyse.urgentie);
-                return (
-                  <div className={`mb-6 rounded-xl ${c.bg} p-4 flex items-start gap-3`}>
-                    <span className={`mt-1 h-2.5 w-2.5 rounded-full shrink-0 ${c.dot}`} />
-                    <div>
-                      <p className={`text-sm font-semibold ${c.text}`}>
-                        Eindscore {nl(results.sectorAnalyse.eindscore, 1)} / 5 — {results.sectorAnalyse.urgentie}
-                      </p>
-                      <p className="text-sm text-slate-600 mt-1">{results.sectorAnalyse.positionering}</p>
-                    </div>
-                  </div>
-                );
-              })()}
 
             <div className="rounded-lg border border-slate-200 overflow-hidden">
               <table className="w-full text-sm">

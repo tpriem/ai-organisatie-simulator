@@ -463,7 +463,6 @@ export function buildReportHtml(results) {
     organisatieTotaal,
     subtotalenPerAfdeling,
     rollen,
-    sectorAnalyse,
     aanbevelingen,
   } = results;
   const datum = new Date(gegenereerdOp).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" });
@@ -510,10 +509,6 @@ export function buildReportHtml(results) {
   .stat-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
   .stat-label { font-size: 9px; color: #94a3b8; margin-bottom: 2px; }
   .stat-value { font-size: 18px; font-weight: bold; }
-  .urgency-banner { border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
-  .urgency-hoog { background: #fef2f2; color: #b91c1c; }
-  .urgency-gemiddeld { background: #fffbeb; color: #b45309; }
-  .urgency-laag { background: #ecfdf5; color: #047857; }
   .finding { font-size: 10px; margin-bottom: 8px; }
   .trend-up { color: #059669; font-weight: bold; } .trend-down { color: #dc2626; font-weight: bold; } .trend-flat { color: #94a3b8; }
   .findings-cols { display: flex; gap: 16px; }
@@ -542,14 +537,6 @@ export function buildReportHtml(results) {
   </div>
   ${capaciteitBlock(organisatieTotaal, rollen)}
   ${financieelBlock(organisatieTotaal)}
-  ${
-    sectorAnalyse
-      ? `<div class="urgency-banner urgency-${sectorAnalyse.urgentie.startsWith("Hoog") ? "hoog" : sectorAnalyse.urgentie.startsWith("Gemiddeld") ? "gemiddeld" : "laag"}">
-    <strong>Eindscore ${nl(sectorAnalyse.eindscore, 1)} / 5 — ${esc(sectorAnalyse.urgentie)}</strong><br/>${esc(sectorAnalyse.positionering)}
-  </div>`
-      : ""
-  }
-
   <h2>Interne transformatie — overzicht per rol</h2>
   <table>
     <thead><tr><th>Rol</th><th>FTE</th><th>Uren/wk</th><th>Kosten/uur</th><th>Reductie (R–A)</th><th>Vrijkomend u/wk (R–A)</th><th>Als besparing ingeboekt (R–A)</th></tr></thead>
@@ -681,18 +668,6 @@ export function buildReportHtml(results) {
     ${(aanbevelingen.aanbevelingen ?? [])
       .map((a) => `<p class="finding"><strong>${esc(a.titel)}</strong><br/>${esc(a.beschrijving)}</p>`)
       .join("")}`
-      : ""
-  }
-
-  ${
-    sectorAnalyse
-      ? `<h2>Sectorpositionering</h2>
-    <p>Sector: ${esc(sectorAnalyse.sector.sector)} (niveau ${sectorAnalyse.sector.niveau}) — risico ${sectorAnalyse.sector.risico}/5, kans ${sectorAnalyse.sector.kans}/5.</p>
-    <p>Impactscore (positioneringsvragen): ${nl(sectorAnalyse.impactScore, 1) ?? "-"} / 5</p>
-    <p>Readinessscore (positioneringsvragen): ${nl(sectorAnalyse.readinessScore, 1) ?? "-"} / 5</p>
-    <p><strong>Eindscore: ${nl(sectorAnalyse.eindscore, 1)} / 5</strong></p>
-    <p>Positionering t.o.v. sectorgemiddelde: ${esc(sectorAnalyse.positionering)}</p>
-    <p><strong>Strategische urgentie: ${esc(sectorAnalyse.urgentie)}</strong></p>`
       : ""
   }
 

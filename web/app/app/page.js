@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { getSector } from "@/lib/sectors";
 
 function initials(naam) {
   return naam
@@ -129,7 +128,6 @@ export default function HomePage() {
         ) : (
           <ul className="space-y-2">
             {clients.map((c) => {
-              const sector = c.sector ? getSector(c.sector) : null;
               return (
                 <li key={c.id}>
                   <a
@@ -151,9 +149,6 @@ export default function HomePage() {
                             {c.scopeLabel}
                           </span>
                         )}
-                      </span>
-                      <span className="block text-xs text-slate-400">
-                        {sector ? sector.sector : "Geen sector ingesteld"}
                       </span>
                     </span>
                     <span className="text-slate-300 group-hover:text-indigo-400 transition-colors">→</span>

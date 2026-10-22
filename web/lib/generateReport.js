@@ -780,7 +780,6 @@ export async function generateReportDocx(results) {
     organisatieTotaal,
     subtotalenPerAfdeling,
     rollen,
-    sectorAnalyse,
     aanbevelingen,
   } = results;
   const datum = new Date(gegenereerdOp).toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" });
@@ -832,13 +831,6 @@ export async function generateReportDocx(results) {
     ),
     ...capaciteitSectie(organisatieTotaal, rollen),
     financieelAlinea(organisatieTotaal),
-    ...(sectorAnalyse
-      ? [
-          paragraph(
-            `Op sectorniveau (${sectorAnalyse.sector.sector}) komt de AI-impact eindscore uit op ${nl(sectorAnalyse.eindscore, 1)} van de 5. ${sectorAnalyse.positionering}. Inschatting van de urgentie: ${sectorAnalyse.urgentie}.`
-          ),
-        ]
-      : []),
 
     heading("Interne transformatie — overzicht per rol"),
     rolSummaryTable(rollen),
@@ -958,20 +950,6 @@ export async function generateReportDocx(results) {
         ])
       );
     }
-  }
-
-  if (sectorAnalyse) {
-    children.push(
-      heading("Sectorpositionering"),
-      paragraph(
-        `Sector: ${sectorAnalyse.sector.sector} (niveau ${sectorAnalyse.sector.niveau}) — risico ${sectorAnalyse.sector.risico}/5, kans ${sectorAnalyse.sector.kans}/5.`
-      ),
-      paragraph(`Impactscore (positioneringsvragen): ${nl(sectorAnalyse.impactScore, 1) ?? "-"} / 5`),
-      paragraph(`Readinessscore (positioneringsvragen): ${nl(sectorAnalyse.readinessScore, 1) ?? "-"} / 5`),
-      paragraph(`Eindscore: ${nl(sectorAnalyse.eindscore, 1)} / 5`, { bold: true }),
-      paragraph(`Positionering t.o.v. sectorgemiddelde: ${sectorAnalyse.positionering}`),
-      paragraph(`Strategische urgentie: ${sectorAnalyse.urgentie}`, { bold: true })
-    );
   }
 
   // Vaste afsluitende sectie — niet AI-gegenereerd, staat altijd in het rapport.

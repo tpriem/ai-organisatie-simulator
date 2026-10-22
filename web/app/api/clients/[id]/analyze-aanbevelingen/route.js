@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientMeta, readAnswers, readResults, writeResults } from "@/lib/clientStore";
 import { meldStoring } from "@/lib/alert";
-import { calculateSectorAnalyse } from "@/lib/scoring";
 import { generateAanbevelingen } from "../../../../../../src/generateAanbevelingen.js";
 
 export const maxDuration = 60;
@@ -23,9 +22,6 @@ export async function POST(request, { params }) {
   }
 
   const answers = await readAnswers(id);
-  const sectorAnalyse = answers.sector
-    ? calculateSectorAnalyse(answers.sector, answers.impact, answers.readiness)
-    : null;
 
   const scope = results.scope ?? answers.scope ?? "bedrijf";
   const scopeLabel = results.scopeLabel ?? answers.scopeLabel ?? "";
@@ -34,13 +30,13 @@ export async function POST(request, { params }) {
 
   let aanbevelingen;
   try {
-    aanbevelingen = await generateAanbevelingen(analyseContextNaam, results.rollen, sectorAnalyse);
+    aanbevelingen = await generateAanbevelingen(analyseContextNaam, results.rollen);
   } catch (err) {
     meldStoring("Aanbevelingen genereren mislukt", { klant: meta.naam, klantId: id, fout: err.message });
     return NextResponse.json({ error: `Aanbevelingen genereren mislukt: ${err.message}` }, { status: 502 });
   }
 
-  const updated = { ...results, sectorAnalyse, aanbevelingen };
+  const updated = { ...results, aanbevelingen };
   await writeResults(id, updated, { reden: "aanbevelingen gegenereerd" });
   return NextResponse.json(updated);
 }

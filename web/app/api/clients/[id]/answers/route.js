@@ -5,11 +5,10 @@ export async function POST(request, { params }) {
   const { id } = await params;
   if (!(await getClientMeta(id))) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
 
-  const { sector, impact, readiness, scope, scopeLabel } = await request.json();
+  // Alleen de scope. Eerder opgeslagen positioneringsantwoorden (sector, impact, readiness)
+  // blijven ongemoeid in de database staan; de tool gebruikt ze niet meer.
+  const { scope, scopeLabel } = await request.json();
   await updateClientMeta(id, {
-    sector: sector ?? null,
-    impact: impact ?? {},
-    readiness: readiness ?? {},
     scope: scope ?? "bedrijf",
     scopeLabel: scopeLabel ?? "",
   });

@@ -166,7 +166,6 @@ export async function POST(request, { params }) {
     organisatieTotaal: orgTotals,
     subtotalenPerAfdeling,
     rollen: rollenMetKeuzes,
-    sectorAnalyse: null,
     aanbevelingen: null,
   };
 

@@ -121,7 +121,6 @@ function fixture({ competenties = true, mislukt = false, handmatig = false, beve
     organisatieTotaal: calculateOrganisatie(rollen),
     subtotalenPerAfdeling: [],
     rollen,
-    sectorAnalyse: null,
     aanbevelingen: null,
   };
 }
