@@ -2,7 +2,7 @@ import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, 
 import { driedeling } from "../../src/competencyProfile.js";
 import { getWaardetype } from "../../src/config.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
-import { calculateTaakprofiel } from "../../src/taakprofiel.js";
+import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
 import {
@@ -141,41 +141,29 @@ function financieelBlock(organisatieTotaal) {
   )} per jaar (realistisch–agressief). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.</p>`;
 }
 
-// Het soort werk dat de organisatie doet, nu en straks.
-function taakprofielBlock(rollen) {
-  const p = calculateTaakprofiel(rollen, "realistisch");
-  if (!p.heeftData) return "";
+// Uit welk soort werk de vrijkomende capaciteit komt, als tabel in uren.
+function herkomstBlock(rollen) {
+  const herkomst = calculateCapaciteitHerkomst(rollen, "realistisch");
+  if (!herkomst.heeftData) return "";
 
-  const max = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
-  const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
-  const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
-  const pp = (v) => `${v > 0 ? "+" : "−"}${nl(Math.abs(v * 100), 1)} pp`;
-
-  const conclusie =
-    groeiers.length > 0
-      ? `<p>Het zwaartepunt verschuift naar <strong>${esc(groeiers[0].label.toLowerCase())}</strong> (${pp(
-          groeiers[0].verschuiving
-        )})${
-          krimpers.length > 0
-            ? `, ten koste van <strong>${esc(krimpers[0].label.toLowerCase())}</strong> (${pp(krimpers[0].verschuiving)})`
-            : ""
-        }.</p>`
-      : "";
-
-  const rijen = p.categorieen
-    .map(
-      (c) =>
-        barTekst(c.label, `${Math.round(c.aandeelNu * 100)}% → ${Math.round(c.aandeelStraks * 100)}%`, (c.aandeelNu / max) * 100, "c-slate") +
-        barTekst("", `${pp(c.verschuiving)}`, (c.aandeelStraks / max) * 100, "c-indigo")
-    )
+  const rijen = herkomstRijen(herkomst, 5)
+    .map((rij) => {
+      const cellen = herkomstCellen(rij);
+      const stijl = rij.soort === "totaal" ? ' style="font-weight:bold;"' : "";
+      return `<tr>${cellen
+        .map((c, i) => `<td${stijl}${i > 0 ? ' class="num"' : ""}>${esc(c)}</td>`)
+        .join("")}</tr>`;
+    })
     .join("");
 
   return `
-  <h2>Waar het werk uit bestaat — nu en straks</h2>
-  <p class="disclaimer">Het aandeel van alle werkuren per taakcategorie. Automatisering raakt categorieën ongelijk, dus de samenstelling verschuift: werk dat moeilijk te automatiseren is wordt een groter deel van het geheel, ook als het in absolute uren krimpt. Grijs is nu, paars na de transformatie.</p>
-  ${conclusie}
-  ${rijen}
-  <p class="disclaimer">In totaal ${Math.round(p.urenNu)} → ${Math.round(p.urenStraks)} uur per week.</p>`;
+  <h2>Waar komt de capaciteit vandaan?</h2>
+  <p class="disclaimer">Waar het werk vandaan komt dat vrijkomt, per taakcategorie. Dit is dezelfde capaciteit als hierboven; daar staat waar die naartoe kan, hier waar die uit voortkomt.</p>
+  <p>${esc(herkomstZin(herkomst))}</p>
+  <table>
+    <thead><tr>${HERKOMST_KOLOMMEN.map((k, i) => `<th${i > 0 ? ' class="num"' : ""}>${esc(k)}</th>`).join("")}</tr></thead>
+    <tbody>${rijen}</tbody>
+  </table>`;
 }
 
 // Hoe volledig en hoe stevig is deze analyse. Teksten komen uit rapportTeksten.js zodat
@@ -534,6 +522,7 @@ export function buildReportHtml(results) {
   table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10px; }
   th, td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; vertical-align: top; }
   th { background: #1e293b; color: white; }
+  th.num, td.num { text-align: right; }
   tr:nth-child(even) td { background: #f8fafc; }
   .badge { display: inline-block; background: #e0e7ff; color: #4338ca; border-radius: 3px; padding: 1px 5px; font-size: 9px; }
   .role-block { page-break-inside: avoid; margin-bottom: 18px; }
@@ -639,7 +628,7 @@ export function buildReportHtml(results) {
   <h2>Organogram — waar de capaciteit vrijkomt</h2>
   ${organogramBlok(orgChart)}
 
-  ${taakprofielBlock(rollen)}
+  ${herkomstBlock(rollen)}
   ${mobiliteitBlock(rollen)}
   ${ontwikkelagendaBlock(rollen)}
 

@@ -17,7 +17,7 @@ import { getWaardetype } from "../../src/config.js";
 import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, BESTEMMING_VOLGORDE } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
-import { calculateTaakprofiel } from "../../src/taakprofiel.js";
+import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
 import { calculateMobiliteit } from "../../src/mobiliteit.js";
 import {
@@ -41,7 +41,7 @@ function pct(n) {
   return `${Math.round(n * 100)}%`;
 }
 
-function cell(text, { width, header = false, shaded = false, bold = false } = {}) {
+function cell(text, { width, header = false, shaded = false, bold = false, align } = {}) {
   return new TableCell({
     width: { size: width, type: WidthType.DXA },
     shading: header
@@ -52,6 +52,7 @@ function cell(text, { width, header = false, shaded = false, bold = false } = {}
     margins: { top: 80, bottom: 80, left: 100, right: 100 },
     children: [
       new Paragraph({
+        alignment: align === "right" ? AlignmentType.RIGHT : undefined,
         children: [
           new TextRun({
             text,
@@ -284,54 +285,36 @@ function financieelAlinea(organisatieTotaal) {
   );
 }
 
-// Het soort werk dat de organisatie doet, nu en straks.
-function taakprofielSectie(rollen) {
-  const p = calculateTaakprofiel(rollen, "realistisch");
-  if (!p.heeftData) return [];
+// Uit welk soort werk de vrijkomende capaciteit komt, als tabel in uren.
+function herkomstSectie(rollen) {
+  const herkomst = calculateCapaciteitHerkomst(rollen, "realistisch");
+  if (!herkomst.heeftData) return [];
 
-  const max = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
-  const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
-  const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
-  const pp = (v) => `${v > 0 ? "+" : "−"}${nl(Math.abs(v * 100), 1)} pp`;
+  const widths = [3000, 1400, 1300, 1400, 1500];
+  const kop = new TableRow({
+    tableHeader: true,
+    children: HERKOMST_KOLOMMEN.map((k, i) => cell(k, { width: widths[i], header: true, align: i > 0 ? "right" : undefined })),
+  });
+  const rijen = herkomstRijen(herkomst, 5).map((rij, n) => {
+    const totaal = rij.soort === "totaal";
+    return new TableRow({
+      children: herkomstCellen(rij).map((c, i) =>
+        cell(c, { width: widths[i], shaded: totaal || n % 2 === 1, bold: totaal, align: i > 0 ? "right" : undefined })
+      ),
+    });
+  });
 
-  const out = [
-    heading("Waar het werk uit bestaat — nu en straks"),
-    paragraph(
-      "Het aandeel van alle werkuren per taakcategorie. Automatisering raakt categorieën ongelijk, dus de samenstelling verschuift: werk dat moeilijk te automatiseren is wordt een groter deel van het geheel, ook als het in absolute uren krimpt. Grijs is nu, paars na de transformatie.",
-      { italics: true, size: 18, color: "64748B" }
-    ),
+  return [
+    heading("Waar komt de capaciteit vandaan?"),
+    paragraph("Waar het werk vandaan komt dat vrijkomt, per taakcategorie. Dit is dezelfde capaciteit als hierboven; daar staat waar die naartoe kan, hier waar die uit voortkomt.", { italics: true, size: 18, color: "64748B" }),
+    paragraph(herkomstZin(herkomst), { bold: true }),
+    new Table({
+      width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
+      columnWidths: widths,
+      borders: tableBorders(),
+      rows: [kop, ...rijen],
+    }),
   ];
-
-  if (groeiers.length > 0) {
-    out.push(
-      paragraph(
-        `Het zwaartepunt verschuift naar ${groeiers[0].label.toLowerCase()} (${pp(groeiers[0].verschuiving)})` +
-          (krimpers.length > 0 ? `, ten koste van ${krimpers[0].label.toLowerCase()} (${pp(krimpers[0].verschuiving)})` : "") +
-          ".",
-        { bold: true }
-      )
-    );
-  }
-
-  for (const c of p.categorieen) {
-    out.push(
-      paragraph(
-        `${c.label} — ${Math.round(c.aandeelNu * 100)}% → ${Math.round(c.aandeelStraks * 100)}% (${pp(c.verschuiving)})`,
-        { size: 18, color: "475569" }
-      )
-    );
-    out.push(miniBar(c.aandeelNu, max, "94A3B8"));
-    out.push(miniBar(c.aandeelStraks, max, "6366F1"));
-  }
-
-  out.push(
-    paragraph(`In totaal ${Math.round(p.urenNu)} → ${Math.round(p.urenStraks)} uur per week.`, {
-      italics: true,
-      size: 18,
-      color: "64748B",
-    })
-  );
-  return out;
 }
 
 function miniBar(value, maxValue, colorHex) {
@@ -829,7 +812,7 @@ export async function generateReportDocx(results) {
       ? [paragraph(`Let op: ${dekkingZinnen(results).mislukt}`, { italics: true, color: "B45309" })]
       : []),
 
-    ...taakprofielSectie(rollen),
+    ...herkomstSectie(rollen),
     ...mobiliteitSectie(rollen),
     ...ontwikkelagendaSectie(rollen),
 

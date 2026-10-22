@@ -7,7 +7,7 @@ import { calculateRole, calculateCapaciteitBestemming, calculateRolBestemming } 
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel, driedeling } from "../../../../../src/competencyProfile.js";
 import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
-import { calculateTaakprofiel } from "../../../../../src/taakprofiel.js";
+import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../../../../src/taakprofiel.js";
 import { calculateMobiliteit } from "../../../../../src/mobiliteit.js";
 import { calculateScanDekking, matchKwaliteit } from "../../../../../src/scanDekking.js";
 import {
@@ -231,81 +231,57 @@ export function Mobiliteit({ results }) {
 // Welk soort werk de organisatie doet, nu en straks. Automatisering raakt categorieën
 // ongelijk, dus het profiel verschuift — en die verschuiving zegt iets scherpers dan
 // "er komt capaciteit vrij": ze zegt wat voor organisatie je wordt.
-export function Taakprofiel({ results }) {
-  const p = useMemo(() => calculateTaakprofiel(results?.rollen ?? [], "realistisch"), [results?.rollen]);
-  if (!p.heeftData) return null;
+// Uit welk soort werk de vrijkomende capaciteit komt. Het tegenstuk van "Waar gaat die capaciteit
+// heen?": daar de bestemming, hier de herkomst. Een tabel met uren, geen aandelen: een aandeel
+// verschuift ook in categorieën die niet krimpen en is moeilijk te lezen.
+export function CapaciteitHerkomst({ results }) {
+  const herkomst = useMemo(() => calculateCapaciteitHerkomst(results?.rollen ?? [], "realistisch"), [results?.rollen]);
+  const [alles, setAlles] = useState(false);
+  if (!herkomst.heeftData) return null;
 
-  const maxAandeel = Math.max(...p.categorieen.map((c) => Math.max(c.aandeelNu, c.aandeelStraks)), 0.01);
-  const groeiers = p.categorieen.filter((c) => c.verschuiving > 0.01).sort((a, b) => b.verschuiving - a.verschuiving);
-  const krimpers = p.categorieen.filter((c) => c.verschuiving < -0.01).sort((a, b) => a.verschuiving - b.verschuiving);
-
-  const pp = (v) => `${v > 0 ? "+" : "−"}${nl(Math.abs(v * 100), 1)} pp`;
+  const aantal = herkomst.categorieen.length;
+  // "Alles" toont elke categorie; anders de top en een samenvatting van de rest.
+  const rijen = herkomstRijen(herkomst, alles ? aantal : 5);
+  const heeftRest = aantal > 6;
 
   return (
-    <Section title="Waar het werk uit bestaat — nu en straks" icon="🧭">
-      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
-        Het aandeel van alle werkuren per taakcategorie. Automatisering raakt categorieën ongelijk, dus de
-        samenstelling verschuift: werk dat moeilijk te automatiseren is wordt een groter deel van het geheel, ook als
-        het in absolute uren krimpt.
-      </p>
+    <Section title="Waar komt de capaciteit vandaan?" icon="🧭">
+      <p className="mb-4 max-w-3xl text-sm text-slate-700">{herkomstZin(herkomst)}</p>
 
-      {(groeiers.length > 0 || krimpers.length > 0) && (
-        <p className="text-sm text-slate-700 mb-4 max-w-3xl">
-          {groeiers.length > 0 && (
-            <>
-              Het zwaartepunt verschuift naar <span className="font-medium">{groeiers[0].label.toLowerCase()}</span> (
-              {pp(groeiers[0].verschuiving)})
-            </>
-          )}
-          {groeiers.length > 0 && krimpers.length > 0 && (
-            <>
-              , ten koste van <span className="font-medium">{krimpers[0].label.toLowerCase()}</span> (
-              {pp(krimpers[0].verschuiving)})
-            </>
-          )}
-          .
-        </p>
+      <div className="overflow-hidden rounded-lg border border-slate-200">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-slate-400">
+              {HERKOMST_KOLOMMEN.map((k, i) => (
+                <th key={k} className={`px-3 py-2 font-medium ${i === 0 ? "text-left" : "text-right"}`}>
+                  {k}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rijen.map((rij) => {
+              const cellen = herkomstCellen(rij);
+              const totaal = rij.soort === "totaal";
+              return (
+                <tr key={rij.id} className={`border-b border-slate-100 last:border-0 ${totaal ? "bg-slate-50 font-semibold text-slate-800" : "text-slate-700"}`}>
+                  {cellen.map((c, i) => (
+                    <td key={i} className={`px-3 py-2 ${i === 0 ? "text-left" : "text-right tabular-nums"} ${i === 2 && !totaal ? "font-medium" : ""} ${rij.soort === "overig" && i === 0 ? "text-slate-500" : ""}`}>
+                      {c}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {heeftRest && (
+        <button type="button" onClick={() => setAlles((a) => !a)} className="mt-3 text-xs text-indigo-600 hover:underline">
+          {alles ? "Alleen de grootste vijf tonen" : `Toon alle ${aantal} categorieën`}
+        </button>
       )}
-
-      <div className="space-y-2">
-        {p.categorieen.map((c) => (
-          <div key={c.id} className="flex items-center gap-3">
-            <span className="text-xs text-slate-700 w-64 shrink-0 truncate" title={c.label}>
-              {c.label}
-            </span>
-            <div className="flex-1 min-w-0 space-y-1">
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-slate-400" style={{ width: `${(c.aandeelNu / maxAandeel) * 100}%` }} />
-              </div>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-indigo-500" style={{ width: `${(c.aandeelStraks / maxAandeel) * 100}%` }} />
-              </div>
-            </div>
-            <span className="text-[11px] text-slate-500 w-24 text-right shrink-0 tabular-nums">
-              {nl((c.aandeelNu * 100), 0)}% → {nl((c.aandeelStraks * 100), 0)}%
-            </span>
-            <span
-              className={`text-[11px] w-20 text-right shrink-0 tabular-nums ${
-                c.verschuiving > 0.01 ? "text-emerald-700" : c.verschuiving < -0.01 ? "text-slate-400" : "text-slate-300"
-              }`}
-            >
-              {Math.abs(c.verschuiving) > 0.001 ? pp(c.verschuiving) : "—"}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 flex items-center gap-4 text-[11px] text-slate-400">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-4 rounded-full bg-slate-400" /> nu
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-4 rounded-full bg-indigo-500" /> na transformatie
-        </span>
-        <span className="ml-auto">
-          {Math.round(p.urenNu)} → {Math.round(p.urenStraks)} uur per week in totaal
-        </span>
-      </div>
     </Section>
   );
 }
@@ -2098,7 +2074,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
           </Section>
         )}
 
-        <Taakprofiel results={results} />
+        <CapaciteitHerkomst results={results} />
         <Mobiliteit results={results} />
         <CompetentieAgenda results={results} />
         <ScanDekking results={results} />

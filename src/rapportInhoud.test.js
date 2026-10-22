@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import mammoth from "mammoth";
 import { calculateRole, calculateOrganisatie, calculateCapaciteitBestemming } from "./calculate.js";
-import { calculateTaakprofiel } from "./taakprofiel.js";
+import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen } from "./taakprofiel.js";
 import { calculateCompetentieProfiel } from "./competencyProfile.js";
 import { calculateCompetentieAgenda } from "./competencyAgenda.js";
 import { calculateMobiliteit } from "./mobiliteit.js";
@@ -167,15 +167,17 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(tekst.includes("alleen als die uren daadwerkelijk uit de kosten verdwijnen"), "voorwaarde ontbreekt");
   });
 
-  test(`${formaat}: het taakprofiel staat erin met de totale verschuiving`, async () => {
+  test(`${formaat}: de herkomst van de capaciteit staat erin als tabel met de totale uren`, async () => {
     const { results, [formaat]: tekst } = await rapporten();
-    const p = calculateTaakprofiel(results.rollen, "realistisch");
-    assert.ok(tekst.includes("Waar het werk uit bestaat"), "sectie ontbreekt");
-    assert.ok(
-      tekst.includes(`${Math.round(p.urenNu)} → ${Math.round(p.urenStraks)} uur per week`),
-      "totaal uren ontbreekt"
-    );
-    for (const c of p.categorieen) assert.ok(tekst.includes(c.label), `categorie "${c.label}" ontbreekt`);
+    const h = calculateCapaciteitHerkomst(results.rollen, "realistisch");
+    assert.ok(tekst.includes("Waar komt de capaciteit vandaan?"), "sectie ontbreekt");
+    assert.ok(tekst.includes(herkomstZin(h)), "de zin met de grootste bronnen ontbreekt");
+    for (const rij of herkomstRijen(h, 5)) {
+      for (const c of herkomstCellen(rij)) assert.ok(tekst.includes(c), `cel "${c}" (${rij.label}) ontbreekt`);
+    }
+    // De oude weergave in aandelen en verschuivingen is weg.
+    assert.ok(!tekst.includes("Het zwaartepunt verschuift"), "oude zwaartepuntzin staat er nog");
+    assert.doesNotMatch(tekst, /d+ pp/, "verschuiving in procentpunten staat er nog");
   });
 
   test(`${formaat}: de rollentabel toont vrijgekomen uren naast het bedrag`, async () => {
@@ -233,7 +235,7 @@ for (const formaat of ["pdf", "docx"]) {
     const { [formaat]: tekst } = await rapporten({ competenties: false });
     assert.ok(!tekst.includes("Ontwikkelagenda"));
     assert.ok(!tekst.includes("Waar kunnen deze mensen heen?"));
-    assert.ok(tekst.includes("Waar het werk uit bestaat"), "de rest van het rapport moet er gewoon zijn");
+    assert.ok(tekst.includes("Waar komt de capaciteit vandaan?"), "de rest van het rapport moet er gewoon zijn");
   });
 }
 
@@ -277,7 +279,7 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(zin, "er hoort een melding te zijn");
     const voorkomens = tekst.split(zin).length - 1;
     assert.ok(voorkomens >= 2, `melding staat ${voorkomens}x, verwacht bij de totalen én in de dekking`);
-    assert.ok(tekst.indexOf(zin) < tekst.indexOf("Waar het werk uit bestaat"), "eerste melding hoort vóór de analyses te staan");
+    assert.ok(tekst.indexOf(zin) < tekst.indexOf("Waar komt de capaciteit vandaan?"), "eerste melding hoort vóór de analyses te staan");
   });
 
   test(`${formaat}: zonder mislukte rollen staat er geen melding over mislukte rollen`, async () => {
@@ -453,7 +455,7 @@ for (const formaat of ["pdf", "docx"]) {
   test(`${formaat}: het organogram spreekt niet meer over wie er overblijft`, async () => {
     const { [formaat]: tekst } = await rapporten();
     const deel = tekst.slice(tekst.indexOf("Organogram — waar de capaciteit vrijkomt"));
-    const organogram = deel.slice(0, deel.indexOf("Waar het werk uit bestaat") > 0 ? deel.indexOf("Waar het werk uit bestaat") : 4000);
+    const organogram = deel.slice(0, deel.indexOf("Waar komt de capaciteit vandaan?") > 0 ? deel.indexOf("Waar komt de capaciteit vandaan?") : 4000);
     assert.doesNotMatch(organogram, /overgebleven|na transformatie/i);
     assert.doesNotMatch(organogram, /\d,\d+ → \d,\d+ FTE/);
   });
