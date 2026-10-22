@@ -436,8 +436,10 @@ function StellingRij({ stelling }) {
             <>
               Invullers:{" "}
               {anderen.map((x, n) => (
-                <span key={n} className="mr-2">
-                  {rolNaam(x.rol)} <span className="font-medium text-slate-700">{ANTWOORD_LABEL[x.antwoord]}</span>
+                <span key={n}>
+                  <span className="mr-2">
+                    {rolNaam(x.rol)} <span className="font-medium text-slate-700">{ANTWOORD_LABEL[x.antwoord]}</span>
+                  </span>{" "}
                 </span>
               ))}
             </>
