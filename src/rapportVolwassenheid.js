@@ -57,15 +57,17 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
         `Voor ${gemeten.length} van de ${profiel.assen.length} assen is vastgesteld hoe ver de organisatie is met het inzetten van AI, op een schaal van 0 (nog niet begonnen) tot 5 (zelfvernieuwend). ${spreiding} Er is geen totaalscore: een gemiddelde zou verbergen wat een directie moet weten.`
       )
     );
+    // De kolom met onderbouwing hoort bij de verdiepingsfase: alleen als er bewijs is vastgelegd.
+    const metBewijs = profiel.bewijsGebruikt;
     blokken.push(
       tabel(
-        ["As", "Niveau", "Doel", "Nog te gaan", "Onderbouwing"],
+        ["As", "Niveau", "Doel", "Nog te gaan", ...(metBewijs ? ["Onderbouwing"] : [])],
         profiel.assen.map((a) => [
           a.naam,
           niveauTekst(a) + (a.gemeten && a.onvolledig ? " (onvolledig)" : ""),
           String(a.doel),
           a.gat === null ? "—" : a.gat === 0 ? "doel gehaald" : String(a.gat),
-          onderbouwingTekst(a),
+          ...(metBewijs ? [onderbouwingTekst(a)] : []),
         ])
       )
     );
@@ -82,7 +84,14 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
         )
       );
     }
-    if (gemeten.some((a) => a.niveau > 0 && !a.onderbouwd)) {
+    if (!profiel.bewijsGebruikt) {
+      blokken.push(
+        alinea(
+          "Dit rapport geeft een eerste beeld op basis van zelfbeoordeling. Een verdiepend onderzoek, met gesprekken en bewijs, volgt in het vervolgtraject.",
+          "noot"
+        )
+      );
+    } else if (gemeten.some((a) => a.niveau > 0 && !a.onderbouwd)) {
       blokken.push(
         alinea(
           "Dit is een zelfbeoordeling. Een as is pas onderbouwd als bij elke voldane stelling het bewijs is gezien; de overige assen zijn indicatief.",
@@ -176,7 +185,7 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
   // ---- Onderbouwing -------------------------------------------------------------------------
   const voldaan = profiel.assen.reduce((s, a) => s + a.onderbouwing.voldaan, 0);
   const gezien = profiel.assen.reduce((s, a) => s + a.onderbouwing.gezien, 0);
-  if (voldaan > 0) {
+  if (voldaan > 0 && profiel.bewijsGebruikt) {
     blokken.push(kop("Onderbouwing"));
     blokken.push(
       alinea(
@@ -235,11 +244,44 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
     }
   }
 
+  // ---- Waar verdieping het meest oplevert ---------------------------------------------------
+  // Dit rapport is een kwantitatief eerste beeld. De scan wijst zelf aan waar gesprekken en bewijs
+  // in een vervolgtraject de meeste toegevoegde waarde hebben.
+  const verdieping = [];
+  const genoemd = new Set();
+  const voeg = (sleutel, tekst) => {
+    if (genoemd.has(sleutel) || verdieping.length >= 8) return;
+    genoemd.add(sleutel);
+    verdieping.push(tekst);
+  };
+  for (const i of analyse.volgorde.slice(0, 3)) {
+    const asNaam = profiel.assen.find((a) => a.id === i.asId)?.naam;
+    voeg(`thema:${i.thema}`, `${i.naam} (${asNaam}): groot verschil tussen niveau ${i.niveau} en doel ${i.doel}. Gesprekken maken duidelijk wat er concreet ontbreekt.`);
+  }
+  for (const r of borging) {
+    voeg(`thema:${r.thema}`, `${r.naam}: de organisatie kan het, maar heeft het niet geborgd. Verdieping toetst hoe kwetsbaar dat is.`);
+  }
+  for (const s of analyse.tegenstrijdigheden) {
+    voeg(`signaal:${s.id}:${s.plek}`, `${s.plek}: een combinatie die zelden klopt. Controleer in een gesprek wat erachter zit.`);
+  }
+  for (const t of analyse.verschillen?.signalen ?? []) {
+    voeg(`thema:${t.thema}`, `${t.naam}: rollen zien het verschillend. Gesprekken met beide kanten leggen het verschil bloot.`);
+  }
+  if (verdieping.length > 0) {
+    blokken.push(kop("Waar verdieping het meest oplevert"));
+    blokken.push(
+      alinea(
+        "Op basis van deze scan zijn dit de plekken waar een verdiepend onderzoek, met gesprekken en bewijs, de meeste toegevoegde waarde heeft."
+      )
+    );
+    blokken.push(lijst(verdieping));
+  }
+
   // ---- Beperkingen --------------------------------------------------------------------------
   blokken.push(kop("Wat dit rapport wel en niet zegt"));
   blokken.push(
     lijst([
-      "Het is een zelfbeoordeling. Ook met bewijsvragen is de score een oordeel van mensen over hun eigen organisatie, en mensen overschatten zichzelf het meest op gebieden waar ze het minst van weten. Daarom zijn er meerdere invullers, bewijs en signalen.",
+      "Het is een zelfbeoordeling. Ook met bewijsvragen is de score een oordeel van mensen over hun eigen organisatie, en mensen overschatten zichzelf het meest op gebieden waar ze het minst van weten. Daarom kent de scan meerdere invullers en signalen, en voegt een verdiepend onderzoek gesprekken en bewijs toe.",
       "Er is geen vergelijking met andere organisaties. Dat kan pas met eigen metingen van veel organisaties, en dan alleen per sector en omvang.",
       "De afhankelijkheden, signalen en realisatievoorwaarden zijn uitgangspunten uit adviespraktijk, geen meetresultaten. Ze worden met ervaring bijgesteld.",
       "De koppeling met de analyse van functies is een eerste uitwerking en geeft voorwaarden, geen exacte voorspelling.",
@@ -259,7 +301,7 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
         `${RAAMWERK.naam}, versie ${RAAMWERK.versie}`,
       ].filter(Boolean),
       disclaimer:
-        "Dit rapport is een strategisch gespreksondersteunend instrument. Het is een zelfbeoordeling, geen audit of certificering, en vervangt geen diepgaand onderzoek.",
+        "Dit rapport is een strategisch gespreksondersteunend instrument en een eerste beeld op basis van zelfbeoordeling. Het is geen audit of certificering en vervangt geen diepgaand onderzoek.",
       blokken,
     };
   }

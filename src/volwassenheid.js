@@ -63,7 +63,7 @@ export const leegeInvoer = () => ({
   geldend: { antwoorden: {}, bewijs: {}, bewijsGezien: {} },
 });
 
-function schoneAntwoorden(ruw) {
+export function schoneAntwoorden(ruw) {
   const uit = {};
   if (ruw && typeof ruw === "object") {
     for (const [id, w] of Object.entries(ruw)) if (STELLING_IDS.has(id) && GELDIG.has(w)) uit[id] = w;

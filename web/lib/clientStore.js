@@ -70,6 +70,13 @@ async function removeAllUnderPrefix(supabase, prefix) {
   for (const entry of profileFiles ?? []) {
     paths.push(`${prefix}/profiles/${entry.name}`);
   }
+  // Bestanden die via de aanleverlink zijn binnengekomen en nog niet zijn overgenomen.
+  for (const sub of ["inbox/roster", "inbox/profiel"]) {
+    const { data: inboxFiles } = await supabase.storage.from(FILES_BUCKET).list(`${prefix}/${sub}`, { limit: 1000 });
+    for (const entry of inboxFiles ?? []) {
+      if (entry.id !== null) paths.push(`${prefix}/${sub}/${entry.name}`);
+    }
+  }
   if (paths.length > 0) {
     await supabase.storage.from(FILES_BUCKET).remove(paths);
   }

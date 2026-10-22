@@ -55,6 +55,9 @@ export function MaturiteitProvider({ id, children }) {
   const [status, setStatus] = useState("laden"); // laden | klaar | opslaan | opgeslagen | fout
   const [actief, setActief] = useState(ADVISEUR);
   const [gevraagdeAs, setGevraagdeAs] = useState(null);
+  // In de bewustwordingsfase is de scan een zelfbeoordeling zonder bewijs. Met deze schakelaar
+  // legt de adviseur in de verdiepingsfase wel bewijs vast.
+  const [bewijsModus, setBewijsModus] = useState(false);
   const timer = useRef(null);
   const wacht = useRef(null);
   // De laatste staat, direct bijgewerkt. Twee klikken kort na elkaar mogen elkaar niet
@@ -172,6 +175,74 @@ export function MaturiteitProvider({ id, children }) {
     setActief(ADVISEUR);
   };
 
+  // Invullers via een link vullen zelf in. Hun antwoorden komen binnen zonder dat de adviseur iets
+  // doet; hier halen we ze op en voegen ze in, zonder wat de adviseur zelf aan het doen is aan te raken.
+  const ververs = useCallback(async () => {
+    if (!laatste.current) return;
+    try {
+      const d = await (await fetch(`/api/clients/${id}/maturiteit`, { cache: "no-store" })).json();
+      const nu = laatste.current;
+      if (!nu) return;
+      const volgende = {
+        ...nu,
+        invullers: [...nu.invullers.filter((i) => i.bron !== "link"), ...d.huidig.invullers.filter((i) => i.bron === "link")],
+      };
+      laatste.current = volgende;
+      setHuidig(volgende);
+    } catch {
+      // de volgende ronde probeert het opnieuw
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const opFocus = () => document.visibilityState === "visible" && !wacht.current && ververs();
+    document.addEventListener("visibilitychange", opFocus);
+    const tik = setInterval(() => !wacht.current && document.visibilityState === "visible" && ververs(), 45_000);
+    return () => {
+      document.removeEventListener("visibilitychange", opFocus);
+      clearInterval(tik);
+    };
+  }, [ververs]);
+
+  // Na het aanmaken of verwijderen van een link staat de lijst invullers op de server anders dan hier.
+  const herlaad = useCallback(async () => {
+    const d = await (await fetch(`/api/clients/${id}/maturiteit`, { cache: "no-store" })).json();
+    laatste.current = d.huidig;
+    setHuidig(d.huidig);
+  }, [id]);
+
+  const linkAanroep = useCallback(
+    async (opties) => {
+      await spoelLeeg();
+      const res = await fetch(`/api/clients/${id}/links`, { headers: { "Content-Type": "application/json" }, ...opties });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) return { fout: body.error ?? "Dat is niet gelukt." };
+      await herlaad();
+      return body;
+    },
+    [id, spoelLeeg, herlaad]
+  );
+  const maakInvullink = async (rol, label) => {
+    const uit = await linkAanroep({ method: "POST", body: JSON.stringify({ type: "invuller", rol, label }) });
+    if (uit.invullerId) setActief(uit.invullerId);
+    return uit;
+  };
+  const vernieuwLink = async (invullerId) => {
+    const lijst = await (await fetch(`/api/clients/${id}/links`)).json();
+    const link = (lijst.links ?? []).find((l) => l.invullerId === invullerId && l.actief);
+    if (!link) return { fout: "Er is geen actieve link voor deze invuller." };
+    return linkAanroep({ method: "POST", body: JSON.stringify({ actie: "vernieuw", linkId: link.id }) });
+  };
+  const verwijderLinkInvuller = async (invullerId) => {
+    const lijst = await (await fetch(`/api/clients/${id}/links`)).json();
+    for (const link of (lijst.links ?? []).filter((l) => l.invullerId === invullerId && !l.ingetrokken)) {
+      const uit = await linkAanroep({ method: "DELETE", body: JSON.stringify({ linkId: link.id, verwijderInvuller: true }) });
+      if (uit.fout) return uit;
+    }
+    setActief(ADVISEUR);
+    return { ok: true };
+  };
+
   const profiel = useMemo(() => (huidig ? berekenProfiel(huidig) : null), [huidig]);
   const effectief = useMemo(() => (huidig ? effectieveAntwoorden(huidig) : null), [huidig]);
 
@@ -194,6 +265,12 @@ export function MaturiteitProvider({ id, children }) {
     zetScope,
     voegInvullerToe,
     verwijderInvuller,
+    maakInvullink,
+    vernieuwLink,
+    verwijderLinkInvuller,
+    ververs,
+    bewijsModus,
+    setBewijsModus,
     gevraagdeAs,
     setGevraagdeAs,
   };
@@ -233,13 +310,13 @@ function Laden({ status, huidig }) {
 function Voetnoot() {
   return (
     <p className="mb-8 text-[11px] leading-relaxed text-slate-400">
-      {RAAMWERK.naam}, versie {RAAMWERK.versie}. Een zelfbeoordeling: de uitkomst is zo stevig als het bewijs eronder. Er is geen vergelijking
-      met andere organisaties en geen totaalscore.
+      {RAAMWERK.naam}, versie {RAAMWERK.versie}. Een eerste beeld op basis van zelfbeoordeling; een verdiepend onderzoek volgt in het vervolgtraject. Er
+      is geen vergelijking met andere organisaties en geen totaalscore.
     </p>
   );
 }
 
-function ProfielRegel({ a, onOpen }) {
+function ProfielRegel({ a, onOpen, toonOnderbouwing = false }) {
   const gemeten = a.gemeten;
   return (
     <button
@@ -263,7 +340,7 @@ function ProfielRegel({ a, onOpen }) {
             <span className="font-semibold text-slate-800">
               {a.niveau} · {a.niveauNaam}
             </span>
-            {a.niveau > 0 && !a.onderbouwd && <span className="ml-1.5 text-[10px] text-amber-600">indicatief</span>}
+            {toonOnderbouwing && a.niveau > 0 && !a.onderbouwd && <span className="ml-1.5 text-[10px] text-amber-600">indicatief</span>}
             {a.onvolledig && <span className="ml-1.5 text-[10px] text-amber-600">onvolledig</span>}
           </>
         ) : (
@@ -276,21 +353,75 @@ function ProfielRegel({ a, onOpen }) {
 
 // ---- Tabblad "AI-volwassenheid": de vragenlijst ----------------------------------------------
 
+const statusTekst = (i) => (i.bron !== "link" ? "" : i.status === "ingediend" ? " · ✓ ingediend" : i.status === "bezig" ? " · bezig" : " · nog niet gestart");
+
 function InvullerKeuze() {
-  const { huidig, actief, setActief, voegInvullerToe, verwijderInvuller } = useMaturiteit();
+  const {
+    huidig, actief, setActief, voegInvullerToe, verwijderInvuller, maakInvullink, vernieuwLink, verwijderLinkInvuller,
+    ververs, bewijsModus, setBewijsModus, profiel,
+  } = useMaturiteit();
   const [nieuw, setNieuw] = useState(false);
+  const [viaLink, setViaLink] = useState(true);
   const [rol, setRol] = useState("directie");
   const [label, setLabel] = useState("");
   const [verwijder, setVerwijder] = useState(false);
+  const [gemaakt, setGemaakt] = useState(null); // { url, wie }
+  const [bezig, setBezig] = useState(false);
+  const [fout, setFout] = useState(null);
+  const [gekopieerd, setGekopieerd] = useState(false);
+
+  const actieveInvuller = huidig.invullers.find((i) => i.id === actief) ?? null;
+  const viaLinkActief = actieveInvuller?.bron === "link";
 
   const knop = (actiefNu) =>
     `rounded-full border px-3 py-1 text-xs transition-colors ${
       actiefNu ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
     }`;
 
+  async function toon(uit, wie) {
+    if (uit?.fout) setFout(uit.fout);
+    else if (uit?.url) {
+      setFout(null);
+      setGekopieerd(false);
+      setGemaakt({ url: uit.url, wie });
+    }
+  }
+
+  async function voegToe() {
+    if (viaLink) {
+      setBezig(true);
+      setFout(null);
+      const uit = await maakInvullink(rol, label);
+      setBezig(false);
+      if (!uit.fout) {
+        setNieuw(false);
+        setLabel("");
+      }
+      await toon(uit, `${rolNaam(rol)}${label.trim() ? ` · ${label.trim()}` : ""}`);
+    } else {
+      voegInvullerToe(rol, label);
+      setNieuw(false);
+      setLabel("");
+    }
+  }
+
+  async function kopieer() {
+    try {
+      await navigator.clipboard.writeText(gemaakt.url);
+      setGekopieerd(true);
+    } catch {
+      setGekopieerd(false);
+    }
+  }
+
   return (
     <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2.5">
-      <p className="mb-1.5 text-xs font-medium text-slate-700">Wie vult in?</p>
+      <div className="mb-1.5 flex items-center justify-between">
+        <p className="text-xs font-medium text-slate-700">Wie vult in?</p>
+        <button type="button" onClick={ververs} className="text-[11px] text-slate-500 hover:text-indigo-600 hover:underline">
+          ↻ Antwoorden van invullers verversen
+        </button>
+      </div>
       <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Wie vult in">
         <button type="button" role="radio" aria-checked={actief === ADVISEUR} onClick={() => setActief(ADVISEUR)} className={knop(actief === ADVISEUR)}>
           Adviseur: geldende antwoorden
@@ -299,6 +430,7 @@ function InvullerKeuze() {
           <button key={i.id} type="button" role="radio" aria-checked={actief === i.id} onClick={() => setActief(i.id)} className={knop(actief === i.id)}>
             {rolNaam(i.rol)}
             {i.label ? ` · ${i.label}` : ""}
+            {statusTekst(i)}
           </button>
         ))}
         {huidig.invullers.length < MAX_INVULLERS && (
@@ -309,48 +441,112 @@ function InvullerKeuze() {
       </div>
 
       {nieuw && (
-        <div className="mt-2 flex flex-wrap items-end gap-2">
-          <label className="text-[11px] text-slate-500">
-            Rol
-            <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700">
-              {ROLLEN.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.naam}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-[11px] text-slate-500">
-            Omschrijving (geen naam), bijvoorbeeld &quot;teamleider klantenservice&quot;
-            <input
-              type="text"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              maxLength={60}
-              className="mt-0.5 block w-64 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              voegInvullerToe(rol, label);
-              setNieuw(false);
-              setLabel("");
-            }}
-            className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500"
-          >
-            Toevoegen
+        <div className="mt-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+          <div className="flex flex-wrap gap-4 text-xs text-slate-600">
+            <label className="flex items-center gap-1.5">
+              <input type="radio" checked={viaLink} onChange={() => setViaLink(true)} /> Via een link: de invuller vult zelf in
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input type="radio" checked={!viaLink} onChange={() => setViaLink(false)} /> Zelf invullen (bijvoorbeeld tijdens een sessie)
+            </label>
+          </div>
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <label className="text-[11px] text-slate-500">
+              Rol
+              <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700">
+                {ROLLEN.filter((r) => r.id !== "adviseur").map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.naam}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px] text-slate-500">
+              Omschrijving (geen naam), bijvoorbeeld &quot;teamleider klantenservice&quot;
+              <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className="mt-0.5 block w-64 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700" />
+            </label>
+            <button type="button" onClick={voegToe} disabled={bezig} className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
+              {bezig ? "Bezig…" : viaLink ? "Link maken" : "Toevoegen"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {fout && <p className="mt-2 text-[11px] text-red-600">{fout}</p>}
+
+      {gemaakt && (
+        <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <p className="text-xs font-medium text-emerald-800">Link voor {gemaakt.wie}</p>
+          <div className="mt-1 flex items-center gap-2">
+            <input readOnly value={gemaakt.url} onFocus={(e) => e.target.select()} className="w-full rounded border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700" />
+            <button type="button" onClick={kopieer} className="shrink-0 rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">
+              {gekopieerd ? "Gekopieerd" : "Kopieer"}
+            </button>
+          </div>
+          <p className="mt-1 text-[11px] text-emerald-800">
+            Deze link wordt maar één keer getoond en is 45 dagen geldig. Is hij kwijt? Maak dan een nieuwe link voor deze invuller; de oude werkt dan niet meer.
+          </p>
+          <button type="button" onClick={() => setGemaakt(null)} className="mt-1 text-[11px] text-emerald-700 hover:underline">
+            Verbergen
           </button>
         </div>
       )}
 
       <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
         {actief === ADVISEUR
-          ? "Je legt hier het geldende oordeel vast: dat telt in alle analyses. Zolang je bij een stelling niets invult, geldt het strengste antwoord van de invullers."
-          : "Je vult in als deze invuller. Zolang de adviseur bij een stelling niets heeft vastgelegd, geldt het strengste antwoord van de invullers. Antwoorden worden per rol getoond, nooit per persoon."}
+          ? "Je legt hier het geldende oordeel vast: dat telt in alle analyses. Zolang je bij een stelling niets invult, geldt het strengste antwoord van de invullers die al hebben verstuurd."
+          : viaLinkActief
+            ? "Deze invuller vult zelf in via de link. Zijn antwoorden zie je hier, maar je kunt ze niet aanpassen. Ze tellen mee zodra hij ze heeft verstuurd."
+            : "Je vult in als deze invuller. Zolang de adviseur bij een stelling niets heeft vastgelegd, geldt het strengste antwoord van de invullers. Antwoorden worden per rol getoond, nooit per persoon."}
       </p>
 
-      {actief !== ADVISEUR && (
+      {actief === ADVISEUR && (
+        <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+          <input type="checkbox" checked={bewijsModus || profiel.bewijsGebruikt} disabled={profiel.bewijsGebruikt} onChange={(e) => setBewijsModus(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+          Bewijs vastleggen (verdiepingsfase)
+        </label>
+      )}
+
+      {viaLinkActief && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px]">
+          <span className="text-slate-500">
+            {actieveInvuller.status === "ingediend" ? "Verstuurd" : actieveInvuller.status === "bezig" ? "Bezig met invullen" : "Nog niet gestart"}
+            {actieveInvuller.bijgewerktOp ? ` · laatst bijgewerkt ${new Date(actieveInvuller.bijgewerktOp).toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" })}` : ""}
+          </span>
+          <button
+            type="button"
+            onClick={async () => toon(await vernieuwLink(actieveInvuller.id), `${rolNaam(actieveInvuller.rol)}${actieveInvuller.label ? ` · ${actieveInvuller.label}` : ""}`)}
+            className="text-indigo-600 hover:underline"
+          >
+            Nieuwe link maken
+          </button>
+          {verwijder ? (
+            <span className="flex items-center gap-2">
+              <span className="text-slate-600">Invuller en antwoorden verwijderen?</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  const uit = await verwijderLinkInvuller(actieveInvuller.id);
+                  setVerwijder(false);
+                  if (uit.fout) setFout(uit.fout);
+                }}
+                className="rounded bg-red-600 px-2 py-0.5 text-white hover:bg-red-500"
+              >
+                Zeker weten
+              </button>
+              <button type="button" onClick={() => setVerwijder(false)} className="text-slate-500 hover:underline">
+                Annuleren
+              </button>
+            </span>
+          ) : (
+            <button type="button" onClick={() => setVerwijder(true)} className="text-slate-400 hover:text-red-600 hover:underline">
+              Invuller verwijderen
+            </button>
+          )}
+        </div>
+      )}
+
+      {actief !== ADVISEUR && !viaLinkActief && (
         <div className="mt-1.5">
           {verwijder ? (
             <span className="flex items-center gap-2 text-[11px]">
@@ -381,13 +577,15 @@ function InvullerKeuze() {
 }
 
 function StellingRij({ stelling }) {
-  const { huidig, effectief, actief, zetAntwoord, zetBewijs, zetBewijsGezien } = useMaturiteit();
+  const { huidig, effectief, actief, zetAntwoord, zetBewijs, zetBewijsGezien, bewijsModus, profiel } = useMaturiteit();
   const adviseur = actief === ADVISEUR;
   const bron = adviseur ? huidig.geldend : huidig.invullers.find((i) => i.id === actief);
+  const alleenLezen = bron?.bron === "link"; // een invuller via een link vult zelf in
+  const toonBewijs = !alleenLezen && (bewijsModus || profiel.bewijsGebruikt);
   const antwoord = bron?.antwoorden?.[stelling.id] ?? null;
   const bewijs = bron?.bewijs?.[stelling.id] ?? "";
   const anderen = adviseur
-    ? huidig.invullers.filter((i) => i.antwoorden?.[stelling.id]).map((i) => ({ rol: i.rol, antwoord: i.antwoorden[stelling.id] }))
+    ? huidig.invullers.filter((i) => i.antwoorden?.[stelling.id]).map((i) => ({ rol: i.rol, antwoord: i.antwoorden[stelling.id], telt: i.bron !== "link" || i.status === "ingediend" }))
     : [];
   const geldendEffectief = effectief[stelling.id];
 
@@ -400,9 +598,11 @@ function StellingRij({ stelling }) {
             <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">{stelling.kant}</span>
             {stelling.tekst}
           </p>
-          <p className="mt-1 text-[11px] italic text-slate-500">
-            {stelling.bewijsvraag} <span className="not-italic text-slate-400">Bijvoorbeeld: {stelling.bewijsvoorbeelden.join("; ")}.</span>
-          </p>
+          {toonBewijs && (
+            <p className="mt-1 text-[11px] italic text-slate-500">
+              {stelling.bewijsvraag} <span className="not-italic text-slate-400">Bijvoorbeeld: {stelling.bewijsvoorbeelden.join("; ")}.</span>
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 gap-1" role="radiogroup" aria-label={stelling.tekst}>
           {ANTWOORDEN.map((a) => (
@@ -411,8 +611,9 @@ function StellingRij({ stelling }) {
               type="button"
               role="radio"
               aria-checked={antwoord === a.waarde}
+              disabled={alleenLezen}
               onClick={() => zetAntwoord(stelling.id, antwoord === a.waarde ? null : a.waarde)}
-              className={`rounded border px-2 py-0.5 text-[11px] transition-colors ${
+              className={`rounded border px-2 py-0.5 text-[11px] transition-colors disabled:cursor-default ${
                 antwoord === a.waarde
                   ? a.waarde === "ja"
                     ? "border-emerald-600 bg-emerald-600 text-white"
@@ -421,7 +622,7 @@ function StellingRij({ stelling }) {
                       : a.waarde === "deels"
                         ? "border-amber-500 bg-amber-500 text-white"
                         : "border-slate-500 bg-slate-500 text-white"
-                  : "border-slate-300 bg-white text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
+                  : "border-slate-300 bg-white text-slate-500 hover:border-indigo-300 hover:text-indigo-600 disabled:hover:border-slate-300 disabled:hover:text-slate-500"
               }`}
             >
               {a.label}
@@ -437,8 +638,9 @@ function StellingRij({ stelling }) {
               Invullers:{" "}
               {anderen.map((x, n) => (
                 <span key={n}>
-                  <span className="mr-2">
+                  <span className={`mr-2 ${x.telt ? "" : "opacity-50"}`}>
                     {rolNaam(x.rol)} <span className="font-medium text-slate-700">{ANTWOORD_LABEL[x.antwoord]}</span>
+                    {x.telt ? "" : " (nog niet verstuurd)"}
                   </span>{" "}
                 </span>
               ))}
@@ -448,27 +650,29 @@ function StellingRij({ stelling }) {
         </p>
       )}
 
-      <div className="mt-1.5 flex flex-col gap-1.5 sm:flex-row sm:items-center">
-        <input
-          type="text"
-          value={bewijs}
-          onChange={(e) => zetBewijs(stelling.id, e.target.value)}
-          maxLength={500}
-          placeholder={adviseur ? "Bewijs: wat heb je gezien of gehoord?" : "Waaruit blijkt dit?"}
-          className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-        />
-        {adviseur && (
-          <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-slate-600">
-            <input
-              type="checkbox"
-              checked={huidig.geldend.bewijsGezien?.[stelling.id] === true}
-              onChange={(e) => zetBewijsGezien(stelling.id, e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
-            />
-            Bewijs gezien
-          </label>
-        )}
-      </div>
+      {toonBewijs && (
+        <div className="mt-1.5 flex flex-col gap-1.5 sm:flex-row sm:items-center">
+          <input
+            type="text"
+            value={bewijs}
+            onChange={(e) => zetBewijs(stelling.id, e.target.value)}
+            maxLength={500}
+            placeholder={adviseur ? "Bewijs: wat heb je gezien of gehoord?" : "Waaruit blijkt dit?"}
+            className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          {adviseur && (
+            <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-slate-600">
+              <input
+                type="checkbox"
+                checked={huidig.geldend.bewijsGezien?.[stelling.id] === true}
+                onChange={(e) => zetBewijsGezien(stelling.id, e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
+              />
+              Bewijs gezien
+            </label>
+          )}
+        </div>
+      )}
     </li>
   );
 }
@@ -952,7 +1156,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
                 {profiel.assen
                   .filter((a) => a.kant === kant)
                   .map((a) => (
-                    <ProfielRegel key={a.id} a={a} onOpen={() => naarAs(a.id)} />
+                    <ProfielRegel key={a.id} a={a} onOpen={() => naarAs(a.id)} toonOnderbouwing={profiel.bewijsGebruikt} />
                   ))}
               </div>
             ))}
@@ -966,10 +1170,14 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
             ondergrens.
           </Waarschuwing>
         )}
-        {profiel.gemeten > 0 && profiel.assen.some((a) => a.gemeten && a.niveau > 0 && !a.onderbouwd) && (
+        {profiel.gemeten > 0 && !profiel.bewijsGebruikt && (
+          <p className="mt-2 text-[11px] text-slate-500">
+            Dit is een eerste beeld op basis van zelfbeoordeling. Een verdiepend onderzoek met gesprekken en bewijs volgt in het vervolgtraject.
+          </p>
+        )}
+        {profiel.gemeten > 0 && profiel.bewijsGebruikt && profiel.assen.some((a) => a.gemeten && a.niveau > 0 && !a.onderbouwd) && (
           <Waarschuwing>
-            Dit is een zelfbeoordeling. Een as is pas onderbouwd als de adviseur het bewijs achter elke voldane stelling heeft gezien; de overige assen zijn
-            indicatief.
+            Een as is pas onderbouwd als de adviseur het bewijs achter elke voldane stelling heeft gezien; de overige assen zijn indicatief.
           </Waarschuwing>
         )}
       </div>
@@ -981,7 +1189,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           <VaardigheidBorging rijen={volledig.vaardigheidVersusBorging} />
           <Signalen signalen={volledig.tegenstrijdigheden} />
           <Verschillen verschillen={volledig.verschillen} />
-          <Onderbouwing profiel={profiel} />
+          {profiel.bewijsGebruikt && <Onderbouwing profiel={profiel} />}
           <Realisatie realisatie={volledig.realisatie} heeftAnalyse={heeftAnalyse} />
         </>
       )}

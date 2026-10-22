@@ -55,7 +55,7 @@ test("de samenvattingstabel toont elke as met het niveau uit de berekening", () 
   const m = bouw(invoer);
   const profiel = berekenProfiel(invoer);
   const t = m.blokken.find((b) => b.soort === "tabel");
-  assert.deepEqual(t.kolommen, ["As", "Niveau", "Doel", "Nog te gaan", "Onderbouwing"]);
+  assert.deepEqual(t.kolommen, ["As", "Niveau", "Doel", "Nog te gaan"], "zonder vastgelegd bewijs geen kolom onderbouwing");
   assert.equal(t.rijen.length, 8);
   for (const a of profiel.assen) {
     const rij = t.rijen.find((r) => r[0] === a.naam);
@@ -66,12 +66,48 @@ test("de samenvattingstabel toont elke as met het niveau uit de berekening", () 
   assert.ok(m.blokken.some((b) => b.soort === "alinea" && /Er is geen totaalscore/.test(b.tekst)));
 });
 
-test("zonder bewijs gezien heet het niveau indicatief, met bewijs onderbouwd", () => {
-  const invoer = metGeldend(antwoordenOp(thema("data_kwaliteit") ? { data_kwaliteit: 2, data_beschikbaar: 2 } : {}));
+test("bewustwordingsfase: een eerste beeld op basis van zelfbeoordeling, zonder onderbouwing per as", () => {
+  const m = bouw(metGeldend(antwoordenOp({ data_kwaliteit: 2, data_beschikbaar: 2 })));
+  const tekst = modelTeksten(m).join(" ");
+  assert.match(tekst, /eerste beeld op basis van zelfbeoordeling/);
+  assert.doesNotMatch(tekst, /indicatief|onderbouwd/, "geen onderbouwingstaal zonder vastgelegd bewijs");
+  assert.ok(!kopjes(m).includes("Onderbouwing"));
+});
+
+test("verdiepingsfase: zodra de adviseur bewijs vastlegt komt de onderbouwing terug", () => {
+  const invoer = metGeldend(antwoordenOp({ data_kwaliteit: 2, data_beschikbaar: 2 }));
   const t = (m) => m.blokken.find((b) => b.soort === "tabel").rijen.find((r) => r[0] === "Data");
-  assert.equal(t(bouw(invoer))[4], "indicatief");
-  const gezien = Object.fromEntries(["data_kwaliteit_1", "data_kwaliteit_2", "data_beschikbaar_1", "data_beschikbaar_2"].map((id) => [id, true]));
-  assert.equal(t(bouw({ ...invoer, geldend: { ...invoer.geldend, bewijsGezien: gezien } }))[4], "onderbouwd");
+  const gezien = Object.fromEntries(["data_kwaliteit_1", "data_kwaliteit_2", "data_beschikbaar_1"].map((id) => [id, true]));
+  const m = bouw({ ...invoer, geldend: { ...invoer.geldend, bewijsGezien: gezien } });
+  assert.equal(m.blokken.find((b) => b.soort === "tabel").kolommen[4], "Onderbouwing");
+  assert.equal(t(m)[4], "indicatief", "niet alle voldane stellingen zijn gezien");
+  assert.ok(kopjes(m).includes("Onderbouwing"));
+  const alles = Object.fromEntries(["data_kwaliteit_1", "data_kwaliteit_2", "data_beschikbaar_1", "data_beschikbaar_2"].map((id) => [id, true]));
+  assert.equal(t(bouw({ ...invoer, geldend: { ...invoer.geldend, bewijsGezien: alles } }))[4], "onderbouwd");
+});
+
+test("waar verdieping het meest oplevert: grote kloven, borging, signalen en verschillen tussen rollen", () => {
+  const maak = (rol, n) => ({ id: `${rol}-1`, rol, label: "", antwoorden: antwoordenOp({ mensen_omgang: n }), bewijs: {} });
+  const a = { ...antwoordenOp({ bouwen_bouwen: 3, bouwen_toetsen: 3, data_beschikbaar: 1, data_kwaliteit: 1 }), ...antwoordenOp({ werkprocessen_effect: 1 }) };
+  a.bouwen_bouwen_3 = "nee";
+  a.bouwen_bouwen_4 = "ja";
+  a.bouwen_bouwen_5 = "ja";
+  const m = bouw({ ...metGeldend(a), invullers: [maak("directie", 4), maak("werkvloer", 1)] });
+  assert.ok(kopjes(m).includes("Waar verdieping het meest oplevert"));
+  const i = m.blokken.findIndex((b) => b.soort === "kop" && b.tekst === "Waar verdieping het meest oplevert");
+  const lijst = m.blokken[i + 2];
+  assert.equal(lijst.soort, "lijst");
+  const tekst = lijst.items.join(" ");
+  assert.match(tekst, /groot verschil tussen niveau/);
+  assert.match(tekst, /Ontwerpen en bouwen: de organisatie kan het, maar heeft het niet geborgd/);
+  assert.match(tekst, /Omgang met AI in het dagelijks werk: rollen zien het verschillend/);
+  assert.ok(lijst.items.length <= 8);
+  assert.equal(new Set(lijst.items).size, lijst.items.length, "geen dubbele regels");
+});
+
+test("zonder iets om te verdiepen ontbreekt het slotdeel", () => {
+  const alles = metGeldend(Object.fromEntries(THEMAS.flatMap((t) => t.stellingen.map((s) => [s.id, "ja"]))));
+  assert.ok(!kopjes(bouw(alles)).includes("Waar verdieping het meest oplevert"));
 });
 
 test("onvolledig: het rapport zegt hoeveel is beantwoord en dat de niveaus een ondergrens zijn", () => {

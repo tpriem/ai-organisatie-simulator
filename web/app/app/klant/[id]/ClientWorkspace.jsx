@@ -19,6 +19,7 @@ import {
 } from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
+import Aanlevering from "./Aanlevering";
 import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
@@ -1389,6 +1390,13 @@ export default function ClientWorkspace({ id }) {
     load();
   }, [load]);
 
+  // Ververst de klantgegevens zonder de pagina op "laden" te zetten, bijvoorbeeld nadat een
+  // bestand uit de inbox is overgenomen.
+  const verversKlant = useCallback(async () => {
+    const res = await fetch(`/api/clients/${id}`);
+    if (res.ok) setClient(await res.json());
+  }, [id]);
+
   async function saveAnswers(partial) {
     const payload = { scope, scopeLabel, ...partial };
     setSavingAnswers(true);
@@ -1685,6 +1693,8 @@ export default function ClientWorkspace({ id }) {
 
         {/* Tab: Input */}
         {activeTab === "input" && (
+        <>
+        <Aanlevering id={id} onOvergenomen={verversKlant} />
         <Section title="Deel 1 — Organisatie-input" icon="📁">
           <div className="grid sm:grid-cols-2 gap-4 mb-1">
             <div>
@@ -1883,6 +1893,7 @@ export default function ClientWorkspace({ id }) {
             <p className="text-xs text-amber-600 mt-4">Kon controle niet uitvoeren: {client.rosterCheck.error}</p>
           )}
         </Section>
+        </>
         )}
 
         {/* Tab: AI-volwassenheid (vragenlijst) */}
