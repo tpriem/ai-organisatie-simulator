@@ -161,11 +161,17 @@ export function antwoordenPerRol(invoer) {
 
 // ---- Thema's en assen (A, B, D, G) -------------------------------------------------------------
 
-/** Hoogste n waarvoor alle stellingen met niveau <= n (en voldoen aan `filter`) voldaan zijn. */
+/**
+ * Hoogste n waarvoor alle stellingen met niveau <= n (en voldoen aan `filter`) voldaan zijn.
+ * Een niveau waarop geen enkele stelling aan het filter voldoet, is nooit zelf een bereikt
+ * niveau: anders zou een ladder die alleen over vaardigheden gaat over de niveaus met enkel
+ * borgingsstellingen heen "klimmen" zonder dat er iets is voldaan.
+ */
 function ladder(stellingen, antwoorden, filter = () => true) {
   let niveau = 0;
   for (let n = 1; n <= 5; n++) {
     const opNiveau = stellingen.filter((s) => s.niveau === n && filter(s));
+    if (opNiveau.length === 0) continue;
     if (!opNiveau.every((s) => voldaan(antwoorden[s.id]))) break;
     niveau = n;
   }

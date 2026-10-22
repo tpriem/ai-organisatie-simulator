@@ -426,3 +426,18 @@ test("F: één niveau verschil is nog geen signaal, twee wel", () => {
   assert.equal(t(maak(3, 1)).spreiding, 2);
   assert.equal(t(maak(3, 1)).signaal, true);
 });
+
+test("D: niveaus met alleen borgingsstellingen laten de vaardigheidsladder niet vanzelf klimmen", () => {
+  // mensen_omgang: 1, 2 vaardigheid; 3 borging; 4, 5 vaardigheid. Op niveau 2 en daarboven 'nee'.
+  const a = antwoordenOp({ mensen_omgang: 2 });
+  const b = beoordeelThema(thema("mensen_omgang"), a);
+  assert.equal(b.niveau, 2);
+  assert.equal(b.losNiveau, 2, "niveau 3 is alleen borging en telt niet als bereikt");
+  const rij = vaardigheidVersusBorging(berekenProfiel(metGeldend(a))).find((x) => x.thema === "mensen_omgang");
+  assert.equal(rij.verschil, 0);
+  assert.equal(rij.signaal, null);
+
+  // data_kwaliteit: 1, 2 vaardigheid; 3, 4 borging; 5 vaardigheid. Niveau 2 zonder niveau 5.
+  const c = beoordeelThema(thema("data_kwaliteit"), antwoordenOp({ data_kwaliteit: 2 }));
+  assert.equal(c.losNiveau, 2);
+});
