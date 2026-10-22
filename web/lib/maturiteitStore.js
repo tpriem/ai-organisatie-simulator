@@ -1,14 +1,16 @@
 import { getSupabase, FILES_BUCKET } from "./supabase";
+import { leegeInvoer, schoonInvoer } from "../../src/volwassenheid.js";
 
 // De AI-volwassenheidsmetingen staan als JSON-bestand in de opslag van de klant, naast
 // het roster en de profielen. Zo is er geen databasemigratie nodig, en verdwijnen ze
 // vanzelf mee wanneer een klant wordt verwijderd (removeAllUnderPrefix in clientStore).
 //
-// Structuur: { huidig: { scope, practices, indicatoren, notities }, metingen: [snapshot, ...] }
-// De metingen zijn vastgelegde momenten, nieuwste eerst; `huidig` is het werkdocument.
+// Structuur: { huidig: <invoer>, metingen: [snapshot, ...] }. De invoer is die van
+// src/volwassenheid.js (scope, doelen, invullers, geldend). De metingen zijn vastgelegde
+// momenten, nieuwste eerst; `huidig` is het werkdocument.
 
 const MAX_METINGEN = 10;
-const leeg = () => ({ huidig: { scope: "", practices: {}, indicatoren: {}, notities: {} }, metingen: [] });
+const leeg = () => ({ huidig: leegeInvoer(), metingen: [] });
 const pad = (id) => `${id}/maturiteit.json`;
 
 export async function readMaturiteit(id) {
@@ -24,8 +26,10 @@ export async function readMaturiteit(id) {
   try {
     const gelezen = JSON.parse(await res.text());
     return {
-      huidig: gelezen.huidig ?? leeg().huidig,
-      metingen: Array.isArray(gelezen.metingen) ? gelezen.metingen : [],
+      // Een bestand uit een eerdere opzet heeft andere velden; die verdwijnen bij het schonen.
+      huidig: schoonInvoer(gelezen.huidig),
+      // Alleen metingen van dit raamwerk (die hebben een raamwerkVersie).
+      metingen: (Array.isArray(gelezen.metingen) ? gelezen.metingen : []).filter((m) => typeof m?.raamwerkVersie === "string"),
     };
   } catch {
     return leeg();

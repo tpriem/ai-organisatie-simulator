@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getClientMeta } from "@/lib/clientStore";
 import { readMaturiteit, saveHuidigeMeting, leggMetingVast, verwijderMeting } from "@/lib/maturiteitStore";
 import { meldStoring } from "@/lib/alert";
-import { schoonInvoer, maakSnapshot, berekenProfiel } from "../../../../../../src/aiMaturity.js";
+import { schoonInvoer, maakSnapshot, berekenProfiel } from "../../../../../../src/volwassenheid.js";
 
 export async function GET(request, { params }) {
   const { id } = await params;

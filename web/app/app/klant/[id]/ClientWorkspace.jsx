@@ -21,7 +21,7 @@ import {
 } from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
-import Maturiteit from "./Maturiteit";
+import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
 // die de analyse blootlegt: kostenreductie levert een eenmalig voordeel dat
@@ -1406,6 +1406,7 @@ export default function ClientWorkspace({ id }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState("input");
+  const [resultatenSub, setResultatenSub] = useState("functies"); // functies | maturity
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1591,6 +1592,7 @@ export default function ClientWorkspace({ id }) {
           (rollen, taken, subtotalen per afdeling) en die worden met meer ruimte beter
           leesbaar, niet slechter. Wel een bovengrens, zodat regels op een breed scherm
           niet over de volle breedte uitlopen. */}
+      <MaturiteitProvider key={id} id={id}>
       <main className="max-w-7xl mx-auto w-full px-6 py-10">
         {/* Klant-switcher */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
@@ -1696,6 +1698,7 @@ export default function ClientWorkspace({ id }) {
           <StepChip done={!!client.rosterFileName} label="Roster" />
           <StepChip done={client.profileFiles?.length > 0} label="Functieprofielen" />
           <StepChip done={hasAnyAnswer} label="Positioneringsvragen" />
+          <MaturiteitIngevuld>{(klaar) => <StepChip done={klaar} label="AI-volwassenheid" />}</MaturiteitIngevuld>
           <StepChip done={!!results} label="Analyse" />
         </div>
 
@@ -1735,12 +1738,17 @@ export default function ClientWorkspace({ id }) {
             label="Positionering"
             done={hasAnyAnswer}
           />
-          <TabButton
-            active={activeTab === "maturiteit"}
-            onClick={() => setActiveTab("maturiteit")}
-            icon="🧭"
-            label="AI Maturity"
-          />
+          <MaturiteitIngevuld>
+            {(klaar) => (
+              <TabButton
+                active={activeTab === "maturiteit"}
+                onClick={() => setActiveTab("maturiteit")}
+                icon="🧭"
+                label="AI-volwassenheid"
+                done={klaar}
+              />
+            )}
+          </MaturiteitIngevuld>
           <TabButton
             active={activeTab === "resultaten"}
             onClick={() => setActiveTab("resultaten")}
@@ -1987,12 +1995,45 @@ export default function ClientWorkspace({ id }) {
         </Section>
         )}
 
-        {/* Tab: AI Maturity (SEI) */}
-        {activeTab === "maturiteit" && <Maturiteit id={id} />}
+        {/* Tab: AI-volwassenheid (vragenlijst) */}
+        {activeTab === "maturiteit" && (
+          <MaturiteitVragen
+            onNaarResultaten={() => {
+              setResultatenSub("maturity");
+              setActiveTab("resultaten");
+            }}
+          />
+        )}
 
         {/* Tab: Resultaten */}
         {activeTab === "resultaten" && (
-          !results ? (
+        <>
+        {/* Submenu: de uitkomsten van de functie-analyse en die van de AI-maturitybeoordeling zijn
+            twee losse scores. */}
+        <div className="mb-5 flex gap-2" role="tablist" aria-label="Soort resultaat">
+          {[
+            ["functies", "📊", "Functies & capaciteit"],
+            ["maturity", "🧭", "AI-volwassenheid"],
+          ].map(([sleutel, icoon, label]) => (
+            <button
+              key={sleutel}
+              type="button"
+              role="tab"
+              aria-selected={resultatenSub === sleutel}
+              onClick={() => setResultatenSub(sleutel)}
+              className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+                resultatenSub === sleutel
+                  ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+              }`}
+            >
+              {icoon} {label}
+            </button>
+          ))}
+        </div>
+        {resultatenSub === "maturity" ? (
+          <MaturiteitResultaten results={results} onNaarVragen={() => setActiveTab("maturiteit")} />
+        ) : !results ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
               <p className="text-sm text-slate-500 mb-1">Nog geen analyse uitgevoerd.</p>
               <p className="text-xs text-slate-400">Vul Input en Positionering in en klik bovenaan op "Analyseer".</p>
@@ -2366,9 +2407,11 @@ export default function ClientWorkspace({ id }) {
           </Section>
         )}
           </>
-          )
+          )}
+        </>
         )}
       </main>
+      </MaturiteitProvider>
     </div>
   );
 }
