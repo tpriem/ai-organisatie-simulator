@@ -223,6 +223,9 @@ export default function Maturiteit({ id }) {
   const [geopend, setGeopend] = useState(null);
   const timer = useRef(null);
   const wacht = useRef(null);
+  // De laatste staat, direct bijgewerkt. Twee klikken kort na elkaar mogen elkaar niet
+  // overschrijven doordat de tweede nog van de staat van vóór de eerste uitgaat.
+  const laatste = useRef(null);
   const dimensieRefs = useRef({});
 
   useEffect(() => {
@@ -231,6 +234,7 @@ export default function Maturiteit({ id }) {
       .then((r) => r.json())
       .then((d) => {
         if (!actief) return;
+        laatste.current = d.huidig;
         setHuidig(d.huidig);
         setMetingen(d.metingen ?? []);
         setStatus("klaar");
@@ -252,6 +256,7 @@ export default function Maturiteit({ id }) {
   }, [id]);
 
   function bewaar(volgende) {
+    laatste.current = volgende;
     setHuidig(volgende);
     wacht.current = volgende;
     setStatus("opslaan");
@@ -274,18 +279,20 @@ export default function Maturiteit({ id }) {
   }
 
   function zetPractice(caId, sleutel, waarde) {
-    const rij = { ...(huidig.practices?.[caId] ?? {}) };
+    const nu = laatste.current;
+    const rij = { ...(nu.practices?.[caId] ?? {}) };
     if (waarde === null) delete rij[sleutel];
     else rij[sleutel] = waarde;
-    bewaar({ ...huidig, practices: { ...huidig.practices, [caId]: rij } });
+    bewaar({ ...nu, practices: { ...nu.practices, [caId]: rij } });
   }
   function zetIndicator(caId, indicatorId, niveau) {
-    const rij = { ...(huidig.indicatoren?.[caId] ?? {}) };
+    const nu = laatste.current;
+    const rij = { ...(nu.indicatoren?.[caId] ?? {}) };
     if (niveau === null) delete rij[indicatorId];
     else rij[indicatorId] = niveau;
-    bewaar({ ...huidig, indicatoren: { ...huidig.indicatoren, [caId]: rij } });
+    bewaar({ ...nu, indicatoren: { ...nu.indicatoren, [caId]: rij } });
   }
-  const zetNotitie = (caId, tekst) => bewaar({ ...huidig, notities: { ...huidig.notities, [caId]: tekst } });
+  const zetNotitie = (caId, tekst) => bewaar({ ...laatste.current, notities: { ...laatste.current.notities, [caId]: tekst } });
 
   const profiel = useMemo(() => (huidig ? berekenProfiel(huidig) : null), [huidig]);
   const vergelijking = useMemo(() => {
@@ -349,7 +356,7 @@ export default function Maturiteit({ id }) {
           <input
             type="text"
             value={huidig.scope ?? ""}
-            onChange={(e) => bewaar({ ...huidig, scope: e.target.value })}
+            onChange={(e) => bewaar({ ...laatste.current, scope: e.target.value })}
             maxLength={200}
             placeholder="Bijvoorbeeld: hele organisatie, of business unit Klantenservice"
             className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
