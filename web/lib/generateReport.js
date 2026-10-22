@@ -35,6 +35,8 @@ import {
   waardetypeHandmatigRegel,
   bevestigingZin,
   rolKop,
+  SUBTOTALEN_KOLOMMEN,
+  subtotaalCellen,
   volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
@@ -143,28 +145,17 @@ function rolSummaryTable(rollen) {
 }
 
 function subtotalenTable(subtotalenPerAfdeling) {
-  const widths = [2600, 1200, 1600, 1600, 1600, 2350];
+  const widths = [2300, 900, 1300, 1700, 1700, 2350];
   const headerRow = new TableRow({
     tableHeader: true,
-    children: [
-      cell("Afdeling", { width: widths[0], header: true }),
-      cell("Rollen", { width: widths[1], header: true }),
-      cell("FTE huidig", { width: widths[2], header: true }),
-      cell("FTE realist.", { width: widths[3], header: true }),
-      cell("FTE agress.", { width: widths[4], header: true }),
-      cell("Besparing/jaar (R–A)", { width: widths[5], header: true }),
-    ],
+    children: SUBTOTALEN_KOLOMMEN.map((k, i) => cell(k, { width: widths[i], header: true })),
   });
 
   const rows = subtotalenPerAfdeling.map((s, i) => {
     const shaded = i % 2 === 1;
     return new TableRow({
       children: [
-        cell(s.afdeling, { width: widths[0], shaded }),
-        cell(String(s.aantalRollen), { width: widths[1], shaded }),
-        cell(nl(s.scenarios.realistisch.totaalFteHuidig, 1), { width: widths[2], shaded }),
-        cell(nl(s.scenarios.realistisch.totaalFteOver, 2), { width: widths[3], shaded }),
-        cell(nl(s.scenarios.agressief.totaalFteOver, 2), { width: widths[4], shaded }),
+        ...subtotaalCellen(s).map((c, k) => cell(c, { width: widths[k], shaded })),
         cell(
           `${eur(s.scenarios.realistisch.totaalKostenBesparingPerJaar)} – ${eur(s.scenarios.agressief.totaalKostenBesparingPerJaar)}`,
           { width: widths[5], shaded }

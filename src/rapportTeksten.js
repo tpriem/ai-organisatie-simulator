@@ -154,3 +154,20 @@ export function rolKop(rol) {
   const vrij = (scenario) => rol.scenarios[scenario].fteWeg ?? Math.max(rol.fte - rol.scenarios[scenario].fteOver, 0);
   return `${rol.roleLabel ?? rol.rolnaam} — ${nl(rol.fte, 1)} FTE, waarvan ${nl(vrij("realistisch"), 1)} FTE vrijkomt (realistisch) tot ${nl(vrij("agressief"), 1)} FTE (agressief)`;
 }
+
+/**
+ * De kolommen van de subtotalen per afdeling in de rapporten. Capaciteit die vrijkomt, niet FTE die
+ * overblijft; de laatste kolom is de waarde van die tijd, geen besparing.
+ */
+export const SUBTOTALEN_KOLOMMEN = ["Afdeling", "Rollen", "FTE huidig", "Komt vrij (realistisch)", "Komt vrij (agressief)", "Waarde per jaar (R–A)"];
+
+/** De eerste vijf cellen van een afdelingsrij; de waarde per jaar zet elk formaat zelf op. */
+export function subtotaalCellen(s) {
+  return [
+    s.afdeling,
+    String(s.aantalRollen),
+    nl(s.scenarios.realistisch.totaalFteHuidig, 1),
+    `${nl(s.scenarios.realistisch.totaalFteWeg, 1)} FTE`,
+    `${nl(s.scenarios.agressief.totaalFteWeg, 1)} FTE`,
+  ];
+}

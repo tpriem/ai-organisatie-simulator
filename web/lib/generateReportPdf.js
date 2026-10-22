@@ -20,6 +20,8 @@ import {
   waardetypeHandmatigRegel,
   bevestigingZin,
   rolKop,
+  SUBTOTALEN_KOLOMMEN,
+  subtotaalCellen,
   volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
@@ -549,15 +551,12 @@ export function buildReportHtml(results) {
     subtotalenPerAfdeling?.length
       ? `<h3>Subtotalen per afdeling</h3>
     <table>
-      <thead><tr><th>Afdeling</th><th>Rollen</th><th>FTE huidig</th><th>FTE realist.</th><th>FTE agress.</th><th>Besparing/jaar (R–A)</th></tr></thead>
+      <thead><tr>${SUBTOTALEN_KOLOMMEN.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead>
       <tbody>
         ${subtotalenPerAfdeling
           .map(
             (s) => `<tr>
-          <td>${esc(s.afdeling)}</td><td>${s.aantalRollen}</td>
-          <td>${nl(s.scenarios.realistisch.totaalFteHuidig, 1)}</td>
-          <td>${nl(s.scenarios.realistisch.totaalFteOver, 2)}</td>
-          <td>${nl(s.scenarios.agressief.totaalFteOver, 2)}</td>
+          ${subtotaalCellen(s).map((c) => `<td>${esc(c)}</td>`).join("")}
           <td>${eur(s.scenarios.realistisch.totaalKostenBesparingPerJaar)} – ${eur(s.scenarios.agressief.totaalKostenBesparingPerJaar)}</td>
         </tr>`
           )

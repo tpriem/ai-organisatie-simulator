@@ -175,7 +175,7 @@ export function CapaciteitHerkomst({ results }) {
 
   return (
     <Section title="Waar komt de capaciteit vandaan?" icon="🧭">
-      <p className="mb-4 max-w-3xl text-sm text-slate-700">{herkomstZin(herkomst)}</p>
+      <p className="mb-4 text-sm text-slate-700">{herkomstZin(herkomst)}</p>
 
       <div className="overflow-hidden rounded-lg border border-slate-200">
         <table className="w-full text-sm">
@@ -231,7 +231,7 @@ export function CompetentieAgenda({ results }) {
 
   return (
     <Section title="Welke competenties raken de hele organisatie?" icon="🎓">
-      <p className="text-xs text-slate-500 mb-4 max-w-3xl">{AGENDA_INTRO}</p>
+      <p className="text-xs text-slate-500 mb-4">{AGENDA_INTRO}</p>
 
       <div className="grid sm:grid-cols-3 gap-3 mb-5">
         <StatCard label="Competenties nieuw nodig" value={agenda.competenties.length} sub="over alle functies" />
@@ -289,7 +289,7 @@ export function CompetentieAgenda({ results }) {
         </button>
       )}
 
-      {laagZin && <p className="mt-3 text-xs text-amber-700 max-w-3xl">{laagZin}</p>}
+      {laagZin && <p className="mt-3 text-xs text-amber-700">{laagZin}</p>}
     </Section>
   );
 }
@@ -1895,9 +1895,9 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                         <th className="py-2 px-3 font-medium">Afdeling</th>
                         <th className="py-2 px-3 font-medium">Rollen</th>
                         <th className="py-2 px-3 font-medium">FTE huidig</th>
-                        <th className="py-2 px-3 font-medium">FTE realistisch</th>
-                        <th className="py-2 px-3 font-medium">FTE agressief</th>
-                        <th className="py-2 px-3 font-medium">Besparing/jaar (realistisch–agressief)</th>
+                        <th className="py-2 px-3 font-medium">Komt vrij (realistisch)</th>
+                        <th className="py-2 px-3 font-medium">Komt vrij (agressief)</th>
+                        <th className="py-2 px-3 font-medium">Waarde per jaar (realistisch–agressief)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1906,8 +1906,8 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                           <td className="py-1.5 px-3 text-slate-700 font-medium">{s.afdeling}</td>
                           <td className="py-1.5 px-3">{s.aantalRollen}</td>
                           <td className="py-1.5 px-3">{nl(s.scenarios.realistisch.totaalFteHuidig, 1)}</td>
-                          <td className="py-1.5 px-3">{nl(s.scenarios.realistisch.totaalFteOver, 2)}</td>
-                          <td className="py-1.5 px-3">{nl(s.scenarios.agressief.totaalFteOver, 2)}</td>
+                          <td className="py-1.5 px-3">{nl(s.scenarios.realistisch.totaalFteWeg, 1)} FTE</td>
+                          <td className="py-1.5 px-3">{nl(s.scenarios.agressief.totaalFteWeg, 1)} FTE</td>
                           <td className="py-1.5 px-3">
                             €{Math.round(s.scenarios.realistisch.totaalKostenBesparingPerJaar / 1000)}k–€
                             {Math.round(s.scenarios.agressief.totaalKostenBesparingPerJaar / 1000)}k

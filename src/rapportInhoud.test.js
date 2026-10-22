@@ -15,6 +15,8 @@ import {
 import { stelWaardetypeIn, rollenDieBevestigingVragen } from "./waardetype.js";
 import { nl } from "./formatNl.js";
 import { buildOrgChartData, organogramTeksten } from "../web/lib/orgChartData.js";
+import { calculateSubtotalenPerAfdeling } from "./calculate.js";
+import { SUBTOTALEN_KOLOMMEN, subtotaalCellen } from "./rapportTeksten.js";
 import { buildReportHtml } from "../web/lib/generateReportPdf.js";
 import { generateReportDocx } from "../web/lib/generateReport.js";
 
@@ -466,5 +468,31 @@ for (const formaat of ["pdf", "docx"]) {
     const { [formaat]: tekst } = await rapporten();
     assert.doesNotMatch(tekst, /FTE → \d/);
     assert.doesNotMatch(tekst, /realistisch \/ \d/);
+  });
+}
+
+// ── Subtotalen per afdeling: vrijkomende capaciteit, niet overblijvende FTE ───────────
+
+async function rapportenMetAfdelingen() {
+  const results = fixture();
+  results.subtotalenPerAfdeling = calculateSubtotalenPerAfdeling(results.rollen);
+  const pdf = platHtml(buildReportHtml(results));
+  const docx = (await mammoth.extractRawText({ buffer: await generateReportDocx(results) })).value.replace(/\s+/g, " ");
+  return { results, pdf, docx };
+}
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: de subtotalen per afdeling tonen wat er vrijkomt, met de waarde per jaar`, async () => {
+    const { results, [formaat]: tekst } = await rapportenMetAfdelingen();
+    assert.ok(results.subtotalenPerAfdeling.length > 0, "de fixture heeft afdelingen nodig");
+    assert.ok(tekst.includes("Subtotalen per afdeling"));
+    for (const k of SUBTOTALEN_KOLOMMEN) assert.ok(tekst.includes(k), `kolom "${k}" ontbreekt`);
+    for (const sub of results.subtotalenPerAfdeling) {
+      for (const cel of subtotaalCellen(sub).slice(2)) assert.ok(tekst.includes(cel), `cel "${cel}" van ${sub.afdeling} ontbreekt`);
+    }
+    // De oude kolomkoppen over overblijvende FTE en besparing zijn weg.
+    assert.ok(!tekst.includes("FTE realist."));
+    assert.ok(!tekst.includes("FTE agress."));
+    assert.ok(!tekst.includes("Besparing/jaar"));
   });
 }
