@@ -8,7 +8,7 @@ function Field({ label, ...props }) {
       <label className="block text-sm font-medium text-white/70 mb-1.5">{label}</label>
       <input
         {...props}
-        className="w-full rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#8AA0FF] focus:border-transparent"
+        className="w-full rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-hod-lilac focus:border-transparent"
       />
     </div>
   );
@@ -45,7 +45,7 @@ export default function ContactForm({ t }) {
     <section className="mx-auto max-w-lg px-6 pt-20 pb-24">
       <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3 text-center">
         {t.title}{" "}
-        <span className="bg-gradient-to-r from-[#6E8BFF] to-[#B07CFF] bg-clip-text text-transparent">{t.titleHighlight}</span>{" "}
+        <span className="bg-gradient-to-r from-hod-violet to-hod-cyan bg-clip-text text-transparent">{t.titleHighlight}</span>{" "}
         {t.titlePost}
       </h1>
       <p className="text-white/50 text-center mb-10 leading-relaxed">{t.text}</p>
@@ -72,14 +72,14 @@ export default function ContactForm({ t }) {
               rows={5}
               value={bericht}
               onChange={(e) => setBericht(e.target.value)}
-              className="w-full rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#8AA0FF] focus:border-transparent resize-none"
+              className="w-full rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-hod-lilac focus:border-transparent resize-none"
             />
           </div>
           {status === "error" && <p className="text-sm text-red-400">{error}</p>}
           <button
             type="submit"
             disabled={status === "sending"}
-            className="w-full rounded-full bg-gradient-to-r from-[#6E8BFF] to-[#B07CFF] py-3 text-sm font-semibold text-white shadow-lg shadow-[#6E8BFF]/20 hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="w-full rounded-full bg-gradient-to-r from-hod-violet to-hod-cyan py-3 text-sm font-semibold text-white shadow-lg shadow-hod-violet/20 hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {status === "sending" ? t.submitting : t.submit}
           </button>

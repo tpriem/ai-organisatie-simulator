@@ -41,8 +41,8 @@ import {
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
-const HEADER_FILL = "1E293B"; // slate-800
-const LIGHT_FILL = "F1F5F9"; // slate-100
+const HEADER_FILL = "241B4B"; // slate-800
+const LIGHT_FILL = "F1F0F9"; // slate-100
 
 function eur(n) {
   return new Intl.NumberFormat("nl-NL", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -78,7 +78,7 @@ function cell(text, { width, header = false, shaded = false, bold = false, align
 }
 
 function noBorderRule() {
-  return { style: BorderStyle.SINGLE, size: 2, color: "CBD5E1" };
+  return { style: BorderStyle.SINGLE, size: 2, color: "D2D0E6" };
 }
 
 function tableBorders() {
@@ -212,10 +212,10 @@ const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const NO_BORDERS = { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER };
 
 const BESTEMMING_KLEUR = {
-  kostenreductie: "94A3B8",
-  capaciteitsgroei: "6366F1",
+  kostenreductie: "9D9BBD",
+  capaciteitsgroei: "7B4FEB",
   kwaliteitsverbetering: "10B981",
-  onbepaald: "C7D2FE",
+  onbepaald: "D5C9FB",
 };
 
 // Waar de vrijgekomen capaciteit naartoe gaat. Zelfde berekening als in de app
@@ -243,17 +243,17 @@ function capaciteitSectie(organisatieTotaal, rollen) {
           `${type ? `${type.icon} ${type.label}` : "Nog niet bepaald"} — ${nl(b.fte, 1)} FTE · ${b.rollen} ${
             b.rollen === 1 ? "rol" : "rollen"
           }`,
-          { size: 18, color: "475569" }
+          { size: 18, color: "4D4A70" }
         )
       );
-      out.push(miniBar(b.fte, maxFte, BESTEMMING_KLEUR[b.waardetype] ?? "94A3B8"));
+      out.push(miniBar(b.fte, maxFte, BESTEMMING_KLEUR[b.waardetype] ?? "9D9BBD"));
     }
     out.push(
       paragraph(
         `Een vertrekpunt voor het gesprek, geen voorschrift: de keuze waar de capaciteit naartoe gaat is aan de organisatie.${
           waardetypeHerkomstZin(rollen) ? ` ${waardetypeHerkomstZin(rollen)}` : ""
         }`,
-        { italics: true, size: 18, color: "64748B" }
+        { italics: true, size: 18, color: "6B6A8F" }
       )
     );
     // Hoe stevig is de verdeling: zijn de rollen die samen de helft van de capaciteit
@@ -264,7 +264,7 @@ function capaciteitSectie(organisatieTotaal, rollen) {
         paragraph(bevestiging, {
           italics: true,
           size: 18,
-          color: bevestiging.startsWith("Let op") ? "B45309" : "64748B",
+          color: bevestiging.startsWith("Let op") ? "B45309" : "6B6A8F",
         })
       );
     }
@@ -281,7 +281,7 @@ function financieelAlinea(organisatieTotaal) {
     )} tot ${eur(
       organisatieTotaal.agressief.totaalKostenBesparingPerJaar
     )} per jaar (realistisch tot agressief). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.`,
-    { italics: true, size: 18, color: "64748B" }
+    { italics: true, size: 18, color: "6B6A8F" }
   );
 }
 
@@ -306,7 +306,7 @@ function herkomstSectie(rollen) {
 
   return [
     heading("Waar komt de capaciteit vandaan?"),
-    paragraph("Waar het werk vandaan komt dat vrijkomt, per taakcategorie. Dit is dezelfde capaciteit als hierboven; daar staat waar die naartoe kan, hier waar die uit voortkomt.", { italics: true, size: 18, color: "64748B" }),
+    paragraph("Waar het werk vandaan komt dat vrijkomt, per taakcategorie. Dit is dezelfde capaciteit als hierboven; daar staat waar die naartoe kan, hier waar die uit voortkomt.", { italics: true, size: 18, color: "6B6A8F" }),
     paragraph(herkomstZin(herkomst), { bold: true }),
     new Table({
       width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
@@ -386,20 +386,20 @@ function bestemmingParagraaf(vrijPerType, indent = 0) {
   return new Paragraph({
     spacing: { before: 20, after: 60 },
     indent: { left: indent },
-    children: [new TextRun({ text: namen.join(" · "), size: 16, color: "64748B" })],
+    children: [new TextRun({ text: namen.join(" · "), size: 16, color: "6B6A8F" })],
   });
 }
 
 function legendaParagraaf() {
   const kleurBlok = (hex, label) => [
     new TextRun({ text: "■ ", color: hex, size: 18 }),
-    new TextRun({ text: label + "   ", size: 16, color: "64748B" }),
+    new TextRun({ text: label + "   ", size: 16, color: "6B6A8F" }),
   ];
   return new Paragraph({
     spacing: { after: 120 },
     children: [
-      ...kleurBlok("CBD5E1", "blijft"),
-      new TextRun({ text: "komt vrij en kan naar:  ", size: 16, color: "94A3B8" }),
+      ...kleurBlok("D2D0E6", "blijft"),
+      new TextRun({ text: "komt vrij en kan naar:  ", size: 16, color: "9D9BBD" }),
       ...["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"].flatMap((t) =>
         kleurBlok(BESTEMMING_KLEUR[t], getWaardetype(t).label.toLowerCase())
       ),
@@ -430,7 +430,7 @@ function organogramSection(rollen) {
   const chart = buildOrgChartData(rollen);
   const teksten = organogramTeksten(chart);
   const o = chart.organisatie;
-  const out = [paragraph(teksten.uitleg, { italics: true, size: 18, color: "64748B" })];
+  const out = [paragraph(teksten.uitleg, { italics: true, size: 18, color: "6B6A8F" })];
 
   if (chart.hierarchie?.problemen?.length) {
     out.push(paragraph(`Let op bij de rapportagelijnen: ${chart.hierarchie.problemen.join(" ")}`, { size: 16, color: "92400E" }));
@@ -460,7 +460,7 @@ function organogramSection(rollen) {
     onderdeelKop(out, `${a.afdeling} — ${teksten.onderdeel(a)}`, a, { size: 22, before: 240 });
     // Bij één rol zou de rolbalk die van de afdeling herhalen; dan alleen de naam.
     if (a.rollen.length === 1) {
-      out.push(paragraph(a.rollen[0].rolnaam, { size: 16, color: "64748B" }));
+      out.push(paragraph(a.rollen[0].rolnaam, { size: 16, color: "6B6A8F" }));
       continue;
     }
     for (const r of a.rollen) onderdeelKop(out, `${r.rolnaam} — ${teksten.onderdeel(r)}`, r, { indent: 300, size: 18, before: 140 });
@@ -525,7 +525,7 @@ function ontwikkelagendaSectie(rollen) {
 
   return [
     heading("Welke competenties raken de hele organisatie?"),
-    paragraph(AGENDA_INTRO, { italics: true, size: 18, color: "64748B" }),
+    paragraph(AGENDA_INTRO, { italics: true, size: 18, color: "6B6A8F" }),
     paragraph(agendaZin(agenda), { bold: true }),
     new Table({
       width: { size: widths.reduce((x, y) => x + y, 0), type: WidthType.DXA },
@@ -533,8 +533,8 @@ function ontwikkelagendaSectie(rollen) {
       borders: tableBorders(),
       rows: [kop, ...rijen],
     }),
-    ...(rest > 0 ? [paragraph(agendaRestZin(rest), { italics: true, size: 18, color: "64748B" })] : []),
-    ...(laagZin ? [paragraph(laagZin, { italics: true, size: 18, color: "64748B" })] : []),
+    ...(rest > 0 ? [paragraph(agendaRestZin(rest), { italics: true, size: 18, color: "6B6A8F" })] : []),
+    ...(laagZin ? [paragraph(laagZin, { italics: true, size: 18, color: "6B6A8F" })] : []),
   ];
 }
 
@@ -654,7 +654,7 @@ export async function generateReportDocx(results) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 40 },
-      children: [new TextRun({ text: `${bedrijfsnaam ?? ""}${scopeSuffix}`, size: 28, color: "475569" })],
+      children: [new TextRun({ text: `${bedrijfsnaam ?? ""}${scopeSuffix}`, size: 28, color: "4D4A70" })],
     }),
     ...(scope === "afdeling" && scopeLabel
       ? [
@@ -675,11 +675,11 @@ export async function generateReportDocx(results) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 },
-      children: [new TextRun({ text: `Gegenereerd op ${datum}`, size: 20, color: "94A3B8" })],
+      children: [new TextRun({ text: `Gegenereerd op ${datum}`, size: 20, color: "9D9BBD" })],
     }),
     paragraph(
       "Dit rapport is een strategisch gespreksondersteunend instrument, gebaseerd op huidig onderzoek en technologie. Het is geen exacte voorspelling en vervangt geen diepgaand consultancytraject of individuele functieanalyse.",
-      { italics: true, size: 18, color: "64748B" }
+      { italics: true, size: 18, color: "6B6A8F" }
     ),
 
     heading("Managementsamenvatting"),
@@ -690,7 +690,7 @@ export async function generateReportDocx(results) {
         )} (realistisch scenario) tot ${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)} (agressief scenario).`
     ),
     ...capaciteitSectie(organisatieTotaal, rollen),
-    ...(results.volwassenheidBeschikbaar ? [paragraph(volwassenheidVerwijzingZin, { italics: true, size: 18, color: "64748B" })] : []),
+    ...(results.volwassenheidBeschikbaar ? [paragraph(volwassenheidVerwijzingZin, { italics: true, size: 18, color: "6B6A8F" })] : []),
     financieelAlinea(organisatieTotaal),
 
     heading("Interne transformatie — overzicht per rol"),
@@ -739,10 +739,10 @@ export async function generateReportDocx(results) {
           ]
         : []),
       ...(waardetypeHandmatigRegel(r)
-        ? [paragraph(waardetypeHandmatigRegel(r), { italics: true, size: 18, color: "64748B" })]
+        ? [paragraph(waardetypeHandmatigRegel(r), { italics: true, size: 18, color: "6B6A8F" })]
         : []),
       ...(beroepsmatchRegel(r.beroepsmatch)
-        ? [paragraph(beroepsmatchRegel(r.beroepsmatch), { italics: true, size: 18, color: "64748B" })]
+        ? [paragraph(beroepsmatchRegel(r.beroepsmatch), { italics: true, size: 18, color: "6B6A8F" })]
         : []),
       taakTable(r),
       // Analyses op de ESCO-koppeling tonen het volledige profiel met trainbaarheid;

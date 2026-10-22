@@ -26,16 +26,16 @@ export default function ForgotPasswordPage() {
         </div>
 
         {status === "sent" ? (
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center">
+          <div className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 text-center">
             <p className="text-sm text-slate-700">
               Als dit e-mailadres bij ons bekend is, ontvang je zo een link om je wachtwoord opnieuw in te stellen.
             </p>
-            <a href="/login" className="inline-block mt-4 text-sm text-indigo-600 hover:underline">
+            <a href="/login" className="inline-block mt-4 text-sm text-indigo-400 hover:underline">
               Terug naar inloggen
             </a>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label>
               <input

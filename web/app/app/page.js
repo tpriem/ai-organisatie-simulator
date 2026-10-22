@@ -14,11 +14,11 @@ function initials(naam) {
 }
 
 const AVATAR_COLORS = [
-  "bg-indigo-100 text-indigo-700",
-  "bg-teal-100 text-teal-700",
-  "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700",
-  "bg-violet-100 text-violet-700",
+  "bg-indigo-500/20 text-indigo-700",
+  "bg-teal-500/20 text-teal-300",
+  "bg-amber-500/20 text-amber-700",
+  "bg-rose-500/20 text-rose-300",
+  "bg-violet-500/20 text-violet-300",
 ];
 
 function avatarColor(naam) {
@@ -71,10 +71,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-indigo-50/60 via-white to-white">
+    <div className="flex-1 bg-gradient-to-b from-indigo-50/60 via-page to-page">
       <main className="mx-auto max-w-2xl w-full px-6 py-16">
         <div className="mb-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700 mb-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-medium text-indigo-700 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
             Intern tool
           </span>
@@ -83,12 +83,12 @@ export default function HomePage() {
               AI Organisatie Transformatie Simulator
             </h1>
             <div className="shrink-0 flex items-center gap-3 mt-1.5">
-              <a href="/app/gebruikers" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors">
+              <a href="/app/gebruikers" className="text-xs text-slate-400 hover:text-indigo-400 transition-colors">
                 Gebruikers
               </a>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="text-xs text-slate-400 hover:text-indigo-600 transition-colors"
+                className="text-xs text-slate-400 hover:text-indigo-400 transition-colors"
               >
                 Uitloggen
               </button>
@@ -103,7 +103,7 @@ export default function HomePage() {
             value={naam}
             onChange={(e) => setNaam(e.target.value)}
             placeholder="Naam van de klant/organisatie"
-            className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="flex-1 rounded-lg border border-slate-300 bg-card px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
           <button
             type="submit"
@@ -122,7 +122,7 @@ export default function HomePage() {
         {loading ? (
           <p className="text-sm text-slate-400">Laden...</p>
         ) : clients.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-6 py-12 text-center">
             <p className="text-sm text-slate-500">Nog geen klanten. Maak hierboven de eerste aan.</p>
           </div>
         ) : (
@@ -132,7 +132,7 @@ export default function HomePage() {
                 <li key={c.id}>
                   <a
                     href={`/app/klant/${c.id}`}
-                    className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
+                    className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-card px-4 py-3.5 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md"
                   >
                     <span
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor(

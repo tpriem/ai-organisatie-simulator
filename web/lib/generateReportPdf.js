@@ -245,7 +245,7 @@ function competentieTop5Block(title, items) {
       .join("")}`;
 }
 
-const BESTEMMING_HEX = { kostenreductie: "#94a3b8", capaciteitsgroei: "#6366f1", kwaliteitsverbetering: "#10b981", onbepaald: "#c7d2fe" };
+const BESTEMMING_HEX = { kostenreductie: "#9d9bbd", capaciteitsgroei: "#7b4feb", kwaliteitsverbetering: "#10b981", onbepaald: "#d5c9fb" };
 
 /** Eén balk: het gekleurde deel komt vrij (per bestemming), de rest blijft. */
 function stapelBalk(fteHuidig, vrijPerType) {
@@ -258,7 +258,7 @@ function stapelBalk(fteHuidig, vrijPerType) {
 function bestemmingRegel(vrijPerType) {
   const namen = BESTEMMING_VOLGORDE.filter((t) => (vrijPerType?.[t] ?? 0) > 0).map((t) => {
     const w = getWaardetype(t);
-    return `<span style="color:${BESTEMMING_HEX[t] === "#c7d2fe" ? "#64748b" : BESTEMMING_HEX[t]};">${w ? `${w.icon} ${esc(w.label)}` : "nog niet bepaald"}</span>`;
+    return `<span style="color:${BESTEMMING_HEX[t] === "#d5c9fb" ? "#6b6a8f" : BESTEMMING_HEX[t]};">${w ? `${w.icon} ${esc(w.label)}` : "nog niet bepaald"}</span>`;
   });
   return namen.length ? `<p style="font-size:9px;margin:0 0 2px;">${namen.join(" &nbsp; ")}</p>` : "";
 }
@@ -266,7 +266,7 @@ function bestemmingRegel(vrijPerType) {
 function legendaOrganogram() {
   const stip = (kleur, tekst) => `<span><span class="tier-stip" style="background:${kleur};"></span>${tekst}</span>`;
   return `<div class="tier-legenda" style="margin:0 0 8px;">
-    ${stip("#e2e8f0", "blijft")}<span>komt vrij en kan naar:</span>
+    ${stip("#e4e2f2", "blijft")}<span>komt vrij en kan naar:</span>
     ${["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"].map((t) => stip(BESTEMMING_HEX[t], esc(getWaardetype(t).label.toLowerCase()))).join("")}
   </div>`;
 }
@@ -275,7 +275,7 @@ function legendaOrganogram() {
 function hierarchieKnoop(knoop, teksten, diepte = 0) {
   const inspringen = diepte * 14;
   return `<div style="margin-left:${inspringen}px;border-left:${
-    diepte > 0 ? "1px solid #e2e8f0" : "none"
+    diepte > 0 ? "1px solid #e4e2f2" : "none"
   };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;page-break-inside:avoid;">
     <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${teksten.onderdeel(knoop)}</p>
     ${stapelBalk(knoop.fteHuidig, knoop.vrijPerType)}
@@ -289,7 +289,7 @@ function afdelingBlok(afdeling, teksten) {
   // Bij één rol zou de rolbalk die van de afdeling herhalen; dan alleen de naam.
   const rollen =
     afdeling.rollen.length === 1
-      ? `<p style="font-size:10px;color:#64748b;margin:4px 0 0 14px;">${esc(afdeling.rollen[0].rolnaam)}</p>`
+      ? `<p style="font-size:10px;color:#6b6a8f;margin:4px 0 0 14px;">${esc(afdeling.rollen[0].rolnaam)}</p>`
       : afdeling.rollen
           .map(
             (r) => `<div style="margin:6px 0 0 14px;">
@@ -453,46 +453,46 @@ export function buildReportHtml(results) {
 <meta charset="utf-8" />
 <style>
   * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #1e293b; font-size: 11px; margin: 0; padding: 32px 40px; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #241b4b; font-size: 11px; margin: 0; padding: 32px 40px; }
   h1 { font-size: 22px; text-align: center; margin: 0 0 4px; }
-  .subtitle { text-align: center; color: #475569; font-size: 14px; margin: 0 0 4px; }
-  .meta { text-align: center; color: #94a3b8; font-size: 10px; margin: 0 0 12px; }
-  .disclaimer { font-style: italic; color: #64748b; font-size: 9px; margin-bottom: 20px; }
-  h2 { font-size: 15px; border-bottom: 2px solid #4f46e5; padding-bottom: 4px; margin: 24px 0 10px; page-break-after: avoid; }
+  .subtitle { text-align: center; color: #4d4a70; font-size: 14px; margin: 0 0 4px; }
+  .meta { text-align: center; color: #9d9bbd; font-size: 10px; margin: 0 0 12px; }
+  .disclaimer { font-style: italic; color: #6b6a8f; font-size: 9px; margin-bottom: 20px; }
+  h2 { font-size: 15px; border-bottom: 2px solid #7b4feb; padding-bottom: 4px; margin: 24px 0 10px; page-break-after: avoid; }
   h3 { font-size: 12px; margin: 14px 0 6px; page-break-after: avoid; }
-  h3.krimp { color: #dc2626; } h3.groei { color: #059669; } h3.samenvoeg { color: #4f46e5; }
+  h3.krimp { color: #dc2626; } h3.groei { color: #059669; } h3.samenvoeg { color: #7b4feb; }
   p { line-height: 1.5; margin: 0 0 8px; }
-  .banner { background: #4f46e5; color: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 11px; }
+  .banner { background: #7b4feb; color: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 11px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10px; }
-  th, td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; vertical-align: top; }
-  th { background: #1e293b; color: white; }
+  th, td { border: 1px solid #d2d0e6; padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: #241b4b; color: white; }
   th.num, td.num { text-align: right; }
-  tr:nth-child(even) td { background: #f8fafc; }
-  .badge { display: inline-block; background: #e0e7ff; color: #4338ca; border-radius: 3px; padding: 1px 5px; font-size: 9px; }
+  tr:nth-child(even) td { background: #f7f6fc; }
+  .badge { display: inline-block; background: #ece6fd; color: #5b34c9; border-radius: 3px; padding: 1px 5px; font-size: 9px; }
   .role-block { page-break-inside: avoid; margin-bottom: 18px; }
   .bar-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
-  .bar-label { width: 80px; font-size: 9px; color: #64748b; flex-shrink: 0; }
-  .bar-track { flex: 1; height: 14px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+  .bar-label { width: 80px; font-size: 9px; color: #6b6a8f; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 14px; background: #f1f0f9; border-radius: 3px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 3px; }
   .bar-value { width: 40px; text-align: right; font-size: 9px; font-weight: bold; flex-shrink: 0; }
-  .stapel { display: flex; height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; margin: 2px 0 3px; }
-  .c-slate { background: #94a3b8; } .c-indigo { background: #6366f1; } .c-indigo-light { background: #c7d2fe; }
+  .stapel { display: flex; height: 10px; background: #f1f0f9; border-radius: 5px; overflow: hidden; margin: 2px 0 3px; }
+  .c-slate { background: #9d9bbd; } .c-indigo { background: #7b4feb; } .c-indigo-light { background: #d5c9fb; }
   .c-emerald { background: #10b981; } .c-blue { background: #3b82f6; } .c-orange { background: #f97316; }
   .profiel-grid { display: flex; gap: 16px; }
   .profiel-kolom { flex: 1; min-width: 0; }
-  .profiel-kop { font-size: 9px; color: #94a3b8; margin: 0 0 3px; }
-  .bar-label-wide { width: 120px; font-size: 9px; color: #475569; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tier-legenda { display: flex; gap: 12px; font-size: 9px; color: #94a3b8; margin: 5px 0 0; }
+  .profiel-kop { font-size: 9px; color: #9d9bbd; margin: 0 0 3px; }
+  .bar-label-wide { width: 120px; font-size: 9px; color: #4d4a70; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tier-legenda { display: flex; gap: 12px; font-size: 9px; color: #9d9bbd; margin: 5px 0 0; }
   .tier-stip { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
   .stat-grid { display: flex; gap: 10px; margin-bottom: 14px; }
-  .stat-card { flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; }
-  .stat-label { font-size: 9px; color: #94a3b8; margin-bottom: 2px; }
+  .stat-card { flex: 1; border: 1px solid #d2d0e6; border-radius: 8px; padding: 10px; }
+  .stat-label { font-size: 9px; color: #9d9bbd; margin-bottom: 2px; }
   .stat-value { font-size: 18px; font-weight: bold; }
   .finding { font-size: 10px; margin-bottom: 8px; }
-  .trend-up { color: #059669; font-weight: bold; } .trend-down { color: #dc2626; font-weight: bold; } .trend-flat { color: #94a3b8; }
+  .trend-up { color: #059669; font-weight: bold; } .trend-down { color: #dc2626; font-weight: bold; } .trend-flat { color: #9d9bbd; }
   .findings-cols { display: flex; gap: 16px; }
   .findings-cols > div { flex: 1; }
-  .closing { background: #f1f5f9; border-radius: 8px; padding: 14px; margin-top: 20px; }
+  .closing { background: #f1f0f9; border-radius: 8px; padding: 14px; margin-top: 20px; }
 </style>
 </head>
 <body>

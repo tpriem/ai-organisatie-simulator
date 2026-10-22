@@ -34,8 +34,8 @@ function Antwoordknoppen({ stelling, waarde, onZet }) {
                   ? "border-red-500 bg-red-500 text-white"
                   : a.waarde === "deels"
                     ? "border-amber-500 bg-amber-500 text-white"
-                    : "border-slate-500 bg-slate-500 text-white"
-              : "border-slate-300 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+                    : "border-slate-400 bg-slate-400 text-page"
+              : "border-slate-300 bg-card text-slate-600 hover:border-indigo-300 hover:text-indigo-400"
           }`}
         >
           {a.label}
@@ -147,7 +147,7 @@ export default function Invullen({ token }) {
   if (fase === "ongeldig") {
     return (
       <Omhulsel>
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-card p-8 text-center shadow-sm">
           <h1 className="text-lg font-semibold text-slate-900">Deze link is niet (meer) geldig</h1>
           <p className="mt-2 text-sm text-slate-600">
             De link is verlopen of ingetrokken, of niet goed overgenomen. Vraag uw contactpersoon bij House of Digital om een nieuwe link.
@@ -171,7 +171,7 @@ export default function Invullen({ token }) {
         </div>
       )}
 
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <h1 className="text-xl font-bold text-slate-900">AI-volwassenheid van {info.organisatie}</h1>
         <p className="mt-1 text-sm text-slate-500">
           U vult in als <span className="font-medium text-slate-700">{info.rolNaam}</span>
@@ -210,7 +210,7 @@ export default function Invullen({ token }) {
           const totaal = as.themas.reduce((s, t) => s + t.stellingen.length, 0);
           const klaar = aantal === totaal;
           return (
-            <details key={as.id} open={geopend === as.id} onToggle={(e) => e.currentTarget.open && setGeopend(as.id)} className="group rounded-xl border border-slate-200 bg-white shadow-sm">
+            <details key={as.id} open={geopend === as.id} onToggle={(e) => e.currentTarget.open && setGeopend(as.id)} className="group rounded-xl border border-slate-200 bg-card shadow-sm">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4">
                 <div>
                   <p className="text-base font-semibold text-slate-900">{as.naam}</p>
@@ -249,7 +249,7 @@ export default function Invullen({ token }) {
         })}
       </div>
 
-      <div className="my-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="my-8 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         {vraagBevestiging ? (
           <div>
             <p className="text-sm text-slate-700">
@@ -286,7 +286,7 @@ export default function Invullen({ token }) {
 function Omhulsel({ children }) {
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3">
           <span className="text-sm font-semibold text-slate-900">House of Digital</span>
           <span className="text-xs text-slate-500">AI-volwassenheidsscan</span>

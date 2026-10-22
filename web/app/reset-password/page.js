@@ -39,22 +39,22 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center">
-        <p className="text-sm text-red-600">Deze link mist een geldig token.</p>
+      <div className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 text-center">
+        <p className="text-sm text-red-400">Deze link mist een geldig token.</p>
       </div>
     );
   }
 
   if (status === "done") {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 text-center">
+      <div className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 text-center">
         <p className="text-sm text-slate-700">Wachtwoord ingesteld — je wordt doorgestuurd naar inloggen...</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Nieuw wachtwoord</label>
         <input
@@ -77,7 +77,7 @@ function ResetPasswordForm() {
           className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       <button
         type="submit"
         disabled={status === "saving"}

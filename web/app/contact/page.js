@@ -1,18 +1,15 @@
 import Image from "next/image";
-import { Sora } from "next/font/google";
 import { getLocale, getDictionary } from "@/lib/i18n";
 import LocaleToggle from "@/components/LocaleToggle";
 import ContactForm from "./ContactForm";
-
-const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sora" });
 
 export default async function ContactPage() {
   const locale = await getLocale();
   const { nav, contact: t } = getDictionary(locale);
 
   return (
-    <div className={`${sora.variable} flex-1 bg-[#07080A] text-[#F4F5F7]`} style={{ fontFamily: "var(--font-sora)" }}>
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-[#07080A]/70 backdrop-blur">
+    <div className={`flex-1 bg-page text-slate-900 font-display`}>
+      <header className="sticky top-0 z-10 border-b border-white/10 bg-page/70 backdrop-blur">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
           <a href="/" className="flex items-center gap-3">
             <Image src="/hod-logo-white.png" alt="House of Digital" width={800} height={400} className="h-6 w-auto" />

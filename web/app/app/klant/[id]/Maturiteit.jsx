@@ -294,7 +294,7 @@ function Vinkje({ label }) {
 
 function Laden({ status, huidig }) {
   if (status === "laden") return <p className="py-8 text-center text-sm text-slate-400">Laden…</p>;
-  if (!huidig) return <p className="py-8 text-center text-sm text-red-600">De meting kon niet worden geladen.</p>;
+  if (!huidig) return <p className="py-8 text-center text-sm text-red-400">De meting kon niet worden geladen.</p>;
   return null;
 }
 
@@ -331,8 +331,8 @@ function ProfielRegel({ a, onOpen, toonOnderbouwing = false }) {
             <span className="font-semibold text-slate-800">
               {a.niveau} · {a.niveauNaam}
             </span>
-            {toonOnderbouwing && a.niveau > 0 && !a.onderbouwd && <span className="ml-1.5 text-[10px] text-amber-600">indicatief</span>}
-            {a.onvolledig && <span className="ml-1.5 text-[10px] text-amber-600">onvolledig</span>}
+            {toonOnderbouwing && a.niveau > 0 && !a.onderbouwd && <span className="ml-1.5 text-[10px] text-amber-400">indicatief</span>}
+            {a.onvolledig && <span className="ml-1.5 text-[10px] text-amber-400">onvolledig</span>}
           </>
         ) : (
           <span className="text-slate-400">niet gemeten</span>
@@ -366,7 +366,7 @@ function InvullerKeuze() {
 
   const knop = (actiefNu) =>
     `rounded-full border px-3 py-1 text-xs transition-colors ${
-      actiefNu ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+      actiefNu ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 bg-card text-slate-600 hover:border-indigo-300 hover:text-indigo-400"
     }`;
 
   async function toon(uit, wie) {
@@ -409,7 +409,7 @@ function InvullerKeuze() {
     <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2.5">
       <div className="mb-1.5 flex items-center justify-between">
         <p className="text-xs font-medium text-slate-700">Wie vult in?</p>
-        <button type="button" onClick={ververs} className="text-[11px] text-slate-500 hover:text-indigo-600 hover:underline">
+        <button type="button" onClick={ververs} className="text-[11px] text-slate-500 hover:text-indigo-400 hover:underline">
           ↻ Antwoorden van invullers verversen
         </button>
       </div>
@@ -425,14 +425,14 @@ function InvullerKeuze() {
           </button>
         ))}
         {huidig.invullers.length < MAX_INVULLERS && (
-          <button type="button" onClick={() => setNieuw((n) => !n)} className="rounded-full border border-dashed border-slate-300 px-3 py-1 text-xs text-slate-500 hover:border-indigo-300 hover:text-indigo-600">
+          <button type="button" onClick={() => setNieuw((n) => !n)} className="rounded-full border border-dashed border-slate-300 px-3 py-1 text-xs text-slate-500 hover:border-indigo-300 hover:text-indigo-400">
             + Invuller toevoegen
           </button>
         )}
       </div>
 
       {nieuw && (
-        <div className="mt-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+        <div className="mt-2 rounded-md border border-slate-200 bg-card px-3 py-2">
           <div className="flex flex-wrap gap-4 text-xs text-slate-600">
             <label className="flex items-center gap-1.5">
               <input type="radio" checked={viaLink} onChange={() => setViaLink(true)} /> Via een link: de invuller vult zelf in
@@ -444,7 +444,7 @@ function InvullerKeuze() {
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <label className="text-[11px] text-slate-500">
               Rol
-              <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700">
+              <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700">
                 {ROLLEN.filter((r) => r.id !== "adviseur").map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.naam}
@@ -454,7 +454,7 @@ function InvullerKeuze() {
             </label>
             <label className="text-[11px] text-slate-500">
               Omschrijving (geen naam), bijvoorbeeld &quot;teamleider klantenservice&quot;
-              <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className="mt-0.5 block w-64 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700" />
+              <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className="mt-0.5 block w-64 rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700" />
             </label>
             <button type="button" onClick={voegToe} disabled={bezig} className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
               {bezig ? "Bezig…" : viaLink ? "Link maken" : "Toevoegen"}
@@ -463,13 +463,13 @@ function InvullerKeuze() {
         </div>
       )}
 
-      {fout && <p className="mt-2 text-[11px] text-red-600">{fout}</p>}
+      {fout && <p className="mt-2 text-[11px] text-red-400">{fout}</p>}
 
       {gemaakt && (
         <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
           <p className="text-xs font-medium text-emerald-800">Link voor {gemaakt.wie}</p>
           <div className="mt-1 flex items-center gap-2">
-            <input readOnly value={gemaakt.url} onFocus={(e) => e.target.select()} className="w-full rounded border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700" />
+            <input readOnly value={gemaakt.url} onFocus={(e) => e.target.select()} className="w-full rounded border border-emerald-200 bg-card px-2 py-1 text-xs text-slate-700" />
             <button type="button" onClick={kopieer} className="shrink-0 rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">
               {gekopieerd ? "Gekopieerd" : "Kopieer"}
             </button>
@@ -493,7 +493,7 @@ function InvullerKeuze() {
 
       {actief === ADVISEUR && (
         <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-          <input type="checkbox" checked={bewijsModus || profiel.bewijsGebruikt} disabled={profiel.bewijsGebruikt} onChange={(e) => setBewijsModus(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600" />
+          <input type="checkbox" checked={bewijsModus || profiel.bewijsGebruikt} disabled={profiel.bewijsGebruikt} onChange={(e) => setBewijsModus(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-400" />
           Bewijs vastleggen (verdiepingsfase)
         </label>
       )}
@@ -507,7 +507,7 @@ function InvullerKeuze() {
           <button
             type="button"
             onClick={async () => toon(await vernieuwLink(actieveInvuller.id), `${rolNaam(actieveInvuller.rol)}${actieveInvuller.label ? ` · ${actieveInvuller.label}` : ""}`)}
-            className="text-indigo-600 hover:underline"
+            className="text-indigo-400 hover:underline"
           >
             Nieuwe link maken
           </button>
@@ -530,7 +530,7 @@ function InvullerKeuze() {
               </button>
             </span>
           ) : (
-            <button type="button" onClick={() => setVerwijder(true)} className="text-slate-400 hover:text-red-600 hover:underline">
+            <button type="button" onClick={() => setVerwijder(true)} className="text-slate-400 hover:text-red-400 hover:underline">
               Invuller verwijderen
             </button>
           )}
@@ -557,7 +557,7 @@ function InvullerKeuze() {
               </button>
             </span>
           ) : (
-            <button type="button" onClick={() => setVerwijder(true)} className="text-[11px] text-slate-400 hover:text-red-600 hover:underline">
+            <button type="button" onClick={() => setVerwijder(true)} className="text-[11px] text-slate-400 hover:text-red-400 hover:underline">
               Deze invuller verwijderen
             </button>
           )}
@@ -585,7 +585,7 @@ function StellingRij({ stelling }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <p className="text-sm text-slate-700">
-            <span className="mr-1.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600">Niveau {stelling.niveau}</span>
+            <span className="mr-1.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400">Niveau {stelling.niveau}</span>
             <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">{stelling.kant}</span>
             {stelling.tekst}
           </p>
@@ -612,8 +612,8 @@ function StellingRij({ stelling }) {
                       ? "border-red-500 bg-red-500 text-white"
                       : a.waarde === "deels"
                         ? "border-amber-500 bg-amber-500 text-white"
-                        : "border-slate-500 bg-slate-500 text-white"
-                  : "border-slate-300 bg-white text-slate-500 hover:border-indigo-300 hover:text-indigo-600 disabled:hover:border-slate-300 disabled:hover:text-slate-500"
+                        : "border-slate-400 bg-slate-400 text-page"
+                  : "border-slate-300 bg-card text-slate-500 hover:border-indigo-300 hover:text-indigo-400 disabled:hover:border-slate-300 disabled:hover:text-slate-500"
               }`}
             >
               {a.label}
@@ -649,7 +649,7 @@ function StellingRij({ stelling }) {
             onChange={(e) => zetBewijs(stelling.id, e.target.value)}
             maxLength={500}
             placeholder={adviseur ? "Bewijs: wat heb je gezien of gehoord?" : "Waaruit blijkt dit?"}
-            className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
           {adviseur && (
             <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-slate-600">
@@ -657,7 +657,7 @@ function StellingRij({ stelling }) {
                 type="checkbox"
                 checked={huidig.geldend.bewijsGezien?.[stelling.id] === true}
                 onChange={(e) => zetBewijsGezien(stelling.id, e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
+                className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-400"
               />
               Bewijs gezien
             </label>
@@ -670,7 +670,7 @@ function StellingRij({ stelling }) {
 
 function ThemaPaneel({ thema, bron }) {
   return (
-    <details className="rounded-lg border border-slate-200 bg-white">
+    <details className="rounded-lg border border-slate-200 bg-card">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-800">{thema.naam}</p>
@@ -713,7 +713,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
   const { telling } = profiel;
   return (
     <div>
-      <div className="mb-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">🧭</span>
@@ -733,7 +733,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
             onChange={(e) => zetScope(e.target.value)}
             maxLength={200}
             placeholder="Bijvoorbeeld: hele organisatie, of business unit Klantenservice"
-            className="mt-1 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="mt-1 w-full rounded-md border border-slate-200 bg-card px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
         </label>
 
@@ -746,7 +746,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
             </span>{" "}
             stellingen beantwoord (geldende antwoorden)
           </p>
-          <button type="button" onClick={onNaarResultaten} className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
+          <button type="button" onClick={onNaarResultaten} className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-500/20">
             Bekijk resultaten →
           </button>
         </div>
@@ -772,7 +772,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
               <div>
                 <p className="text-sm font-semibold text-slate-800">
                   {a.naam}
-                  <span className="ml-2 rounded bg-white px-1.5 py-0.5 text-[10px] font-normal text-slate-500">{a.kant}kant</span>
+                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[10px] font-normal text-slate-500">{a.kant}kant</span>
                 </p>
                 <p className="text-xs text-slate-500">{a.beschrijving}</p>
               </div>
@@ -787,7 +787,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
             <div className="space-y-2 px-4 pb-4">
               <label className="flex items-center gap-2 text-xs text-slate-500">
                 Doelniveau voor deze as
-                <select value={a.doel} onChange={(e) => zetDoel(a.id, Number(e.target.value))} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700">
+                <select value={a.doel} onChange={(e) => zetDoel(a.id, Number(e.target.value))} className="rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700">
                   {NIVEAUS.map((n) => (
                     <option key={n.niveau} value={n.niveau}>
                       {n.niveau} · {n.naam}
@@ -813,7 +813,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
 
 function Kaart({ titel, uitleg, children }) {
   return (
-    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
       <h2 className="mb-1 text-sm font-semibold text-slate-800">{titel}</h2>
       {uitleg && <p className="mb-3 text-xs text-slate-500">{uitleg}</p>}
       {children}
@@ -859,7 +859,7 @@ function Volgorde({ volgorde }) {
       <ol className="space-y-3">
         {volgorde.map((i) => (
           <li key={i.thema} className="flex gap-3">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-semibold text-indigo-600">{i.volgorde}</span>
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-semibold text-indigo-400">{i.volgorde}</span>
             <div className="min-w-0">
               <p className="text-sm text-slate-800">
                 <span className="font-medium">{i.naam}</span>
@@ -897,7 +897,7 @@ function VaardigheidBorging({ rijen }) {
           {met.map((r) => (
             <li key={r.thema} className="text-xs text-slate-700">
               <span className="font-medium">{r.naam}</span>: kan het op niveau {r.kanHet}, geborgd op niveau {r.geborgd} —{" "}
-              <span className={r.verschil >= 2 ? "font-medium text-red-600" : "text-amber-700"}>{r.signaal}</span>
+              <span className={r.verschil >= 2 ? "font-medium text-red-400" : "text-amber-700"}>{r.signaal}</span>
             </li>
           ))}
         </ul>
@@ -1097,7 +1097,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
 
   return (
     <div>
-      <div className="mb-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">🧭</span>
@@ -1135,7 +1135,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
         {profiel.gemeten === 0 ? (
           <p className="rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400">
             Nog niets beantwoord.{" "}
-            <button type="button" onClick={onNaarVragen} className="text-indigo-600 underline">
+            <button type="button" onClick={onNaarVragen} className="text-indigo-400 underline">
               Naar de vragenlijst
             </button>
           </p>
@@ -1143,7 +1143,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           <>
             {["organisatie", "systeem"].map((kant) => (
               <div key={kant} className="mb-2">
-                <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-500">{kant}kant</p>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-400">{kant}kant</p>
                 {profiel.assen
                   .filter((a) => a.kant === kant)
                   .map((a) => (
@@ -1199,14 +1199,14 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
             {vastleggen ? "Vastleggen…" : "Meting vastleggen"}
           </button>
         </div>
-        {melding && <p className={`mb-2 text-xs ${melding.soort === "ok" ? "text-emerald-700" : "text-red-600"}`}>{melding.tekst}</p>}
+        {melding && <p className={`mb-2 text-xs ${melding.soort === "ok" ? "text-emerald-700" : "text-red-400"}`}>{melding.tekst}</p>}
         {vergelijking?.onvergelijkbaar && (
           <p className="mb-3 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">Niet te vergelijken met de laatste meting: {vergelijking.onvergelijkbaar}.</p>
         )}
         {vergelijking?.perAs && (
           <p className="mb-3 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
             Sinds de laatste meting ({datum(metingen[0].op)}): <span className="font-medium text-emerald-700">{vergelijking.gestegen} gestegen</span>,{" "}
-            <span className="font-medium text-slate-700">{vergelijking.gelijk} gelijk</span>, <span className="font-medium text-red-600">{vergelijking.gedaald} gedaald</span>.
+            <span className="font-medium text-slate-700">{vergelijking.gelijk} gelijk</span>, <span className="font-medium text-red-400">{vergelijking.gedaald} gedaald</span>.
             {vergelijking.perAs
               .filter((v) => v.verschil !== 0)
               .map((v) => ` ${v.naam}: ${v.voor} → ${v.nu}.`)
@@ -1239,7 +1239,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
                         </button>
                       </span>
                     ) : (
-                      <button onClick={() => setVerwijderOp(m.op)} className="text-[11px] text-slate-400 hover:text-red-600 hover:underline">
+                      <button onClick={() => setVerwijderOp(m.op)} className="text-[11px] text-slate-400 hover:text-red-400 hover:underline">
                         Verwijderen
                       </button>
                     )}

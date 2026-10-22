@@ -16,14 +16,14 @@ const pct = (deel, geheel) => (geheel > 0 ? Math.round((deel / geheel) * 100) : 
 const BOOM_CSS = `
 .og-boom ul { display: flex; justify-content: center; position: relative; margin: 0; padding: 18px 0 0; list-style: none; }
 .og-boom li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 18px 8px 0; }
-.og-boom li::before, .og-boom li::after { content: ""; position: absolute; top: 0; right: 50%; width: 50%; height: 18px; border-top: 1px solid #cbd5e1; }
-.og-boom li::after { right: auto; left: 50%; border-left: 1px solid #cbd5e1; }
+.og-boom li::before, .og-boom li::after { content: ""; position: absolute; top: 0; right: 50%; width: 50%; height: 18px; border-top: 1px solid var(--color-slate-300); }
+.og-boom li::after { right: auto; left: 50%; border-left: 1px solid var(--color-slate-300); }
 .og-boom li:only-child { padding-top: 0; }
 .og-boom li:only-child::before, .og-boom li:only-child::after { display: none; }
 .og-boom li:first-child::before, .og-boom li:last-child::after { border: 0 none; }
-.og-boom li:last-child::before { border-right: 1px solid #cbd5e1; border-radius: 0 6px 0 0; }
+.og-boom li:last-child::before { border-right: 1px solid var(--color-slate-300); border-radius: 0 6px 0 0; }
 .og-boom li:first-child::after { border-radius: 6px 0 0 0; }
-.og-boom ul ul::before { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: 1px solid #cbd5e1; }
+.og-boom ul ul::before { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: 1px solid var(--color-slate-300); }
 .og-boom > ul { padding-top: 0; }
 `;
 
@@ -83,7 +83,7 @@ function Legenda() {
 function RolBox({ knoop, aantalVerborgen, openKlap, onKlap }) {
   const heeftKinderen = knoop.kinderen.length > 0;
   return (
-    <div className="flex h-[160px] w-[208px] flex-col rounded-lg border border-slate-200 bg-white p-2.5 text-left shadow-sm">
+    <div className="flex h-[160px] w-[208px] flex-col rounded-lg border border-slate-200 bg-card p-2.5 text-left shadow-sm">
       <p className="line-clamp-2 h-8 text-xs font-semibold leading-4 text-slate-800" title={knoop.rolnaam}>
         {knoop.rolnaam}
       </p>
@@ -214,7 +214,7 @@ function RolRij({ rol }) {
 function AfdelingKaart({ naam, x, rollen }) {
   const teksten = { onderdeel: (v) => `${nl(v.fteHuidig, 1)} FTE · ${nl(v.fteVrij, 1)} FTE vrij (${pct(v.fteVrij, v.fteHuidig)}%)` };
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-card shadow-sm">
       <div className="border-b border-slate-100 px-3 py-2.5">
         <div className="mb-1.5 flex items-baseline justify-between gap-3">
           <p className="text-sm font-semibold text-slate-800">{naam}</p>
@@ -255,7 +255,7 @@ export default function Organogram({ rollen }) {
         </div>
       )}
 
-      <div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3">
+      <div className="mb-4 rounded-lg border border-slate-200 bg-card px-4 py-3">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <p className="text-sm font-semibold text-slate-800">Hele organisatie</p>
           <p className="text-xs text-slate-500">

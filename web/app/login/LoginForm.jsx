@@ -29,7 +29,7 @@ function LoginFormInner({ t }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-4">
+    <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.email}</label>
         <input
@@ -50,7 +50,7 @@ function LoginFormInner({ t }) {
           className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       <button
         type="submit"
         disabled={loading}
@@ -74,7 +74,7 @@ export default function LoginForm({ t }) {
           <LoginFormInner t={t} />
         </Suspense>
         <p className="text-center mt-4">
-          <a href="/forgot-password" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors">
+          <a href="/forgot-password" className="text-xs text-slate-400 hover:text-indigo-400 transition-colors">
             {t.forgot}
           </a>
         </p>

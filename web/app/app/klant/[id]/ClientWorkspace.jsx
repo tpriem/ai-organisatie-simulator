@@ -55,7 +55,7 @@ export function CapaciteitBestemming({ results }) {
   };
 
   return (
-    <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="mb-5 rounded-xl border border-slate-200 bg-card p-4 shadow-sm">
       <p className="text-sm font-semibold text-slate-800">Waar gaat die capaciteit heen?</p>
       <p className="text-xs text-slate-500 mt-0.5 mb-3">
         Drie opties om de vrijgekomen tijd in te zetten. Per functie is ingeschat welke optie het meest voor de hand ligt;
@@ -207,7 +207,7 @@ export function CapaciteitHerkomst({ results }) {
       </div>
 
       {heeftRest && (
-        <button type="button" onClick={() => setAlles((a) => !a)} className="mt-3 text-xs text-indigo-600 hover:underline">
+        <button type="button" onClick={() => setAlles((a) => !a)} className="mt-3 text-xs text-indigo-400 hover:underline">
           {alles ? "Alleen de grootste vijf tonen" : `Toon alle ${aantal} categorieën`}
         </button>
       )}
@@ -284,7 +284,7 @@ export function CompetentieAgenda({ results }) {
 
       {rest > 0 && <p className="mt-2 text-xs text-slate-500">{agendaRestZin(rest)}</p>}
       {mogelijkRest && (
-        <button type="button" onClick={() => setAlles((a) => !a)} className="mt-2 text-xs text-indigo-600 hover:underline">
+        <button type="button" onClick={() => setAlles((a) => !a)} className="mt-2 text-xs text-indigo-400 hover:underline">
           {alles ? "Alleen de breedste vijf tonen" : `Toon alle ${agenda.competenties.length} competenties`}
         </button>
       )}
@@ -296,7 +296,7 @@ export function CompetentieAgenda({ results }) {
 
 function Section({ title, icon, children, right }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
+    <section className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">
@@ -349,7 +349,7 @@ function FileDropLabel({ htmlFor, uploading, label, hint }) {
 
 function StatCard({ label, value, sub, noot }) {
   return (
-    <div className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-col rounded-xl border border-slate-200 bg-card p-4 shadow-sm">
       <p className="text-xs font-medium text-slate-400 mb-1">{label}</p>
       <p className="text-2xl font-bold text-slate-900">{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
@@ -363,7 +363,7 @@ function TabButton({ active, onClick, icon, label, done }) {
     <button
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-        active ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"
+        active ? "border-indigo-600 text-indigo-400" : "border-transparent text-slate-500 hover:text-slate-700"
       }`}
     >
       <span>{icon}</span>
@@ -438,7 +438,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
           <p className="text-xs font-semibold text-slate-700">
             {huidig?.label ?? "Waardetype nog niet bepaald"}
             {handmatig && (
-              <span className="ml-1.5 rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
+              <span className="ml-1.5 rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
                 {bevestigtInschatting(role) ? "bevestigd" : "handmatig bepaald"}
               </span>
             )}
@@ -452,7 +452,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
         </div>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="shrink-0 text-[11px] text-indigo-600 hover:text-indigo-500 hover:underline"
+          className="shrink-0 text-[11px] text-indigo-400 hover:text-indigo-400 hover:underline"
         >
           {open ? "Sluiten" : "Bijsturen"}
         </button>
@@ -471,7 +471,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
           <button
             onClick={() => kies(role.waardetype, "bevestigen")}
             disabled={bezig}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-white border border-amber-300 px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-card border border-amber-300 px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-500/20 disabled:opacity-50"
           >
             {bezigMet === "bevestigen" && <Spinner />}
             {bezigMet === "bevestigen" ? "Bevestigen…" : "Bevestigen"}
@@ -491,8 +491,8 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
                 aria-pressed={role.waardetype === w.id}
                 className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors disabled:opacity-50 ${
                   role.waardetype === w.id
-                    ? "border-indigo-400 bg-white font-medium text-indigo-700"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-indigo-300"
+                    ? "border-indigo-400 bg-card font-medium text-indigo-700"
+                    : "border-slate-200 bg-card text-slate-600 hover:border-indigo-300"
                 }`}
               >
                 {w.icon} {w.label}
@@ -505,7 +505,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
             onChange={(e) => setReden(e.target.value)}
             maxLength={300}
             placeholder="Reden (optioneel), bijvoorbeeld: groeiambitie in de regio"
-            className="mt-2 w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="mt-2 w-full rounded-md border border-slate-200 bg-card px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
           {handmatig && (
             <button
@@ -522,7 +522,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
               <Spinner /> Opslaan…
             </p>
           )}
-          {fout && <p className="mt-1.5 text-[11px] text-red-600">{fout}</p>}
+          {fout && <p className="mt-1.5 text-[11px] text-red-400">{fout}</p>}
         </div>
       )}
     </div>
@@ -569,7 +569,7 @@ function WaardetypeBadge({ waardetype, toelichting, compact = false, handmatig =
         className="text-sm"
       >
         {w.icon}
-        {handmatig && <span className="text-indigo-500">*</span>}
+        {handmatig && <span className="text-indigo-400">*</span>}
         {bevestigen && (
           <span
             className="ml-0.5 text-amber-500"
@@ -616,8 +616,8 @@ function CompetentieTop5Block({ title, subtitle, items }) {
 
 const TRAINBAARHEID_KLEUR = {
   hoog: { balk: "bg-emerald-500", stip: "bg-emerald-500", tekst: "text-emerald-700" },
-  midden: { balk: "bg-blue-500", stip: "bg-blue-500", tekst: "text-blue-700" },
-  laag: { balk: "bg-orange-500", stip: "bg-orange-500", tekst: "text-orange-700" },
+  midden: { balk: "bg-blue-500", stip: "bg-blue-500", tekst: "text-blue-300" },
+  laag: { balk: "bg-orange-500", stip: "bg-orange-500", tekst: "text-orange-300" },
 };
 const TRAINBAARHEID_ONBEKEND = { balk: "bg-slate-400", stip: "bg-slate-400", tekst: "text-slate-500" };
 
@@ -633,7 +633,7 @@ function OverlapKpis({ profiel }) {
   const d = driedeling(profiel);
   return (
     <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <div className="rounded-lg bg-white p-3">
+      <div className="rounded-lg bg-card p-3">
         <p className="text-[11px] text-slate-500">Sluit nu al aan</p>
         <p className="text-2xl font-semibold text-slate-800">{profiel.overlapPct}%</p>
         <p className="text-[11px] text-slate-400 mt-0.5">
@@ -645,7 +645,7 @@ function OverlapKpis({ profiel }) {
       {/* Bewust het níet-trainbare deel als kopgetal. "80% na training" leest als een
           toestand die je bereikt, terwijl het een bovengrens is; wat je niet kunt
           trainen is het getal waar een beslissing aan hangt. */}
-      <div className="rounded-lg bg-white p-3">
+      <div className="rounded-lg bg-card p-3">
         <p className="text-[11px] text-slate-500">Niet met training te overbruggen</p>
         <p className="text-2xl font-semibold text-slate-800">
           {d ? d.nietTrainbaarPct : "—"}
@@ -750,7 +750,7 @@ function CompetentieProfielVergelijking({ profiel }) {
     acties[c.naam] = { label: "ontwikkelen", klasse: "text-slate-500" };
   }
   for (const c of profiel.teToetsen ?? []) {
-    acties[c.naam] = { label: "toetsen bezetting", klasse: "text-orange-600" };
+    acties[c.naam] = { label: "toetsen bezetting", klasse: "text-orange-300" };
   }
 
   return (
@@ -827,20 +827,20 @@ function VersieHistorie({ id, onHersteld }) {
     <div className="relative">
       <button
         onClick={openen}
-        className="text-xs rounded-lg bg-white text-slate-600 border border-slate-200 px-3 py-1.5 shadow-sm hover:bg-slate-50 transition-colors"
+        className="text-xs rounded-lg bg-card text-slate-600 border border-slate-200 px-3 py-1.5 shadow-sm hover:bg-slate-50 transition-colors"
         title="Eerdere versies van deze analyse terugzetten"
       >
         ↩ Vorige versies
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-80 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+        <div className="absolute right-0 z-20 mt-1 w-80 rounded-lg border border-slate-200 bg-card p-3 shadow-lg">
           <p className="text-xs font-semibold text-slate-700 mb-1">Eerdere versies</p>
           <p className="text-[11px] text-slate-400 mb-2">
             Elke analyse bewaart de vorige uitkomst. De huidige versie wordt bewaard voordat je terugzet.
           </p>
 
-          {fout && <p className="text-[11px] text-red-600 mb-2">{fout}</p>}
+          {fout && <p className="text-[11px] text-red-400 mb-2">{fout}</p>}
           {versies === null && <p className="text-[11px] text-slate-400">Laden…</p>}
           {versies?.length === 0 && !fout && (
             <p className="text-[11px] text-slate-500">
@@ -885,7 +885,7 @@ function RolBestemming({ role, children }) {
     return `${Math.round(o.gevolg.waarde)} uur per week naar beter werk`;
   };
   return (
-    <div className="mb-4 rounded-xl border border-slate-200 bg-white p-4">
+    <div className="mb-4 rounded-xl border border-slate-200 bg-card p-4">
       <p className="text-sm font-semibold text-slate-800">Waar gaat de capaciteit van deze functie heen?</p>
       <p className="mt-0.5 mb-3 text-xs text-slate-500">
         {nl(b.fte, 1)} FTE ({Math.round(b.urenPerWeek)} uur per week) komt vrij, tot {nl(b.fteAgressief, 1)} FTE in het ambitieuze scenario. Dat is{" "}
@@ -901,7 +901,7 @@ function RolBestemming({ role, children }) {
           >
             <span className={`font-medium ${o.gekozen ? "text-indigo-800" : "text-slate-600"}`}>
               {o.icon} {o.label}
-              {o.gekozen && <span className="ml-2 rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">bestemming</span>}
+              {o.gekozen && <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">bestemming</span>}
             </span>
             <span className="shrink-0 text-right">{gevolg(o)}</span>
           </li>
@@ -1017,7 +1017,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
         {role.kostenPerUur}/uur).
       </p>
       <div className="flex items-center justify-between mb-1.5">
-        <span className={`text-[11px] ${totaalAandeelPct !== 100 ? "text-red-600 font-medium" : "text-slate-400"}`}>
+        <span className={`text-[11px] ${totaalAandeelPct !== 100 ? "text-red-400 font-medium" : "text-slate-400"}`}>
           Totaal aandeel: {totaalAandeelPct}%{totaalAandeelPct !== 100 ? " — moet 100% zijn" : ""}
         </span>
         {(isDirtyFromSaved || isAdjustedFromOrigineel) && (
@@ -1025,7 +1025,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
             {isAdjustedFromOrigineel && (
               <button
                 onClick={handleReset}
-                className="text-[11px] text-slate-400 hover:text-indigo-600 hover:underline"
+                className="text-[11px] text-slate-400 hover:text-indigo-400 hover:underline"
               >
                 Herstel naar AI-inschatting
               </button>
@@ -1062,7 +1062,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
               <tr key={i} className="border-b border-slate-100 last:border-0">
                 <td className="py-1.5 pr-2">{t.omschrijving}</td>
                 <td className="py-1.5 pr-2">
-                  <span className="inline-block rounded bg-indigo-100 text-indigo-700 px-1.5 py-0.5 text-[10px]">
+                  <span className="inline-block rounded bg-indigo-500/20 text-indigo-700 px-1.5 py-0.5 text-[10px]">
                     {t.categorieLabel}
                   </span>
                 </td>
@@ -1300,7 +1300,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
   if (!client)
     return (
       <div className="flex-1 bg-slate-50">
-        <main className="max-w-7xl mx-auto px-6 py-12 text-sm text-red-600">Klant niet gevonden.</main>
+        <main className="max-w-7xl mx-auto px-6 py-12 text-sm text-red-400">Klant niet gevonden.</main>
       </div>
     );
 
@@ -1320,13 +1320,13 @@ export default function ClientWorkspace({ id, nieuw = false }) {
       <main className="max-w-7xl mx-auto w-full px-6 py-10">
         {/* Klant-switcher */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
-          <a href="/app" className="text-sm text-slate-400 hover:text-indigo-600 transition-colors">
+          <a href="/app" className="text-sm text-slate-400 hover:text-indigo-400 transition-colors">
             ← Alle klanten
           </a>
           <select
             value={id}
             onChange={(e) => router.push(`/app/klant/${e.target.value}`)}
-            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-slate-300 bg-card px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             {allClients.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1340,7 +1340,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               value={newClientNaam}
               onChange={(e) => setNewClientNaam(e.target.value)}
               placeholder="+ nieuwe klant"
-              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm shadow-sm w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="rounded-lg border border-slate-300 bg-card px-2.5 py-1.5 text-sm shadow-sm w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <button
               type="submit"
@@ -1350,12 +1350,12 @@ export default function ClientWorkspace({ id, nieuw = false }) {
             </button>
           </form>
           <div className="flex items-center gap-3">
-            <a href="/app/gebruikers" className="text-xs text-slate-400 hover:text-indigo-600 transition-colors">
+            <a href="/app/gebruikers" className="text-xs text-slate-400 hover:text-indigo-400 transition-colors">
               Gebruikers
             </a>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-xs text-slate-400 hover:text-indigo-600 transition-colors"
+              className="text-xs text-slate-400 hover:text-indigo-400 transition-colors"
             >
               Uitloggen
             </button>
@@ -1383,7 +1383,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
 
         {/* Scope: totale bedrijf of business unit/afdeling */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
-          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
+          <div className="inline-flex rounded-lg border border-slate-200 bg-card p-0.5 text-xs">
             <button
               onClick={() => handleScopeChange("bedrijf")}
               className={`px-3 py-1 rounded-md transition-colors ${
@@ -1422,7 +1422,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
 
         {nieuw && !opzetGesloten && <KlantOpzet id={id} onSluit={() => setOpzetGesloten(true)} />}
 
-        {savingAnswers && <p className="text-xs text-indigo-500 mb-4">Opslaan...</p>}
+        {savingAnswers && <p className="text-xs text-indigo-400 mb-4">Opslaan...</p>}
 
         {error && (
           <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
@@ -1494,7 +1494,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               />
               <a
                 href="/api/roster-template"
-                className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-500 hover:underline"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-400 hover:underline"
               >
                 ⬇ Download het rostersjabloon (.xlsx)
               </a>
@@ -1533,11 +1533,11 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                   {client.profileFiles.map((f) => (
                     <li key={f} className="flex items-center justify-between text-xs text-slate-600">
                       <span className="flex items-center gap-1 truncate">
-                        <span className="text-emerald-600">✓</span> {f}
+                        <span className="text-emerald-400">✓</span> {f}
                       </span>
                       <button
                         onClick={() => handleDeleteProfile(f)}
-                        className="text-red-400 hover:text-red-600 hover:underline shrink-0 ml-2"
+                        className="text-red-400 hover:text-red-400 hover:underline shrink-0 ml-2"
                       >
                         verwijderen
                       </button>
@@ -1552,7 +1552,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
             <div className="mt-5">
               <p className="text-sm font-medium text-slate-700 mb-2">
                 Controle:{" "}
-                <span className={client.rosterCheck.gekoppeld === client.rosterCheck.totaalRollen ? "text-emerald-700" : "text-amber-600"}>
+                <span className={client.rosterCheck.gekoppeld === client.rosterCheck.totaalRollen ? "text-emerald-700" : "text-amber-400"}>
                   {client.rosterCheck.gekoppeld} / {client.rosterCheck.totaalRollen}
                 </span>{" "}
                 rollen uit het roster gekoppeld aan een functieprofiel
@@ -1587,7 +1587,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                             maximumFractionDigits: 0,
                           }).format(r.loonkostenPerJaar)}
                         </td>
-                        <td className={`py-1.5 px-3 font-medium ${r.gekoppeld ? "text-emerald-600" : "text-red-600"}`}>
+                        <td className={`py-1.5 px-3 font-medium ${r.gekoppeld ? "text-emerald-400" : "text-red-400"}`}>
                           {r.gekoppeld ? "✓" : "✗ ontbreekt"}
                         </td>
                       </tr>
@@ -1670,7 +1670,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
             </div>
           )}
           {client.rosterCheck?.error && (
-            <p className="text-xs text-amber-600 mt-4">Kon controle niet uitvoeren: {client.rosterCheck.error}</p>
+            <p className="text-xs text-amber-400 mt-4">Kon controle niet uitvoeren: {client.rosterCheck.error}</p>
           )}
         </Section>
         </>
@@ -1705,7 +1705,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
                 resultatenSub === sleutel
                   ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
-                  : "border-slate-300 bg-white text-slate-600 hover:border-indigo-300 hover:text-indigo-600"
+                  : "border-slate-300 bg-card text-slate-600 hover:border-indigo-300 hover:text-indigo-400"
               }`}
             >
               {icoon} {label}
@@ -1715,7 +1715,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         {resultatenSub === "maturity" ? (
           <MaturiteitResultaten results={results} onNaarVragen={() => setActiveTab("maturiteit")} />
         ) : !results ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-white/60 px-6 py-16 text-center">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-6 py-16 text-center">
               <p className="text-sm text-slate-500 mb-1">Nog geen analyse uitgevoerd.</p>
               <p className="text-xs text-slate-400">Vul Input in en klik bovenaan op "Analyseer".</p>
             </div>
@@ -1735,7 +1735,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 </a>
                 <a
                   href={`/api/clients/${id}/report-pdf`}
-                  className="text-xs rounded-lg bg-white text-indigo-600 border border-indigo-200 px-3 py-1.5 shadow-sm hover:bg-indigo-50 transition-colors"
+                  className="text-xs rounded-lg bg-card text-indigo-400 border border-indigo-200 px-3 py-1.5 shadow-sm hover:bg-indigo-50 transition-colors"
                 >
                   ⬇ Impactrapport (PDF)
                 </a>
@@ -1953,7 +1953,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 )}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600 mb-2">Groeiende rollen</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400 mb-2">Groeiende rollen</p>
                 {results.aanbevelingen.groeiendeRollen?.length > 0 ? (
                   <ul className="space-y-2">
                     {results.aanbevelingen.groeiendeRollen.map((r, i) => (
@@ -1968,7 +1968,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 )}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">Samenvoegkandidaten</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-400 mb-2">Samenvoegkandidaten</p>
                 {results.aanbevelingen.samenvoegKandidaten?.length > 0 ? (
                   <ul className="space-y-2">
                     {results.aanbevelingen.samenvoegKandidaten.map((s, i) => (

@@ -1,14 +1,11 @@
 import Image from "next/image";
-import { Sora } from "next/font/google";
 import { getLocale, getDictionary } from "@/lib/i18n";
 import LocaleToggle from "@/components/LocaleToggle";
-
-const sora = Sora({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sora" });
 
 function NumberCard({ nr, title, children }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
-      <span className="block text-sm font-semibold bg-gradient-to-r from-[#6E8BFF] to-[#B07CFF] bg-clip-text text-transparent mb-3">
+      <span className="block text-sm font-semibold bg-gradient-to-r from-hod-violet to-hod-cyan bg-clip-text text-transparent mb-3">
         {nr}
       </span>
       <h3 className="text-base font-semibold text-white mb-1.5">{title}</h3>
@@ -20,7 +17,7 @@ function NumberCard({ nr, title, children }) {
 function StepRow({ nr, title, children }) {
   return (
     <div className="flex gap-4">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6E8BFF] to-[#B07CFF] text-white text-sm font-semibold">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-hod-violet to-hod-cyan text-white text-sm font-semibold">
         {nr}
       </span>
       <div>
@@ -36,9 +33,9 @@ export default async function LandingPage() {
   const { nav, landing: t } = getDictionary(locale);
 
   return (
-    <div className={`${sora.variable} flex-1 bg-[#07080A] text-[#F4F5F7]`} style={{ fontFamily: "var(--font-sora)" }}>
+    <div className={`flex-1 bg-page text-slate-900 font-display`}>
       {/* Nav */}
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-[#07080A]/70 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-white/10 bg-page/70 backdrop-blur">
         <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src="/hod-logo-white.png" alt="House of Digital" width={800} height={400} className="h-6 w-auto" priority />
@@ -67,7 +64,7 @@ export default async function LandingPage() {
         </span>
         <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-[1.08]">
           {t.heroTitlePre}{" "}
-          <span className="bg-gradient-to-r from-[#6E8BFF] to-[#B07CFF] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-hod-violet to-hod-cyan bg-clip-text text-transparent">
             {t.heroTitleHighlight}
           </span>{" "}
           {t.heroTitlePost}
@@ -76,7 +73,7 @@ export default async function LandingPage() {
         <div className="mt-9 flex items-center justify-center gap-3">
           <a
             href="/contact"
-            className="rounded-full bg-gradient-to-r from-[#6E8BFF] to-[#B07CFF] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#6E8BFF]/20 hover:opacity-90 transition-opacity"
+            className="rounded-full bg-gradient-to-r from-hod-violet to-hod-cyan px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-hod-violet/20 hover:opacity-90 transition-opacity"
           >
             {t.cta}
           </a>
@@ -87,7 +84,7 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-5xl px-6 py-20 border-t border-white/10">
         <h2 className="text-3xl font-bold text-center mb-3">
           {t.resultsHeading}{" "}
-          <span className="bg-gradient-to-r from-[#6E8BFF] to-[#B07CFF] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-hod-violet to-hod-cyan bg-clip-text text-transparent">
             {t.resultsHeadingHighlight}
           </span>
         </h2>
@@ -123,7 +120,7 @@ export default async function LandingPage() {
 
       {/* Disclaimer / positioning — pull quote style */}
       <section className="mx-auto max-w-3xl px-6 pb-24">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 border-l-4 border-l-[#8AA0FF]">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 border-l-4 border-l-hod-lilac">
           <p className="text-base text-white/80 leading-relaxed">
             {t.disclaimer.split(`{richting}`)[0]}
             <strong className="text-white">{t.disclaimerStrong}</strong>

@@ -94,7 +94,7 @@ export default function Aanleveren({ token }) {
   if (fase === "ongeldig") {
     return (
       <Omhulsel>
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-card p-8 text-center shadow-sm">
           <h1 className="text-lg font-semibold text-slate-900">Deze link is niet (meer) geldig</h1>
           <p className="mt-2 text-sm text-slate-600">
             De link is verlopen of ingetrokken, of niet goed overgenomen. Vraag uw contactpersoon bij House of Digital om een nieuwe link.
@@ -110,7 +110,7 @@ export default function Aanleveren({ token }) {
 
   return (
     <Omhulsel>
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <h1 className="text-xl font-bold text-slate-900">Gegevens aanleveren voor {info.organisatie}</h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">
           Voor de analyse hebben wij twee dingen nodig: een overzicht van de functies in uw organisatie en de bijbehorende functieprofielen. Wij controleren uw bestanden voordat de
@@ -121,7 +121,7 @@ export default function Aanleveren({ token }) {
           {PRIVACY_URL && (
             <>
               {" "}
-              <a href={PRIVACY_URL} className="text-indigo-600 underline" target="_blank" rel="noreferrer">
+              <a href={PRIVACY_URL} className="text-indigo-400 underline" target="_blank" rel="noreferrer">
                 Lees hoe wij met gegevens omgaan
               </a>
               .
@@ -130,12 +130,12 @@ export default function Aanleveren({ token }) {
         </p>
       </div>
 
-      <section className="mb-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">1. Functieoverzicht</h2>
         <p className="mt-1 text-sm text-slate-600">
           Een Excel- of CSV-bestand met per functie het aantal FTE, de uren per week en de kosten per uur (kolommen: rolnaam, fte, uren_per_week, kosten_per_uur; optioneel afdeling en
           rapporteert_aan).{" "}
-          <a href="/api/roster-template" className="text-indigo-600 underline">
+          <a href="/api/roster-template" className="text-indigo-400 underline">
             Download het sjabloon
           </a>
           .
@@ -154,7 +154,7 @@ export default function Aanleveren({ token }) {
         <p className="mt-1 text-xs text-slate-400">Toegestaan: {toegestaan("roster")}, maximaal {info.maxMB} MB. Een eerder aangeleverd functieoverzicht wordt vervangen.</p>
       </section>
 
-      <section className="mb-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">2. Functieprofielen</h2>
         <p className="mt-1 text-sm text-slate-600">
           Eén bestand per functie, met een naam die overeenkomt met de functie in het overzicht. U kunt meerdere bestanden tegelijk kiezen.
@@ -186,7 +186,7 @@ export default function Aanleveren({ token }) {
         </ul>
       )}
 
-      <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="mb-8 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">Aangeleverd</h2>
         {info.bestanden.length === 0 ? (
           <p className="mt-2 text-sm text-slate-400">Nog niets aangeleverd.</p>
@@ -207,7 +207,7 @@ export default function Aanleveren({ token }) {
                         <span className="min-w-0 truncate text-slate-700">{b.naam}</span>
                         <span className="flex shrink-0 items-center gap-3 text-xs text-slate-400">
                           {b.grootte ? formaat(b.grootte) : ""}
-                          <button onClick={() => verwijder(b)} className="text-slate-500 hover:text-red-600 hover:underline">
+                          <button onClick={() => verwijder(b)} className="text-slate-500 hover:text-red-400 hover:underline">
                             Verwijderen
                           </button>
                         </span>
@@ -227,7 +227,7 @@ export default function Aanleveren({ token }) {
 function Omhulsel({ children }) {
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3">
           <span className="text-sm font-semibold text-slate-900">House of Digital</span>
           <span className="text-xs text-slate-500">AI Organisatie Transformatie Simulator</span>

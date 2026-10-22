@@ -17,8 +17,8 @@ import { renderHtmlToPdf } from "./generateReportPdf.js";
 // Weergave van het volwassenheidsrapport in Word en PDF. De inhoud komt uit één gegevensmodel
 // (src/rapportVolwassenheid.js); hier zit alleen de opmaak.
 
-const HEADER_FILL = "1E293B";
-const LIGHT_FILL = "F1F5F9";
+const HEADER_FILL = "241B4B";
+const LIGHT_FILL = "F1F0F9";
 const TABEL_BREEDTE = 9000;
 
 function esc(str) {
@@ -56,22 +56,22 @@ export function bouwVolwassenheidHtml(model) {
 <meta charset="utf-8" />
 <style>
   * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; color: #1e293b; font-size: 11px; margin: 0; padding: 32px 40px; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #241b4b; font-size: 11px; margin: 0; padding: 32px 40px; }
   h1 { font-size: 22px; text-align: center; margin: 0 0 4px; }
-  .subtitle { text-align: center; color: #475569; font-size: 14px; margin: 0 0 4px; }
-  .meta { text-align: center; color: #94a3b8; font-size: 10px; margin: 0 0 2px; }
-  .disclaimer { font-style: italic; color: #64748b; font-size: 9px; margin: 12px 0 18px; }
-  h2 { font-size: 15px; border-bottom: 2px solid #4f46e5; padding-bottom: 4px; margin: 24px 0 10px; page-break-after: avoid; }
+  .subtitle { text-align: center; color: #4d4a70; font-size: 14px; margin: 0 0 4px; }
+  .meta { text-align: center; color: #9d9bbd; font-size: 10px; margin: 0 0 2px; }
+  .disclaimer { font-style: italic; color: #6b6a8f; font-size: 9px; margin: 12px 0 18px; }
+  h2 { font-size: 15px; border-bottom: 2px solid #7b4feb; padding-bottom: 4px; margin: 24px 0 10px; page-break-after: avoid; }
   h3 { font-size: 12px; margin: 14px 0 6px; page-break-after: avoid; }
   p { line-height: 1.5; margin: 0 0 8px; }
-  p.noot { font-style: italic; color: #64748b; font-size: 10px; }
+  p.noot { font-style: italic; color: #6b6a8f; font-size: 10px; }
   p.waarschuwing { color: #b45309; }
   ul, ol { margin: 0 0 10px; padding-left: 20px; }
   li { line-height: 1.5; margin-bottom: 4px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10px; }
-  th, td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; vertical-align: top; }
-  th { background: #1e293b; color: white; }
-  tr:nth-child(even) td { background: #f8fafc; }
+  th, td { border: 1px solid #d2d0e6; padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: #241b4b; color: white; }
+  tr:nth-child(even) td { background: #f7f6fc; }
   tr { page-break-inside: avoid; }
 </style>
 </head>
@@ -106,7 +106,7 @@ function wordTabel(b) {
   const gewichten = b.kolommen.map((k) => GEWICHT[k] ?? 1);
   const som = gewichten.reduce((s, g) => s + g, 0);
   const breedtes = gewichten.map((g) => Math.floor((TABEL_BREEDTE * g) / som));
-  const rand = { style: BorderStyle.SINGLE, size: 2, color: "CBD5E1" };
+  const rand = { style: BorderStyle.SINGLE, size: 2, color: "D2D0E6" };
   return new Table({
     width: { size: breedtes.reduce((s, x) => s + x, 0), type: WidthType.DXA },
     columnWidths: breedtes,
@@ -121,9 +121,9 @@ function wordTabel(b) {
 export async function generateVolwassenheidDocx(model) {
   const children = [
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: model.titel, bold: true, size: 44 })] }),
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: model.ondertitel, size: 28, color: "475569" })] }),
-    ...model.meta.map((m) => new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: m, size: 18, color: "94A3B8" })] })),
-    new Paragraph({ spacing: { before: 160, after: 240 }, children: [new TextRun({ text: model.disclaimer, italics: true, size: 18, color: "64748B" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [new TextRun({ text: model.ondertitel, size: 28, color: "4D4A70" })] }),
+    ...model.meta.map((m) => new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: m, size: 18, color: "9D9BBD" })] })),
+    new Paragraph({ spacing: { before: 160, after: 240 }, children: [new TextRun({ text: model.disclaimer, italics: true, size: 18, color: "6B6A8F" })] }),
   ];
 
   for (const b of model.blokken) {
@@ -137,7 +137,7 @@ export async function generateVolwassenheidDocx(model) {
         })
       );
     } else if (b.soort === "alinea") {
-      const opmaak = b.stijl === "noot" ? { italics: true, size: 18, color: "64748B" } : b.stijl === "waarschuwing" ? { color: "B45309" } : {};
+      const opmaak = b.stijl === "noot" ? { italics: true, size: 18, color: "6B6A8F" } : b.stijl === "waarschuwing" ? { color: "B45309" } : {};
       children.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: b.tekst, ...opmaak })] }));
     } else if (b.soort === "lijst") {
       for (const item of b.items) children.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 60 }, children: [new TextRun({ text: item })] }));

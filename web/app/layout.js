@@ -1,8 +1,14 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Funnel_Sans, Funnel_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Het lettertype van houseofdigital.nl: Funnel Display voor koppen, Funnel Sans voor lopende tekst.
+const funnelSans = Funnel_Sans({
+  variable: "--font-funnel-sans",
+  subsets: ["latin"],
+});
+
+const funnelDisplay = Funnel_Display({
+  variable: "--font-funnel-display",
   subsets: ["latin"],
 });
 
@@ -20,9 +26,9 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="nl"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${funnelSans.variable} ${funnelDisplay.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">{children}</body>
+      <body className="min-h-full flex flex-col bg-page text-slate-900">{children}</body>
     </html>
   );
 }

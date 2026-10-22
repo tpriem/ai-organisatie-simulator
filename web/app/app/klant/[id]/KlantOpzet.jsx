@@ -69,8 +69,8 @@ export default function KlantOpzet({ id, onSluit }) {
       </p>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-500">1. Aanleveren</h3>
+        <div className="rounded-lg border border-slate-200 bg-card p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-400">1. Aanleveren</h3>
           <p className="mt-1 text-xs text-slate-500">Voor het functieoverzicht en de functieprofielen. Eén link per klant.</p>
           <button
             type="button"
@@ -82,13 +82,13 @@ export default function KlantOpzet({ id, onSluit }) {
           </button>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-500">2. Vragenlijst voor invullers</h3>
+        <div className="rounded-lg border border-slate-200 bg-card p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-400">2. Vragenlijst voor invullers</h3>
           <p className="mt-1 text-xs text-slate-500">Eén link per invuller; de antwoorden komen per rol binnen.</p>
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <label className="text-[11px] text-slate-500">
               Rol
-              <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700">
+              <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700">
                 {ROLLEN.filter((r) => r.id !== "adviseur").map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.naam}
@@ -104,7 +104,7 @@ export default function KlantOpzet({ id, onSluit }) {
                 onChange={(e) => setLabel(e.target.value)}
                 maxLength={60}
                 placeholder="bijvoorbeeld teamleider klantenservice"
-                className="mt-0.5 block w-56 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
+                className="mt-0.5 block w-56 rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700"
               />
             </label>
             <button type="button" onClick={maakInvuller} disabled={bezig} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50">
@@ -114,7 +114,7 @@ export default function KlantOpzet({ id, onSluit }) {
         </div>
       </div>
 
-      {fout && <p className="mt-3 text-xs text-red-600">{fout}</p>}
+      {fout && <p className="mt-3 text-xs text-red-400">{fout}</p>}
 
       {links.length > 0 && (
         <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -129,8 +129,8 @@ export default function KlantOpzet({ id, onSluit }) {
               <li key={`${l.soort}-${n}`}>
                 <p className="text-xs font-medium text-slate-700">{l.wie}</p>
                 <div className="mt-0.5 flex items-center gap-2">
-                  <input readOnly value={l.url} onFocus={(e) => e.target.select()} className="w-full rounded border border-emerald-200 bg-white px-2 py-1 text-xs text-slate-700" />
-                  <button type="button" onClick={() => kopieer(l.url, `${l.soort}-${n}`)} className="shrink-0 rounded-md border border-emerald-300 bg-white px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100">
+                  <input readOnly value={l.url} onFocus={(e) => e.target.select()} className="w-full rounded border border-emerald-200 bg-card px-2 py-1 text-xs text-slate-700" />
+                  <button type="button" onClick={() => kopieer(l.url, `${l.soort}-${n}`)} className="shrink-0 rounded-md border border-emerald-300 bg-card px-3 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20">
                     {gekopieerd === `${l.soort}-${n}` ? "Gekopieerd" : "Kopieer"}
                   </button>
                 </div>
