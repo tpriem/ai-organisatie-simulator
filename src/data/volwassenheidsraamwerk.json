@@ -1,0 +1,359 @@
+{
+  "naam": "AI-volwassenheidsraamwerk House of Digital",
+  "versie": "1.0",
+  "niveaus": [
+    { "niveau": 1, "naam": "Verkennen", "beschrijving": "Er is bewust mee begonnen: losse initiatieven, nog niet herhaalbaar." },
+    { "niveau": 2, "naam": "Werkend", "beschrijving": "Het bestaat en wordt in ten minste één onderdeel gebruikt met zichtbaar resultaat." },
+    { "niveau": 3, "naam": "Gestuurd", "beschrijving": "Er is een eigenaar, er zijn afspraken, het wordt gemeten en bijgestuurd." },
+    { "niveau": 4, "naam": "Organisatiebreed", "beschrijving": "Overal dezelfde werkwijze, herhaalbaar en vergelijkbaar tussen onderdelen." },
+    { "niveau": 5, "naam": "Zelfvernieuwend", "beschrijving": "De organisatie kijkt vooruit en vernieuwt op eigen initiatief, voordat de druk ontstaat." }
+  ],
+  "rollen": [
+    { "id": "directie", "naam": "Directie" },
+    { "id": "management", "naam": "Management" },
+    { "id": "it_data", "naam": "IT en data" },
+    { "id": "hr", "naam": "HR" },
+    { "id": "werkvloer", "naam": "Werkvloer" },
+    { "id": "adviseur", "naam": "Adviseur" }
+  ],
+  "assen": [
+    {
+      "id": "strategie",
+      "naam": "Strategie en sturing",
+      "kant": "organisatie",
+      "beschrijving": "Of AI een bewuste koers is, met doelen, een portfolio van initiatieven en besluiten over wat door mag en wat stopt.",
+      "themas": [
+        {
+          "id": "strategie_richting",
+          "naam": "Richting en doelen",
+          "beschrijving": "Waarom AI voor deze organisatie van belang is en welke bedrijfsdoelen het moet helpen halen.",
+          "stellingen": [
+            { "id": "strategie_richting_1", "niveau": 1, "kant": "vaardigheid", "tekst": "De directie heeft uitgesproken waarom AI voor de organisatie van belang is en welke kansen en bedreigingen zij ziet.", "bewijsvraag": "Waar staat dat vastgelegd?", "bewijsvoorbeelden": ["directieverslag of strategiesessie", "memo aan de organisatie"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "strategie_richting_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Voor ten minste één onderdeel is vastgelegd welk bedrijfsdoel AI moet helpen halen, met een meetbare uitkomst.", "bewijsvraag": "Welk doel, welke maatstaf, in welk plan?", "bewijsvoorbeelden": ["jaarplan of projectplan met doelstelling", "KPI-afspraak"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "strategie_richting_3", "niveau": 3, "kant": "borging", "tekst": "Er is een eigenaar voor de AI-koers op directieniveau, en de koers wordt ten minste jaarlijks tegen de resultaten getoetst en bijgesteld.", "bewijsvraag": "Wie is eigenaar en wanneer is de koers voor het laatst bijgesteld?", "bewijsvoorbeelden": ["portefeuilleverdeling directie", "verslag van de bijstelling"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "strategie_richting_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Elk bedrijfsonderdeel kan aangeven hoe zijn AI-initiatieven bijdragen aan de organisatiedoelen; de koers is in de hele organisatie dezelfde.", "bewijsvraag": "Verwijzen de plannen van de onderdelen naar één koers?", "bewijsvoorbeelden": ["onderdeelsplannen", "portfolio-overzicht met doelkoppeling"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "strategie_richting_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie werkt met scenario's over hoe AI haar markt en bedrijfsmodel kan veranderen en past de strategie daarop aan.", "bewijsvraag": "Welke scenario's, en wat is er door veranderd?", "bewijsvoorbeelden": ["scenario-analyse", "strategie-update met verwijzing naar de scenario's"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "strategie_portfolio",
+          "naam": "Portfolio en rendement",
+          "beschrijving": "Overzicht van alle AI-initiatieven en besluiten over starten, doorgaan en stoppen op basis van wat ze opleveren.",
+          "stellingen": [
+            { "id": "strategie_portfolio_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Er is een overzicht van alle lopende en geplande AI-initiatieven, ook de initiatieven die buiten IT om zijn gestart.", "bewijsvraag": "Waar staat het overzicht en hoe compleet is het?", "bewijsvoorbeelden": ["initiatievenlijst", "inventarisatie per afdeling"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "strategie_portfolio_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Per initiatief is vooraf vastgelegd wat het moet opleveren en wanneer het stopt als dat niet lukt.", "bewijsvraag": "Laat van één initiatief de verwachte opbrengst en het stopcriterium zien.", "bewijsvoorbeelden": ["businesscase", "startbesluit met stopcriterium"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "strategie_portfolio_3", "niveau": 3, "kant": "borging", "tekst": "Een vast gremium beslist op vaste momenten over starten, doorgaan en stoppen van AI-initiatieven, op basis van gemeten resultaat.", "bewijsvraag": "Welk gremium, welk ritme, en welk initiatief is het laatst gestopt?", "bewijsvoorbeelden": ["besluitenlijst", "agenda van het portfolio-overleg"], "analyses": ["A", "B", "C", "D", "E", "G", "H"] },
+            { "id": "strategie_portfolio_4", "niveau": 4, "kant": "borging", "tekst": "De werkelijke opbrengst van AI (capaciteit, kwaliteit, kosten) wordt organisatiebreed op dezelfde manier gemeten en tussen onderdelen vergeleken.", "bewijsvraag": "Met welke maatstaven, en waar staat de vergelijking?", "bewijsvoorbeelden": ["rapportage met vergelijkbare maatstaven per onderdeel"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "strategie_portfolio_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Middelen worden verschoven naar waar AI aantoonbaar het meeste oplevert, ook als dat ten koste gaat van bestaande activiteiten.", "bewijsvraag": "Welk budgetbesluit laat die verschuiving zien?", "bewijsvoorbeelden": ["budgetbesluit met herverdeling", "stopgezette activiteit"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "strategie_verandering",
+          "naam": "Verandering organiseren",
+          "beschrijving": "Hoe de organisatie de verandering door AI leidt: wie wordt geraakt, wat gebeurt er met vrijgekomen tijd, en hoe passen rollen en structuur zich aan.",
+          "stellingen": [
+            { "id": "strategie_verandering_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Het is bekend welke functies en afdelingen het eerst door AI worden geraakt.", "bewijsvraag": "Welke analyse ligt daaronder?", "bewijsvoorbeelden": ["impactanalyse per functie (bijvoorbeeld de rolanalyse van de simulator)"], "analyses": ["A", "B", "G", "H", "I"] },
+            { "id": "strategie_verandering_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Voor een onderdeel dat met AI werkt is de verandering begeleid: wie doet wat anders, en wat gebeurt er met de vrijgekomen tijd.", "bewijsvraag": "Laat het veranderplan en de communicatie zien.", "bewijsvoorbeelden": ["veranderplan", "communicatie aan medewerkers", "afspraak over de bestemming van vrijgekomen tijd"], "analyses": ["A", "B", "G", "H", "I"] },
+            { "id": "strategie_verandering_3", "niveau": 3, "kant": "borging", "tekst": "Er is een vaste aanpak voor veranderingen door AI, met een eigenaar, een rol voor de medezeggenschap en afspraken over de bestemming van vrijgekomen capaciteit.", "bewijsvraag": "Waar staat de aanpak, en wat was de rol van de OR bij de laatste verandering?", "bewijsvoorbeelden": ["aanpakdocument", "OR-advies of -instemming"], "analyses": ["A", "B", "D", "F", "G", "H", "I"] },
+            { "id": "strategie_verandering_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Rollen en organisatiestructuur zijn in de hele organisatie aangepast op het werken met AI, bijvoorbeeld met nieuwe rollen en gewijzigde functieprofielen.", "bewijsvraag": "Welke functieprofielen of rollen zijn gewijzigd?", "bewijsvoorbeelden": ["aangepast functiehuis", "nieuwe rollen in het organogram"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "strategie_verandering_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie past structuur en rollen proactief aan op verwachte veranderingen, voordat de druk ontstaat.", "bewijsvraag": "Welke verwachte verandering is al in de planning verwerkt?", "bewijsvoorbeelden": ["strategische personeelsplanning met AI-scenario's"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mensen",
+      "naam": "Mensen en cultuur",
+      "kant": "organisatie",
+      "beschrijving": "Of mensen met AI kunnen en durven werken, kritisch blijven op de uitkomsten, en of leidinggevenden hen daarin meenemen.",
+      "themas": [
+        {
+          "id": "mensen_vaardigheden",
+          "naam": "Vaardigheden en rollen",
+          "beschrijving": "Of medewerkers de vaardigheden hebben die hun veranderde werk vraagt, en of die vaardigheden geborgd zijn.",
+          "stellingen": [
+            { "id": "mensen_vaardigheden_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Medewerkers mogen AI-hulpmiddelen uitproberen en weten waar ze terechtkunnen met vragen.", "bewijsvraag": "Waar staat dat het mag, en wie is het aanspreekpunt?", "bewijsvoorbeelden": ["gebruiksrichtlijn", "aanspreekpunt of helpdesk"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "mensen_vaardigheden_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Medewerkers van wie het werk door AI verandert, hebben een opleiding gevolgd die past bij hun taken, en niet alleen een algemene introductie.", "bewijsvraag": "Welke opleiding, voor welke functies, en hoeveel mensen hebben hem gevolgd?", "bewijsvoorbeelden": ["opleidingsplan per functie", "deelnameregistratie"], "analyses": ["A", "B", "C", "F", "G", "H", "I"] },
+            { "id": "mensen_vaardigheden_3", "niveau": 3, "kant": "borging", "tekst": "Per functie is vastgelegd welke AI-vaardigheden nodig zijn; opleiding en werving zijn daarop afgestemd en de voortgang wordt gevolgd.", "bewijsvraag": "Laat een functieprofiel met AI-eisen en de voortgangsregistratie zien.", "bewijsvoorbeelden": ["functieprofielen met AI-eisen", "opleidingsregistratie", "ontwikkelagenda uit de rolanalyse"], "analyses": ["A", "B", "D", "G", "H", "I"] },
+            { "id": "mensen_vaardigheden_4", "niveau": 4, "kant": "vaardigheid", "tekst": "In de hele organisatie zijn de benodigde AI-vaardigheden aanwezig; schaarse expertise op data en engineering is niet afhankelijk van enkele personen.", "bewijsvraag": "Wie vervangt de belangrijkste expert als die wegvalt?", "bewijsvoorbeelden": ["bezettingsoverzicht", "vervangingsafspraken"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "mensen_vaardigheden_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie voorziet welke vaardigheden over twee tot drie jaar nodig zijn en bouwt die nu al op.", "bewijsvraag": "Welke vaardigheid wordt nu opgebouwd voor later?", "bewijsvoorbeelden": ["strategische personeelsplanning", "opleidingsprogramma op toekomstige rollen"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "mensen_omgang",
+          "naam": "Omgang met AI in het dagelijks werk",
+          "beschrijving": "Of medewerkers AI gebruiken, de uitkomsten controleren, fouten melden en verbeteringen aandragen.",
+          "stellingen": [
+            { "id": "mensen_omgang_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Medewerkers gebruiken AI-hulpmiddelen in hun werk, en de organisatie weet globaal hoeveel en waarvoor.", "bewijsvraag": "Welke cijfers of peiling laten het gebruik zien?", "bewijsvoorbeelden": ["gebruikscijfers van tools", "peiling onder medewerkers"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "mensen_omgang_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Medewerkers die AI gebruiken controleren de uitkomsten en weten wanneer ze die niet mogen vertrouwen.", "bewijsvraag": "Hoe is dat vastgelegd of gecontroleerd?", "bewijsvoorbeelden": ["werkinstructie", "steekproef op uitkomsten", "interviews met gebruikers"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "mensen_omgang_3", "niveau": 3, "kant": "borging", "tekst": "Er zijn afspraken over wat medewerkers zelf mogen beslissen op basis van AI en wat menselijke beoordeling vereist, en de naleving wordt gecontroleerd.", "bewijsvraag": "Welke beslisregels, en wat kwam uit de laatste controle?", "bewijsvoorbeelden": ["beslisregels per proces", "controle-uitkomsten"], "analyses": ["A", "B", "C", "D", "F", "G", "H"] },
+            { "id": "mensen_omgang_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Fouten en bijna-fouten met AI worden in de hele organisatie gemeld en gedeeld, zonder dat de melder erop wordt afgerekend.", "bewijsvraag": "Laat het meldregister en een gedeeld voorbeeld zien.", "bewijsvoorbeelden": ["meldregister", "gedeelde leerpunten"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "mensen_omgang_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Medewerkers dragen zelf verbeteringen en nieuwe toepassingen aan, en die worden opgepakt.", "bewijsvraag": "Welk idee van een medewerker is het laatst uitgevoerd?", "bewijsvoorbeelden": ["ideeënstroom met opvolging"], "analyses": ["A", "B", "F", "G", "H"] }
+          ]
+        },
+        {
+          "id": "mensen_leiderschap",
+          "naam": "Leiderschap en leren",
+          "beschrijving": "Of leidinggevenden hun team door de verandering leiden en of de organisatie leert van haar ervaringen.",
+          "stellingen": [
+            { "id": "mensen_leiderschap_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Leidinggevenden hebben zich verdiept in wat AI voor hun eigen team betekent.", "bewijsvraag": "Aan welke sessies of programma's hebben zij deelgenomen?", "bewijsvoorbeelden": ["deelname aan sessies", "verslag van een managementbijeenkomst"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "mensen_leiderschap_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Leidinggevenden bespreken met hun team wat AI aan het werk verandert en wat dat voor mensen betekent.", "bewijsvraag": "Wanneer is dat voor het laatst in een teamoverleg besproken?", "bewijsvoorbeelden": ["agenda of verslag teamoverleg", "interviews met medewerkers"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "mensen_leiderschap_3", "niveau": 3, "kant": "borging", "tekst": "Leidinggevenden worden beoordeeld op hoe zij hun team door de verandering leiden, en er is steun voor wie dat moeilijk vindt.", "bewijsvraag": "Welk beoordelingscriterium, en welke begeleiding?", "bewijsvoorbeelden": ["beoordelingscriteria", "begeleidingsaanbod voor leidinggevenden"], "analyses": ["A", "B", "D", "F", "G", "H"] },
+            { "id": "mensen_leiderschap_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Ervaringen met AI worden in de hele organisatie gedeeld, wat werkt en wat niet, en teams leren van elkaar.", "bewijsvraag": "Via welk kanaal, en welk leerpunt is overgenomen door een ander team?", "bewijsvoorbeelden": ["community of kennisnetwerk", "gedeelde leerpunten"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "mensen_leiderschap_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie onderzoekt stelselmatig het effect van AI op werkplezier, werkdruk en behoud van mensen, en stuurt daarop.", "bewijsvraag": "Welke meting, en welke maatregel volgde eruit?", "bewijsvoorbeelden": ["medewerkersonderzoek met AI-vragen", "maatregelen naar aanleiding daarvan"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "werkprocessen",
+      "naam": "Werkprocessen",
+      "kant": "organisatie",
+      "beschrijving": "Of het werk opnieuw wordt ingericht rond AI, met de mens in de regie, en of het effect wordt gemeten.",
+      "themas": [
+        {
+          "id": "werkprocessen_beproeven",
+          "naam": "Kiezen en beproeven",
+          "beschrijving": "Of de organisatie weet waar AI het meest oplevert en dat met experimenten beproeft.",
+          "stellingen": [
+            { "id": "werkprocessen_beproeven_1", "niveau": 1, "kant": "vaardigheid", "tekst": "De organisatie heeft in kaart welke processen het meest baat hebben bij AI.", "bewijsvraag": "Welke analyse ligt daaronder?", "bewijsvoorbeelden": ["procesanalyse", "taakanalyse per functie uit de simulator"], "analyses": ["A", "B", "G", "H", "I"] },
+            { "id": "werkprocessen_beproeven_2", "niveau": 2, "kant": "vaardigheid", "tekst": "AI is in ten minste één proces beproefd met een vooraf bepaald doel en een gemeten uitkomst.", "bewijsvraag": "Welk experiment, welk doel, wat kwam eruit?", "bewijsvoorbeelden": ["pilotrapport met doel en uitkomst"], "analyses": ["A", "B", "C", "G", "H"] },
+            { "id": "werkprocessen_beproeven_3", "niveau": 3, "kant": "borging", "tekst": "Er is een vaste manier om experimenten op te zetten, te beoordelen en te stoppen of door te zetten, met een eigenaar.", "bewijsvraag": "Waar staat de aanpak, en welk experiment is het laatst gestopt?", "bewijsvoorbeelden": ["experimenteerkader", "besluiten over stoppen en doorzetten"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "werkprocessen_beproeven_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Elk onderdeel kan zelf experimenten starten volgens dezelfde aanpak, en de uitkomsten zijn vergelijkbaar.", "bewijsvraag": "Welke onderdelen hebben zelf geëxperimenteerd, en hoe zijn uitkomsten vergeleken?", "bewijsvoorbeelden": ["overzicht experimenten per onderdeel"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "werkprocessen_beproeven_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie beproeft nieuwe mogelijkheden van AI voordat ze gemeengoed zijn, en loopt daarmee vooruit op haar markt.", "bewijsvraag": "Welk experiment met een nieuwe techniek loopt nu?", "bewijsvoorbeelden": ["experimenten met nieuwe technieken", "verkenning met partners"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "werkprocessen_herontwerp",
+          "naam": "Herontwerp met de mens in de regie",
+          "beschrijving": "Of het werk zelf opnieuw is ingericht, met vastgelegde plekken waar mensen beslissen, controleren en ingrijpen.",
+          "stellingen": [
+            { "id": "werkprocessen_herontwerp_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Er is besproken hoe het werk eruit zou zien als AI delen overneemt, en niet alleen welke tool erbij komt.", "bewijsvraag": "Waar is dat besproken en vastgelegd?", "bewijsvoorbeelden": ["workshopverslag", "schets van het nieuwe werk"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "werkprocessen_herontwerp_2", "niveau": 2, "kant": "vaardigheid", "tekst": "In ten minste één proces is het werk opnieuw ingericht (taken, volgorde, rollen), en is vastgelegd waar mensen beslissen en controleren.", "bewijsvraag": "Laat de procesbeschrijving van vóór en na zien.", "bewijsvoorbeelden": ["procesbeschrijving voor en na", "taakverdeling nu en straks uit de simulator"], "analyses": ["A", "B", "C", "F", "G", "H", "I"] },
+            { "id": "werkprocessen_herontwerp_3", "niveau": 3, "kant": "borging", "tekst": "Bij elk herontwerp wordt vooraf bepaald welke beslissingen bij mensen blijven, wie verantwoordelijk is voor de uitkomst en hoe kan worden ingegrepen.", "bewijsvraag": "Welke ontwerpstandaard, en waar staan de beslispunten van het laatste herontwerp?", "bewijsvoorbeelden": ["ontwerpstandaard", "vastgelegde beslispunten en verantwoordelijken"], "analyses": ["A", "B", "C", "D", "G", "H"] },
+            { "id": "werkprocessen_herontwerp_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Herontwerp van het werk rond AI is in alle relevante onderdelen toegepast met dezelfde uitgangspunten.", "bewijsvraag": "Welke processen zijn herontworpen, en welke nog niet?", "bewijsvoorbeelden": ["overzicht herontworpen processen"], "analyses": ["A", "B", "E", "G", "H"] },
+            { "id": "werkprocessen_herontwerp_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Processen worden doorlopend aangepast op wat AI nieuw mogelijk maakt, zonder dat daar steeds een project voor nodig is.", "bewijsvraag": "Welke aanpassing is het laatst doorgevoerd en hoe snel ging dat?", "bewijsvoorbeelden": ["verbeterritme", "logboek van procesaanpassingen"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "werkprocessen_effect",
+          "naam": "Effect meten en verbeteren",
+          "beschrijving": "Of het effect van AI wordt gemeten tegen een nulmeting en of daarop wordt gestuurd.",
+          "stellingen": [
+            { "id": "werkprocessen_effect_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Er is een idee van wat AI in een proces moet opleveren: tijd, kwaliteit of kosten.", "bewijsvraag": "Welke verwachting is uitgesproken?", "bewijsvoorbeelden": ["doelstelling in een plan"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "werkprocessen_effect_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Van ten minste één AI-toepassing is het effect gemeten tegen een nulmeting.", "bewijsvraag": "Laat de meting van vóór en na zien.", "bewijsvoorbeelden": ["nulmeting en nameting", "evaluatierapport"], "analyses": ["A", "B", "C", "E", "G", "H", "I"] },
+            { "id": "werkprocessen_effect_3", "niveau": 3, "kant": "borging", "tekst": "Voor elke AI-toepassing in gebruik zijn maatstaven afgesproken, en die worden periodiek aan de eigenaar gerapporteerd.", "bewijsvraag": "Welke maatstaven, en wanneer is er voor het laatst gerapporteerd?", "bewijsvoorbeelden": ["dashboard", "periodieke rapportage"], "analyses": ["A", "B", "D", "G", "H", "I"] },
+            { "id": "werkprocessen_effect_4", "niveau": 4, "kant": "borging", "tekst": "Effecten worden in de hele organisatie met dezelfde maatstaven gemeten, zodat onderdelen vergelijkbaar zijn.", "bewijsvraag": "Welke uniforme maatstaven, en waar staat de vergelijking?", "bewijsvoorbeelden": ["uniforme rapportage over onderdelen"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "werkprocessen_effect_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Metingen worden gebruikt om te voorspellen wat nieuwe toepassingen gaan opleveren, en die voorspellingen worden achteraf getoetst.", "bewijsvraag": "Welke voorspelling is achteraf vergeleken met de uitkomst?", "bewijsvoorbeelden": ["voorspelling tegenover realisatie"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risico",
+      "naam": "Risico en governance",
+      "kant": "organisatie",
+      "beschrijving": "Wie beslist over AI, wat mag en wat niet, en wat er gebeurt als het misgaat.",
+      "themas": [
+        {
+          "id": "risico_eigenaarschap",
+          "naam": "Eigenaarschap en besluitvorming",
+          "beschrijving": "Of elke AI-toepassing een aanspreekbare eigenaar heeft en besluiten via een vast proces lopen.",
+          "stellingen": [
+            { "id": "risico_eigenaarschap_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Het is bekend wie in de organisatie over AI gaat, ook als dat nog informeel is.", "bewijsvraag": "Wie is dat, en weten anderen dat ook?", "bewijsvoorbeelden": ["aanspreekpunt", "intranetvermelding"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "risico_eigenaarschap_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Voor elke AI-toepassing in gebruik is één eigenaar benoemd die aanspreekbaar is op de uitkomsten.", "bewijsvraag": "Laat het overzicht van toepassingen met eigenaren zien.", "bewijsvoorbeelden": ["eigenaarregister"], "analyses": ["A", "B", "C", "G", "H"] },
+            { "id": "risico_eigenaarschap_3", "niveau": 3, "kant": "borging", "tekst": "Besluiten over de inzet van AI, over data en over acceptabel risico lopen via een vast besluitproces met vastgelegde bevoegdheden.", "bewijsvraag": "Welke mandaatregeling, en welk besluit is het laatst genomen?", "bewijsvoorbeelden": ["mandaatregeling", "besluitenlijst"], "analyses": ["A", "B", "C", "D", "E", "G", "H"] },
+            { "id": "risico_eigenaarschap_4", "niveau": 4, "kant": "borging", "tekst": "De governance geldt voor de hele organisatie, ook voor AI die afdelingen zelf of via leveranciers hebben ingevoerd.", "bewijsvraag": "Hoe zijn toepassingen buiten IT om in beeld gebracht en behandeld?", "bewijsvoorbeelden": ["inventarisatie van eigen en leverancierstoepassingen", "behandeling daarvan"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "risico_eigenaarschap_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De governance wordt aangepast op nieuwe technieken en regels voordat die tot problemen leiden.", "bewijsvraag": "Welke aanpassing is gedaan vóórdat er een probleem was?", "bewijsvoorbeelden": ["horizonscan", "wijzigingshistorie van de governance"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "risico_beleid",
+          "naam": "Beleid en naleving",
+          "beschrijving": "Of er beleid is dat de wettelijke eisen vertaalt naar de eigen organisatie, en of dat wordt nageleefd.",
+          "stellingen": [
+            { "id": "risico_beleid_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Er zijn basisafspraken over wat medewerkers wel en niet met AI mogen doen, bijvoorbeeld geen vertrouwelijke gegevens in externe hulpmiddelen.", "bewijsvraag": "Waar staan die afspraken en hoe zijn ze bekendgemaakt?", "bewijsvoorbeelden": ["richtlijn", "bericht aan medewerkers"], "analyses": ["A", "B", "F", "G", "H"] },
+            { "id": "risico_beleid_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Er is AI-beleid dat de belangrijkste wettelijke eisen vertaalt naar de eigen organisatie, waaronder de Europese AI-verordening en de privacyregels.", "bewijsvraag": "Laat het beleid zien en wie het heeft vastgesteld.", "bewijsvoorbeelden": ["beleidsdocument", "vaststellingsbesluit"], "analyses": ["A", "B", "C", "G", "H", "I"] },
+            { "id": "risico_beleid_3", "niveau": 3, "kant": "borging", "tekst": "AI-toepassingen worden vóór ingebruikname getoetst aan het beleid en ingedeeld naar risico, en die toetsing is vastgelegd.", "bewijsvraag": "Laat een toetsingsdossier met risico-indeling zien.", "bewijsvoorbeelden": ["toetsingsdossiers", "risicoclassificatie per toepassing"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "risico_beleid_4", "niveau": 4, "kant": "borging", "tekst": "De naleving van het beleid wordt in de hele organisatie periodiek gecontroleerd, en afwijkingen worden opgevolgd.", "bewijsvraag": "Wanneer was de laatste controle en wat is ermee gedaan?", "bewijsvoorbeelden": ["auditrapport", "opvolging van afwijkingen"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "risico_beleid_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Het beleid wordt proactief bijgesteld op komende wetgeving en op eigen ervaringen.", "bewijsvraag": "Welke bijstelling is gedaan op een regel die nog niet gold?", "bewijsvoorbeelden": ["wijzigingshistorie van het beleid"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "risico_verantwoord",
+          "naam": "Verantwoorde AI en incidenten",
+          "beschrijving": "Of de organisatie weet welke uitkomsten onacceptabel zijn, betrokkenen informeert, en incidenten opvolgt.",
+          "stellingen": [
+            { "id": "risico_verantwoord_1", "niveau": 1, "kant": "vaardigheid", "tekst": "De organisatie heeft besproken welke uitkomsten van AI zij onacceptabel vindt, bijvoorbeeld ongelijke behandeling of afwijzingen die niemand kan uitleggen.", "bewijsvraag": "Waar staan die uitgangspunten?", "bewijsvoorbeelden": ["vastgelegde principes", "verslag van de bespreking"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "risico_verantwoord_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Voor AI-toepassingen die mensen raken is bekeken of ze groepen benadelen, en weten betrokkenen dat AI is gebruikt.", "bewijsvraag": "Welke beoordeling, en hoe zijn betrokkenen geïnformeerd?", "bewijsvoorbeelden": ["beoordeling op benadeling", "informatie aan klanten of medewerkers"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "risico_verantwoord_3", "niveau": 3, "kant": "borging", "tekst": "Incidenten met AI worden geregistreerd, beoordeeld en opgevolgd met een vaste eigenaar, en betrokkenen kunnen bezwaar maken tegen een uitkomst.", "bewijsvraag": "Laat het incidentregister en de bezwaarprocedure zien.", "bewijsvoorbeelden": ["incidentregister", "bezwaarprocedure"], "analyses": ["A", "B", "C", "D", "G", "H"] },
+            { "id": "risico_verantwoord_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Toetsing op eerlijkheid en uitlegbaarheid is standaard voor alle toepassingen die mensen raken, in de hele organisatie.", "bewijsvraag": "Welke toetsnorm, en welke toepassingen zijn ermee getoetst?", "bewijsvoorbeelden": ["toetsnorm", "overzicht getoetste toepassingen"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "risico_verantwoord_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie legt naar buiten verantwoording af over haar AI-gebruik en betrekt belanghebbenden bij de inrichting ervan.", "bewijsvraag": "Welke verantwoording is gepubliceerd en wie is betrokken?", "bewijsvoorbeelden": ["verantwoordingsrapport", "verslag van overleg met belanghebbenden"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "naam": "Data",
+      "kant": "systeem",
+      "beschrijving": "Of de data voor AI beschikbaar, bruikbaar en betrouwbaar is, en of de organisatie weet waar ze vandaan komt.",
+      "themas": [
+        {
+          "id": "data_beschikbaar",
+          "naam": "Beschikbaar en bruikbaar",
+          "beschrijving": "Of de organisatie weet welke data ze heeft, erbij kan en die ervoor mag gebruiken.",
+          "stellingen": [
+            { "id": "data_beschikbaar_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Het is bekend welke data de organisatie heeft en waar die staat.", "bewijsvraag": "Welk overzicht, en hoe actueel is het?", "bewijsvoorbeelden": ["dataoverzicht", "systeemlandschap met gegevensstromen"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "data_beschikbaar_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Voor de AI-toepassingen in gebruik is de benodigde data toegankelijk, en is vastgelegd dat die ervoor gebruikt mag worden (eigendom, toestemming, privacy).", "bewijsvraag": "Laat de toegangsafspraak en de grondslag voor gebruik zien.", "bewijsvoorbeelden": ["toegangsafspraak", "vastgelegde grondslag of toestemming"], "analyses": ["A", "B", "G", "H", "I"] },
+            { "id": "data_beschikbaar_3", "niveau": 3, "kant": "borging", "tekst": "Data heeft eigenaren die beslissen over het gebruik, en aanvragen voor AI lopen via een vaste weg.", "bewijsvraag": "Wie is eigenaar van de belangrijkste bron, en hoe loopt een aanvraag?", "bewijsvoorbeelden": ["data-eigenaarschap", "aanvraagproces"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "data_beschikbaar_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Data is in de hele organisatie vindbaar en herbruikbaar via gedeelde voorzieningen, zodat nieuwe toepassingen niet opnieuw beginnen.", "bewijsvraag": "Welke voorziening, en welke toepassing heeft die hergebruikt?", "bewijsvoorbeelden": ["datacatalogus", "gedeeld dataplatform"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "data_beschikbaar_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie ontsluit actief nieuwe databronnen, intern, extern of synthetisch, om toekomstige toepassingen mogelijk te maken.", "bewijsvraag": "Welke bron is ontsloten voordat er een concrete toepassing was?", "bewijsvoorbeelden": ["databronnenstrategie", "verwerving van externe data"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "data_kwaliteit",
+          "naam": "Kwaliteit en herkomst",
+          "beschrijving": "Of de kwaliteit van de data bekend is, wordt bewaakt, en of de herkomst traceerbaar is.",
+          "stellingen": [
+            { "id": "data_kwaliteit_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Het is bekend welke databronnen onbetrouwbaar zijn en waarom.", "bewijsvraag": "Welke knelpunten zijn benoemd?", "bewijsvoorbeelden": ["knelpuntenlijst", "bevindingen uit een datascan"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "data_kwaliteit_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Voor de data die AI-toepassingen voedt is de kwaliteit beoordeeld, en de belangrijkste gebreken zijn hersteld of afgeschermd.", "bewijsvraag": "Laat de kwaliteitsbeoordeling en de herstelacties zien.", "bewijsvoorbeelden": ["kwaliteitsrapport", "herstelacties"], "analyses": ["A", "B", "C", "E", "G", "H"] },
+            { "id": "data_kwaliteit_3", "niveau": 3, "kant": "borging", "tekst": "Datakwaliteit wordt gemeten en bewaakt met afgesproken normen, en de herkomst van data is traceerbaar.", "bewijsvraag": "Welke normen, welke meting, en hoe is de herkomst vastgelegd?", "bewijsvoorbeelden": ["kwaliteitsmetingen", "herkomstregistratie"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "data_kwaliteit_4", "niveau": 4, "kant": "borging", "tekst": "Kwaliteitsnormen en bewaking gelden voor alle data die AI gebruikt, in de hele organisatie.", "bewijsvraag": "Welke bronnen vallen nog buiten de bewaking?", "bewijsvoorbeelden": ["dekkingsoverzicht van de bewaking"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "data_kwaliteit_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Kwaliteitsproblemen worden bij de bron voorkomen door aangepaste processen en systemen, in plaats van achteraf gerepareerd.", "bewijsvraag": "Welk probleem is bij de bron opgelost?", "bewijsvoorbeelden": ["bronverbeteringen", "aangepast invoerproces"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bouwen",
+      "naam": "Bouwen en integreren",
+      "kant": "systeem",
+      "beschrijving": "Of AI-toepassingen met discipline worden ontworpen, gebouwd, gekoppeld aan bestaande systemen en getoetst voordat ze in gebruik gaan.",
+      "themas": [
+        {
+          "id": "bouwen_bouwen",
+          "naam": "Ontwerpen en bouwen",
+          "beschrijving": "Of toepassingen volgens afspraken worden gebouwd en gekoppeld, met herbruikbare bouwstenen.",
+          "stellingen": [
+            { "id": "bouwen_bouwen_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Er wordt geprobeerd AI-oplossingen te bouwen of in te richten, al is het met losse hulpmiddelen.", "bewijsvraag": "Welk prototype bestaat er?", "bewijsvoorbeelden": ["prototype", "proefopstelling"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "bouwen_bouwen_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Ten minste één AI-toepassing is gebouwd of ingericht, gekoppeld aan bestaande systemen en in gebruik in een echt proces.", "bewijsvraag": "Welke toepassing, aan welke systemen gekoppeld?", "bewijsvoorbeelden": ["werkende toepassing", "koppelingsoverzicht"], "analyses": ["A", "B", "E", "G", "H"] },
+            { "id": "bouwen_bouwen_3", "niveau": 3, "kant": "borging", "tekst": "Er zijn afspraken over hoe AI-toepassingen worden ontworpen en gebouwd (architectuur, hergebruik, beveiliging, koppelingen), met een eigenaar van die afspraken.", "bewijsvraag": "Waar staan de afspraken en wie beheert ze?", "bewijsvoorbeelden": ["ontwerprichtlijnen", "architectuurbesluiten"], "analyses": ["A", "B", "C", "D", "E", "G", "H", "I"] },
+            { "id": "bouwen_bouwen_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Herbruikbare bouwstenen en standaarden maken het mogelijk toepassingen in meerdere onderdelen uit te rollen zonder opnieuw te bouwen.", "bewijsvraag": "Welke bouwsteen is in meer dan één onderdeel gebruikt?", "bewijsvoorbeelden": ["gedeeld platform", "hergebruiksoverzicht"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "bouwen_bouwen_5", "niveau": 5, "kant": "vaardigheid", "tekst": "Nieuwe toepassingen zijn binnen een voorspelbare tijd te bouwen en uit te rollen, en de bouwaanpak wordt zelf vernieuwd op nieuwe technieken.", "bewijsvraag": "Wat is de doorlooptijd van de laatste drie toepassingen, en welke vernieuwing is doorgevoerd?", "bewijsvoorbeelden": ["doorlooptijden", "vernieuwingen in de bouwaanpak"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "bouwen_toetsen",
+          "naam": "Toetsen vóór ingebruikname",
+          "beschrijving": "Of toepassingen vóór gebruik worden getest op werking, afwijkend gedrag en uitlegbaarheid, volgens een vaste norm.",
+          "stellingen": [
+            { "id": "bouwen_toetsen_1", "niveau": 1, "kant": "vaardigheid", "tekst": "AI-toepassingen worden uitgeprobeerd voordat ze in gebruik gaan, al is het informeel.", "bewijsvraag": "Wat is er uitgeprobeerd en door wie?", "bewijsvoorbeelden": ["testverslag", "proefperiode"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "bouwen_toetsen_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Van ten minste één toepassing is vóór ingebruikname getest hoe die zich gedraagt bij fouten, afwijkende invoer en misbruik, en is vastgelegd wat acceptabel is.", "bewijsvraag": "Laat het testplan met de acceptatiecriteria zien.", "bewijsvoorbeelden": ["testplan met acceptatiecriteria", "testuitkomsten"], "analyses": ["A", "B", "C", "G", "H"] },
+            { "id": "bouwen_toetsen_3", "niveau": 3, "kant": "borging", "tekst": "Elke toepassing moet een vaste toets doorstaan (werking, afwijkend gedrag, uitlegbaarheid van uitkomsten) voordat ze in gebruik gaat, en de uitkomst wordt vastgelegd.", "bewijsvraag": "Welke toetsnorm, en welk dossier hoort bij de laatste toepassing?", "bewijsvoorbeelden": ["toetsnorm", "toetsdossiers"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "bouwen_toetsen_4", "niveau": 4, "kant": "borging", "tekst": "Dezelfde toetsnorm geldt in de hele organisatie, ook voor toepassingen van leveranciers.", "bewijsvraag": "Welke leverancierstoepassing is volgens de norm getoetst?", "bewijsvoorbeelden": ["dekkingsoverzicht", "toetsing van een leverancierstoepassing"], "analyses": ["A", "B", "C", "D", "G", "H"] },
+            { "id": "bouwen_toetsen_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De toetsen worden aangescherpt op basis van incidenten en nieuwe inzichten, en zwaktes worden actief opgezocht.", "bewijsvraag": "Welke aanscherping volgde op een incident, en wie zoekt zwaktes op?", "bewijsvoorbeelden": ["verbeterhistorie van de toets", "verslag van aanvalstesten"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "beheer",
+      "naam": "Beheer in productie",
+      "kant": "systeem",
+      "beschrijving": "Of draaiende AI-toepassingen worden bewaakt, onderhouden en beveiligd, met afspraken over prestaties.",
+      "themas": [
+        {
+          "id": "beheer_bewaken",
+          "naam": "Bewaken en onderhouden",
+          "beschrijving": "Of de werking, het gebruik en de kosten van toepassingen worden gevolgd en of ze worden onderhouden als hun gedrag verandert.",
+          "stellingen": [
+            { "id": "beheer_bewaken_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Het is bekend wie ingrijpt als een AI-toepassing in gebruik iets verkeerds doet.", "bewijsvraag": "Wie is dat, en weten gebruikers dat?", "bewijsvoorbeelden": ["contactpersoon", "escalatieafspraak"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "beheer_bewaken_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Van AI-toepassingen in gebruik worden de werking, het gebruik en de kosten gevolgd.", "bewijsvraag": "Laat de logging en het kostenoverzicht zien.", "bewijsvoorbeelden": ["logging", "kostenoverzicht"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "beheer_bewaken_3", "niveau": 3, "kant": "borging", "tekst": "Er zijn afspraken over prestaties (kwaliteit, beschikbaarheid, kosten) en over wat er gebeurt bij afwijkingen, en modellen worden onderhouden als hun gedrag verandert.", "bewijsvraag": "Welke afspraken, en wanneer is een model voor het laatst bijgewerkt en waarom?", "bewijsvoorbeelden": ["prestatieafspraken", "onderhoudshistorie"], "analyses": ["A", "B", "C", "D", "E", "G", "H", "I"] },
+            { "id": "beheer_bewaken_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Het beheer is voor alle toepassingen op dezelfde manier ingericht, met gedeelde bewaking.", "bewijsvraag": "Welke toepassingen vallen nog buiten de gedeelde bewaking?", "bewijsvoorbeelden": ["beheeroverzicht", "centrale bewaking"], "analyses": ["A", "B", "C", "G", "H"] },
+            { "id": "beheer_bewaken_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De prestaties in productie zijn voorspelbaar en verbeteren aantoonbaar door geleerde lessen.", "bewijsvraag": "Welke trend laat de verbetering zien?", "bewijsvoorbeelden": ["prestatietrend over tijd", "doorgevoerde verbeteringen"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "beheer_beveiligen",
+          "naam": "Beveiligen",
+          "beschrijving": "Of de extra risico's van AI, zoals manipulatie van invoer en lekken via antwoorden, bekend zijn en afgedekt, ook voor zelfstandig handelende toepassingen.",
+          "stellingen": [
+            { "id": "beheer_beveiligen_1", "niveau": 1, "kant": "vaardigheid", "tekst": "De organisatie weet welke risico's AI-toepassingen toevoegen, zoals manipulatie van de invoer en het lekken van gegevens via antwoorden.", "bewijsvraag": "Welke inventarisatie van risico's is gemaakt?", "bewijsvoorbeelden": ["risico-inventarisatie", "dreigingsoverzicht"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "beheer_beveiligen_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Toepassingen in gebruik zijn beschermd tegen de bekendste aanvallen en hebben beperkte toegang tot gegevens en systemen.", "bewijsvraag": "Welke maatregelen, en welk toegangsmodel?", "bewijsvoorbeelden": ["maatregelenoverzicht", "toegangsmodel per toepassing"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "beheer_beveiligen_3", "niveau": 3, "kant": "borging", "tekst": "AI-beveiliging is onderdeel van het bestaande beveiligingsbeleid, met een eigenaar en periodieke toetsing, en voor zelfstandig handelende toepassingen (agents) zijn de bevoegdheden begrensd.", "bewijsvraag": "Waar staat het in het beleid, en hoe zijn de bevoegdheden van agents begrensd?", "bewijsvoorbeelden": ["beveiligingsbeleid met AI-paragraaf", "begrenzing van agents"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "beheer_beveiligen_4", "niveau": 4, "kant": "borging", "tekst": "De beveiliging van AI wordt in de hele organisatie bewaakt en getest, ook bij leveranciers.", "bewijsvraag": "Welke test is het laatst uitgevoerd, en bij welke leverancier?", "bewijsvoorbeelden": ["testrapporten", "leveranciersbeoordeling op beveiliging"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "beheer_beveiligen_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie anticipeert op nieuwe aanvalsvormen en test daarop voordat ze zich voordoen.", "bewijsvraag": "Op welke nieuwe aanvalsvorm is getest?", "bewijsvoorbeelden": ["dreigingsanalyse", "proactieve testen"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "technologie",
+      "naam": "Technologie en leveranciers",
+      "kant": "systeem",
+      "beschrijving": "Of de infrastructuur opschalen toelaat en of de afhankelijkheid van leveranciers bekend en beheersbaar is.",
+      "themas": [
+        {
+          "id": "technologie_infrastructuur",
+          "naam": "Infrastructuur en opschalen",
+          "beschrijving": "Of de infrastructuur toepassingen betrouwbaar draagt, meegroeit met de vraag en organisatiebrede uitrol toelaat.",
+          "stellingen": [
+            { "id": "technologie_infrastructuur_1", "niveau": 1, "kant": "vaardigheid", "tekst": "De organisatie heeft toegang tot AI-voorzieningen (cloud, modellen, rekenkracht) om te kunnen beginnen.", "bewijsvraag": "Welke voorzieningen zijn beschikbaar?", "bewijsvoorbeelden": ["overzicht beschikbare diensten"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "technologie_infrastructuur_2", "niveau": 2, "kant": "vaardigheid", "tekst": "De infrastructuur draagt de toepassingen in gebruik betrouwbaar, en de kosten zijn inzichtelijk.", "bewijsvraag": "Wat is de beschikbaarheid geweest, en wat kost het per maand?", "bewijsvoorbeelden": ["beschikbaarheidscijfers", "kostenoverzicht"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "technologie_infrastructuur_3", "niveau": 3, "kant": "borging", "tekst": "Er is een eigenaar voor de AI-infrastructuur, met een plan en een budget dat meegroeit met de vraag.", "bewijsvraag": "Wie is eigenaar, en laat de roadmap en het budget zien.", "bewijsvoorbeelden": ["roadmap", "budget"], "analyses": ["A", "B", "D", "E", "G", "H"] },
+            { "id": "technologie_infrastructuur_4", "niveau": 4, "kant": "vaardigheid", "tekst": "Toepassingen kunnen in de hele organisatie worden uitgerold zonder dat de infrastructuur de beperking is.", "bewijsvraag": "Welke uitrol laat dat zien?", "bewijsvoorbeelden": ["uitrolhistorie", "capaciteitsplanning"], "analyses": ["A", "B", "C", "G", "H"] },
+            { "id": "technologie_infrastructuur_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De infrastructuur wordt vooruitlopend vernieuwd op verwachte behoeften en nieuwe technieken.", "bewijsvraag": "Welke vernieuwing is gedaan vóór de vraag ontstond?", "bewijsvoorbeelden": ["vernieuwingsplan", "vooruitlopende investering"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        },
+        {
+          "id": "technologie_leveranciers",
+          "naam": "Leveranciers en afhankelijkheid",
+          "beschrijving": "Of leveranciers bewust zijn gekozen, contractueel zijn geregeld en of de organisatie kan wisselen zonder schade.",
+          "stellingen": [
+            { "id": "technologie_leveranciers_1", "niveau": 1, "kant": "vaardigheid", "tekst": "Het is bekend welke AI-leveranciers en -diensten in gebruik zijn, ook buiten IT om.", "bewijsvraag": "Laat het overzicht zien en hoe het is samengesteld.", "bewijsvoorbeelden": ["leveranciersoverzicht", "inventarisatie per afdeling"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "technologie_leveranciers_2", "niveau": 2, "kant": "vaardigheid", "tekst": "Leveranciers zijn bewust gekozen op geschiktheid, kosten en gegevensbescherming, en de contracten regelen het gebruik van gegevens.", "bewijsvraag": "Laat de selectie en het contract van de belangrijkste leverancier zien.", "bewijsvoorbeelden": ["selectiedocument", "contract met gegevensafspraken"], "analyses": ["A", "B", "G", "H"] },
+            { "id": "technologie_leveranciers_3", "niveau": 3, "kant": "borging", "tekst": "Voor elke kritieke leverancier is de afhankelijkheid beoordeeld, en zijn afspraken over prestaties, continuïteit en beëindiging vastgelegd.", "bewijsvraag": "Welke leveranciers zijn kritiek, en wat is afgesproken over beëindiging?", "bewijsvoorbeelden": ["afhankelijkheidsanalyse", "exit-afspraken in contracten"], "analyses": ["A", "B", "C", "D", "G", "H"] },
+            { "id": "technologie_leveranciers_4", "niveau": 4, "kant": "borging", "tekst": "Leveranciersbeheer voor AI is in de hele organisatie ingericht, en voor kritieke toepassingen is wisselen van leverancier voorbereid of beproefd.", "bewijsvraag": "Welk exitplan bestaat er, en is het ooit getest?", "bewijsvoorbeelden": ["exitplannen", "verslag van een wisseltest"], "analyses": ["A", "B", "D", "G", "H"] },
+            { "id": "technologie_leveranciers_5", "niveau": 5, "kant": "vaardigheid", "tekst": "De organisatie volgt het aanbod actief en kan snel wisselen of aanhaken zonder verstoring.", "bewijsvraag": "Welke wissel of aansluiting is recent zonder verstoring gedaan?", "bewijsvoorbeelden": ["marktverkenning", "wisselhistorie"], "analyses": ["A", "B", "G", "H"] }
+          ]
+        }
+      ]
+    }
+  ],
+  "afhankelijkheden": [
+    { "van": "werkprocessen_herontwerp", "vanafNiveau": 3, "vereist": "werkprocessen_beproeven", "minimaalNiveau": 2, "reden": "Herontwerpen zonder beproefde toepassing is ontwerpen op papier." },
+    { "van": "werkprocessen_herontwerp", "vanafNiveau": 3, "vereist": "mensen_vaardigheden", "minimaalNiveau": 2, "reden": "Een herontworpen proces draait niet zonder mensen die ermee kunnen werken." },
+    { "van": "bouwen_bouwen", "vanafNiveau": 3, "vereist": "data_kwaliteit", "minimaalNiveau": 2, "reden": "Bouwen op data waarvan de kwaliteit onbekend is levert onbetrouwbare toepassingen." },
+    { "van": "beheer_bewaken", "vanafNiveau": 3, "vereist": "bouwen_toetsen", "minimaalNiveau": 2, "reden": "Je kunt niet bewaken wat nooit tegen een norm is getoetst." },
+    { "van": "technologie_infrastructuur", "vanafNiveau": 4, "vereist": "risico_eigenaarschap", "minimaalNiveau": 3, "reden": "Organisatiebreed uitrollen zonder vast besluitproces vermenigvuldigt risico's." },
+    { "van": "technologie_infrastructuur", "vanafNiveau": 4, "vereist": "beheer_bewaken", "minimaalNiveau": 3, "reden": "Opschalen zonder gedeelde bewaking betekent opschalen van blinde vlekken." },
+    { "van": "strategie_portfolio", "vanafNiveau": 3, "vereist": "werkprocessen_effect", "minimaalNiveau": 2, "reden": "Sturen op rendement vereist dat er ten minste één keer is gemeten." },
+    { "van": "mensen_omgang", "vanafNiveau": 3, "vereist": "risico_beleid", "minimaalNiveau": 2, "reden": "Kritisch gebruik vereist dat duidelijk is wat mag en wat niet." },
+    { "van": "risico_verantwoord", "vanafNiveau": 3, "vereist": "risico_eigenaarschap", "minimaalNiveau": 2, "reden": "Incidenten opvolgen vereist een aanspreekbare eigenaar per toepassing." },
+    { "van": "bouwen_toetsen", "vanafNiveau": 4, "vereist": "technologie_leveranciers", "minimaalNiveau": 3, "reden": "Dezelfde toetsnorm voor leverancierstoepassingen vereist contractuele grip op leveranciers." }
+  ],
+  "tegenstrijdigheden": [
+    { "id": "E1", "soort": "assen", "als": { "as": "bouwen", "minimaal": 3 }, "terwijl": { "as": "data", "maximaal": 1 }, "uitleg": "Gedisciplineerd bouwen op data die niemand kent is onwaarschijnlijk; waarschijnlijk is Bouwen te positief beoordeeld." },
+    { "id": "E2", "soort": "assen", "als": { "as": "technologie", "minimaal": 3 }, "terwijl": { "as": "risico", "maximaal": 1 }, "uitleg": "Opschalen zonder governance: ofwel de governance is onderschat, ofwel het opschalen is risicovol." },
+    { "id": "E3", "soort": "assen", "als": { "as": "werkprocessen", "minimaal": 4 }, "terwijl": { "as": "mensen", "maximaal": 1 }, "uitleg": "Organisatiebreed herontworpen werk zonder opgeleide mensen kan niet draaien." },
+    { "id": "E4", "soort": "assen", "als": { "as": "beheer", "minimaal": 3 }, "terwijl": { "as": "bouwen", "maximaal": 1 }, "uitleg": "Beheren met afspraken van iets dat zonder discipline is gebouwd." },
+    { "id": "E5", "soort": "themas", "als": { "thema": "strategie_portfolio", "minimaal": 3 }, "terwijl": { "thema": "werkprocessen_effect", "maximaal": 1 }, "uitleg": "Sturen op rendement terwijl er niets is gemeten." },
+    { "id": "E6", "soort": "spreiding", "als": { "minimaal": 5 }, "terwijl": { "maximaal": 1 }, "uitleg": "Een as op het hoogste niveau naast een as op het laagste komt in de praktijk zelden voor; controleer de hoogste as." },
+    { "id": "E7", "soort": "overschatting", "aandeelJa": 0.7, "aandeelGezien": 0.2, "uitleg": "Patroon van zelfoverschatting: veel 'ja' zonder gezien bewijs. De as is indicatief." },
+    { "id": "E8", "soort": "nvt", "aandeelNvt": 0.25, "uitleg": "De scope past niet bij deze as, of 'niet van toepassing' wordt gebruikt om vragen te ontwijken." },
+    { "id": "E9", "soort": "ladder", "uitleg": "Niveau 1 van een thema is 'nee' terwijl een hoger niveau 'ja' is: de invuller heeft de ladder niet als ladder gelezen; antwoorden nalopen." }
+  ],
+  "realisatievoorwaarden": [
+    { "scenario": "realistisch", "thema": "werkprocessen_herontwerp", "minimaalNiveau": 2, "reden": "Vrijgekomen tijd ontstaat pas als het werk anders wordt ingericht; een hulpmiddel erbij levert geen capaciteit op." },
+    { "scenario": "realistisch", "thema": "mensen_vaardigheden", "minimaalNiveau": 2, "reden": "Mensen moeten met de nieuwe werkwijze kunnen werken." },
+    { "scenario": "realistisch", "thema": "risico_beleid", "minimaalNiveau": 2, "reden": "Zonder duidelijke regels blijft gebruik onzeker en wordt het teruggedraaid bij het eerste incident." },
+    { "scenario": "realistisch", "thema": "data_beschikbaar", "minimaalNiveau": 2, "alleenBij": "gegevensverwerkende taken", "reden": "Taken met veel gegevensverwerking zijn alleen te automatiseren als de data er is en gebruikt mag worden." },
+    { "scenario": "agressief", "thema": "werkprocessen_effect", "minimaalNiveau": 3, "reden": "Het ambitieuze scenario veronderstelt sturing op gemeten effect." },
+    { "scenario": "agressief", "thema": "bouwen_bouwen", "minimaalNiveau": 3, "reden": "Hogere automatiseringsgraden vereisen eigen toepassingen die betrouwbaar draaien." },
+    { "scenario": "agressief", "thema": "beheer_bewaken", "minimaalNiveau": 3, "reden": "Hogere automatiseringsgraden vereisen toepassingen die bewaakt en onderhouden worden." },
+    { "scenario": "agressief", "thema": "strategie_verandering", "minimaalNiveau": 3, "reden": "De bestemming van vrijgekomen capaciteit moet geregeld zijn, anders verdampt ze." },
+    { "scenario": "kwaliteitsverbetering", "thema": "werkprocessen_effect", "minimaalNiveau": 2, "reden": "Kwaliteit die niet wordt gemeten is niet aantoonbaar; geldt waar grote rollen de bestemming kwaliteitsverbetering hebben." }
+  ]
+}
