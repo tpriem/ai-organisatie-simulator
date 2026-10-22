@@ -3,7 +3,16 @@ import { driedeling } from "../../src/competencyProfile.js";
 import { getWaardetype } from "../../src/config.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../src/taakprofiel.js";
-import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
+import {
+  calculateCompetentieAgenda,
+  agendaRijen,
+  agendaCellen,
+  agendaZin,
+  agendaRestZin,
+  agendaLaagZin,
+  AGENDA_INTRO,
+  AGENDA_KOLOMMEN,
+} from "../../src/competencyAgenda.js";
 import {
   dekkingZinnen,
   beroepsmatchRegel,
@@ -179,44 +188,31 @@ function dekkingBlock(results) {
   ${z.zwak ? `<p>${esc(z.zwak)}</p>` : ""}`;
 }
 
-// De ontwikkelbehoefte opgeteld over alle rollen. Zelfde berekening als in de app.
+// De competenties die de hele organisatie raken. Zelfde berekening en teksten als in de app.
 function ontwikkelagendaBlock(rollen) {
   const agenda = calculateCompetentieAgenda(rollen, "realistisch");
   if (agenda.competenties.length === 0) return "";
 
-  const breed = agenda.competenties.filter((c) => c.aantalRollen > 1);
-  const nietTrainbaar = agenda.competenties.filter((c) => c.trainbaarheid === "laag");
-
-  const rijen = agenda.competenties
+  const { rijen: zichtbaar, rest } = agendaRijen(agenda, 5);
+  const rijen = zichtbaar
     .map((c) => {
+      const [naam, nodigIn, trainbaar] = agendaCellen(c, agenda.aantalRollenTotaal);
       const klasse = TIER_KLASSE[c.trainbaarheid] ?? "c-slate";
-      return `<tr>
-        <td>${esc(c.naam)}</td>
-        <td><i class="tier-stip ${klasse}"></i>${c.trainbaarheid ? `${esc(c.trainbaarheid)} trainbaar` : "onbekend"}</td>
-        <td>${c.aantalRollen}</td><td>${nl(c.fte, 1)}</td><td>${nl(c.gemiddeldBelang, 1)}</td>
-      </tr>`;
+      return `<tr><td>${esc(naam)}</td><td>${esc(nodigIn)}</td><td><i class="tier-stip ${klasse}"></i>${esc(trainbaar)}</td></tr>`;
     })
     .join("");
+  const laagZin = agendaLaagZin(agenda);
 
   return `
-  <h2>Ontwikkelagenda — organisatiebreed</h2>
-  <p class="disclaimer">De competenties die ná de transformatie nieuw nodig zijn, opgeteld over alle rollen en gewogen naar de FTE die overblijft. Een competentie die in meerdere rollen terugkomt is één programma, geen reeks losse gesprekken.</p>
-  <p><strong>${agenda.competenties.length}</strong> competenties zijn nieuw nodig, waarvan <strong>${breed.length}</strong> in meerdere rollen.${
-    agenda.aandeelNietTrainbaar === null
-      ? ""
-      : ` <strong>${Math.round(agenda.aandeelNietTrainbaar * 100)}%</strong> van de totale ontwikkelbehoefte is niet met training op te lossen (${nietTrainbaar.length} van de ${agenda.competenties.length} competenties).`
-  }</p>
+  <h2>Welke competenties raken de hele organisatie?</h2>
+  <p class="disclaimer">${esc(AGENDA_INTRO)}</p>
+  <p>${esc(agendaZin(agenda))}</p>
   <table>
-    <thead><tr><th>Competentie</th><th>Ontwikkelbaar</th><th>Rollen</th><th>FTE</th><th>Belang</th></tr></thead>
+    <thead><tr>${AGENDA_KOLOMMEN.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead>
     <tbody>${rijen}</tbody>
   </table>
-  ${
-    nietTrainbaar.length > 0
-      ? `<p class="disclaimer">${
-          nietTrainbaar.length === 1 ? "Eén competentie" : `${nietTrainbaar.length} competenties`
-        } in deze lijst ${nietTrainbaar.length === 1 ? "is" : "zijn"} laag trainbaar — disposities in plaats van vaardigheden. Die los je niet op met een opleidingsbudget; de vraag is of ze al in huis zijn. Toets daarop bij de huidige bezetting.</p>`
-      : ""
-  }`;
+  ${rest > 0 ? `<p class="disclaimer">${esc(agendaRestZin(rest))}</p>` : ""}
+  ${laagZin ? `<p class="disclaimer">${esc(laagZin)}</p>` : ""}`;
 }
 
 function bar(label, value, maxValue, colorClass) {

@@ -18,7 +18,16 @@ import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, 
 import { driedeling } from "../../src/competencyProfile.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../src/taakprofiel.js";
-import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
+import {
+  calculateCompetentieAgenda,
+  agendaRijen,
+  agendaCellen,
+  agendaZin,
+  agendaRestZin,
+  agendaLaagZin,
+  AGENDA_INTRO,
+  AGENDA_KOLOMMEN,
+} from "../../src/competencyAgenda.js";
 import {
   dekkingZinnen,
   beroepsmatchRegel,
@@ -504,67 +513,36 @@ const TRAINBAARHEID_LABEL = {
   laag: "laag trainbaar",
 };
 
-// De ontwikkelbehoefte opgeteld over alle rollen. Zelfde berekening als in de app.
+// De competenties die de hele organisatie raken. Zelfde berekening en teksten als in de app.
 function ontwikkelagendaSectie(rollen) {
   const agenda = calculateCompetentieAgenda(rollen, "realistisch");
   if (agenda.competenties.length === 0) return [];
 
-  const breed = agenda.competenties.filter((c) => c.aantalRollen > 1);
-  const nietTrainbaar = agenda.competenties.filter((c) => c.trainbaarheid === "laag");
-
-  const widths = [4300, 1700, 800, 800, 800];
+  const { rijen: zichtbaar, rest } = agendaRijen(agenda, 5);
+  const widths = [4600, 2000, 2000];
   const kop = new TableRow({
     tableHeader: true,
-    children: [
-      cell("Competentie", { width: widths[0], header: true }),
-      cell("Ontwikkelbaar", { width: widths[1], header: true }),
-      cell("Rollen", { width: widths[2], header: true }),
-      cell("FTE", { width: widths[3], header: true }),
-      cell("Belang", { width: widths[4], header: true }),
-    ],
+    children: AGENDA_KOLOMMEN.map((k, i) => cell(k, { width: widths[i], header: true })),
   });
-  const rijen = agenda.competenties.map((c, i) => {
-    const shaded = i % 2 === 1;
-    return new TableRow({
-      children: [
-        cell(c.naam, { width: widths[0], shaded }),
-        cell(TRAINBAARHEID_LABEL[c.trainbaarheid] ?? "onbekend", { width: widths[1], shaded }),
-        cell(String(c.aantalRollen), { width: widths[2], shaded }),
-        cell(nl(c.fte, 1), { width: widths[3], shaded }),
-        cell(nl(c.gemiddeldBelang, 1), { width: widths[4], shaded }),
-      ],
-    });
-  });
+  const rijen = zichtbaar.map((c, n) =>
+    new TableRow({
+      children: agendaCellen(c, agenda.aantalRollenTotaal).map((t, i) => cell(t, { width: widths[i], shaded: n % 2 === 1 })),
+    })
+  );
+  const laagZin = agendaLaagZin(agenda);
 
   return [
-    heading("Ontwikkelagenda — organisatiebreed"),
-    paragraph(
-      "De competenties die ná de transformatie nieuw nodig zijn, opgeteld over alle rollen en gewogen naar de FTE die overblijft. Een competentie die in meerdere rollen terugkomt is één programma, geen reeks losse gesprekken.",
-      { italics: true, size: 18, color: "64748B" }
-    ),
-    paragraph(
-      `${agenda.competenties.length} competenties zijn nieuw nodig, waarvan ${breed.length} in meerdere rollen.` +
-        (agenda.aandeelNietTrainbaar === null
-          ? ""
-          : ` ${Math.round(agenda.aandeelNietTrainbaar * 100)}% van de totale ontwikkelbehoefte is niet met training op te lossen (${nietTrainbaar.length} van de ${agenda.competenties.length} competenties).`),
-      { bold: true }
-    ),
+    heading("Welke competenties raken de hele organisatie?"),
+    paragraph(AGENDA_INTRO, { italics: true, size: 18, color: "64748B" }),
+    paragraph(agendaZin(agenda), { bold: true }),
     new Table({
-      width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA },
+      width: { size: widths.reduce((x, y) => x + y, 0), type: WidthType.DXA },
       columnWidths: widths,
       borders: tableBorders(),
       rows: [kop, ...rijen],
     }),
-    ...(nietTrainbaar.length > 0
-      ? [
-          paragraph(
-            `${nietTrainbaar.length === 1 ? "Eén competentie" : `${nietTrainbaar.length} competenties`} in deze lijst ${
-              nietTrainbaar.length === 1 ? "is" : "zijn"
-            } laag trainbaar — disposities in plaats van vaardigheden. Die los je niet op met een opleidingsbudget; de vraag is of ze al in huis zijn. Toets daarop bij de huidige bezetting.`,
-            { italics: true, size: 18, color: "64748B" }
-          ),
-        ]
-      : []),
+    ...(rest > 0 ? [paragraph(agendaRestZin(rest), { italics: true, size: 18, color: "64748B" })] : []),
+    ...(laagZin ? [paragraph(laagZin, { italics: true, size: 18, color: "64748B" })] : []),
   ];
 }
 

@@ -4,7 +4,7 @@ import mammoth from "mammoth";
 import { calculateRole, calculateOrganisatie, calculateCapaciteitBestemming } from "./calculate.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen } from "./taakprofiel.js";
 import { calculateCompetentieProfiel } from "./competencyProfile.js";
-import { calculateCompetentieAgenda } from "./competencyAgenda.js";
+import { calculateCompetentieAgenda, agendaRijen, agendaCellen, agendaZin, agendaRestZin } from "./competencyAgenda.js";
 import {
   dekkingZinnen,
   beroepsmatchRegel,
@@ -204,21 +204,23 @@ test("de fixture bevat genoeg om de ontwikkelagenda te laten zien", () => {
 });
 
 for (const formaat of ["pdf", "docx"]) {
-  test(`${formaat}: de ontwikkelagenda toont elke competentie en het niet-trainbare aandeel`, async () => {
+  test(`${formaat}: de competentietabel toont de breedste competenties en het niet-trainbare aandeel`, async () => {
     const { results, [formaat]: tekst } = await rapporten();
     const agenda = calculateCompetentieAgenda(results.rollen, "realistisch");
-    assert.ok(tekst.includes("Ontwikkelagenda"), "sectie ontbreekt");
-    for (const c of agenda.competenties) assert.ok(tekst.includes(c.naam), `competentie "${c.naam}" ontbreekt`);
-    assert.ok(
-      tekst.includes(`${Math.round(agenda.aandeelNietTrainbaar * 100)}% van de totale ontwikkelbehoefte`),
-      "niet-trainbaar aandeel ontbreekt"
-    );
-    assert.ok(tekst.includes(`${agenda.competenties.length} competenties zijn nieuw nodig`), "aantal ontbreekt");
+    assert.ok(tekst.includes("Welke competenties raken de hele organisatie?"), "sectie ontbreekt");
+    const { rijen, rest } = agendaRijen(agenda, 5);
+    for (const c of rijen) {
+      for (const cel of agendaCellen(c, agenda.aantalRollenTotaal)) assert.ok(tekst.includes(cel), `cel "${cel}" (${c.naam}) ontbreekt`);
+    }
+    if (rest > 0) assert.ok(tekst.includes(agendaRestZin(rest)), "melding over de overige competenties ontbreekt");
+    assert.ok(tekst.includes(agendaZin(agenda)), "samenvattende zin ontbreekt");
+    // De kolommen FTE en Belang zijn weg: die lazen als formatie en als een getal zonder uitleg.
+    assert.ok(!tekst.includes("Ontwikkelbaar"), "oude kolom staat er nog");
   });
 
   test(`${formaat}: zonder competentiegegevens ontbreken deze secties, zonder fout`, async () => {
     const { [formaat]: tekst } = await rapporten({ competenties: false });
-    assert.ok(!tekst.includes("Ontwikkelagenda"));
+    assert.ok(!tekst.includes("Welke competenties raken de hele organisatie?"));
     assert.ok(tekst.includes("Waar komt de capaciteit vandaan?"), "de rest van het rapport moet er gewoon zijn");
   });
 }

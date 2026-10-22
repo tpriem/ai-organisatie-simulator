@@ -6,7 +6,16 @@ import { signOut } from "next-auth/react";
 import { calculateRole, calculateCapaciteitBestemming, calculateRolBestemming } from "../../../../../src/calculate.js";
 import { calculateCompetentieTop5 } from "../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel, driedeling } from "../../../../../src/competencyProfile.js";
-import { calculateCompetentieAgenda } from "../../../../../src/competencyAgenda.js";
+import {
+  calculateCompetentieAgenda,
+  agendaRijen,
+  agendaCellen,
+  agendaZin,
+  agendaRestZin,
+  agendaLaagZin,
+  AGENDA_INTRO,
+  AGENDA_KOLOMMEN,
+} from "../../../../../src/competencyAgenda.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../../../../src/taakprofiel.js";
 import { calculateScanDekking, matchKwaliteit } from "../../../../../src/scanDekking.js";
 import {
@@ -206,70 +215,66 @@ export function CapaciteitHerkomst({ results }) {
   );
 }
 
-// De ontwikkelbehoefte opgeteld over alle rollen. Per rol staat al wat er nieuw nodig
-// is, maar los van elkaar zie je niet dat één competentie de hele organisatie raakt —
-// en dat is een organisatiebreed programma, geen reeks ontwikkelgesprekken.
+// De competenties die straks extra nodig zijn, geteld over alle functies. Per functie staat al wat
+// die functie nodig heeft; hier zie je welke competenties de hele organisatie raken. Dat is één
+// programma, geen reeks ontwikkelgesprekken. Geen kolommen voor FTE of een belangscore: dat leest als
+// formatie of als een getal zonder uitleg.
 export function CompetentieAgenda({ results }) {
-  const agenda = useMemo(
-    () => calculateCompetentieAgenda(results?.rollen ?? [], "realistisch"),
-    [results?.rollen]
-  );
+  const agenda = useMemo(() => calculateCompetentieAgenda(results?.rollen ?? [], "realistisch"), [results?.rollen]);
+  const [alles, setAlles] = useState(false);
   if (agenda.competenties.length === 0) return null;
 
   const breed = agenda.competenties.filter((c) => c.aantalRollen > 1);
-  const nietTrainbaar = agenda.competenties.filter((c) => c.trainbaarheid === "laag");
+  const { rijen, rest } = agendaRijen(agenda, alles ? agenda.competenties.length : 5);
+  const mogelijkRest = agendaRijen(agenda, 5).rest > 0;
+  const laagZin = agendaLaagZin(agenda);
 
   return (
-    <Section title="Ontwikkelagenda — organisatiebreed" icon="🎓">
-      <p className="text-xs text-slate-500 mb-4 max-w-3xl">
-        De competenties die ná de transformatie nieuw nodig zijn, opgeteld over alle rollen en gewogen naar de FTE die
-        overblijft. Een competentie die in meerdere rollen terugkomt is één programma, geen reeks losse gesprekken.
-      </p>
+    <Section title="Welke competenties raken de hele organisatie?" icon="🎓">
+      <p className="text-xs text-slate-500 mb-4 max-w-3xl">{AGENDA_INTRO}</p>
 
       <div className="grid sm:grid-cols-3 gap-3 mb-5">
-        <StatCard label="Competenties nieuw nodig" value={agenda.competenties.length} sub="over alle rollen" />
+        <StatCard label="Competenties nieuw nodig" value={agenda.competenties.length} sub="over alle functies" />
         <StatCard
-          label="Raakt meerdere rollen"
+          label="Raakt meerdere functies"
           value={breed.length}
-          sub={breed.length > 0 ? "kandidaat voor één programma" : "allemaal rolspecifiek"}
+          sub={breed.length > 0 ? "kandidaat voor één programma" : "allemaal functiespecifiek"}
         />
         <StatCard
           label="Niet met training op te lossen"
           value={agenda.aandeelNietTrainbaar === null ? "—" : `${Math.round(agenda.aandeelNietTrainbaar * 100)}%`}
-          sub={`${nietTrainbaar.length} van de ${agenda.competenties.length} competenties`}
+          sub={`${agenda.competenties.filter((c) => c.trainbaarheid === "laag").length} van de ${agenda.competenties.length} competenties`}
         />
       </div>
 
       <div className="rounded-lg border border-slate-200 overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-slate-500">
-            <tr>
-              <th className="text-left font-medium py-2 px-3">Competentie</th>
-              <th className="text-left font-medium py-2 px-3 w-40">Ontwikkelbaar</th>
-              <th className="text-right font-medium py-2 px-3 w-20">Rollen</th>
-              <th className="text-right font-medium py-2 px-3 w-20">FTE</th>
-              <th className="text-right font-medium py-2 px-3 w-20">Belang</th>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-slate-400">
+              {AGENDA_KOLOMMEN.map((k) => (
+                <th key={k} className="px-3 py-2 text-left font-medium">
+                  {k}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {agenda.competenties.map((c) => {
+          <tbody>
+            {rijen.map((c) => {
               const stijl = TRAINBAARHEID_KLEUR[c.trainbaarheid] ?? { stip: "bg-slate-300", tekst: "text-slate-400" };
+              const [naam, nodigIn, trainbaar] = agendaCellen(c, agenda.aantalRollenTotaal);
               return (
-                <tr key={c.naam} className="hover:bg-slate-50/60">
-                  <td className="py-2 px-3 text-slate-800">{c.naam}</td>
-                  <td className="py-2 px-3">
+                <tr key={c.naam} className="border-b border-slate-100 last:border-0 text-slate-700">
+                  <td className="px-3 py-2 text-slate-800">{naam}</td>
+                  {/* Welke functies het precies zijn staat achter de muisaanwijzer. */}
+                  <td className="px-3 py-2 cursor-help" title={c.rollen.join("\n")}>
+                    {nodigIn}
+                  </td>
+                  <td className="px-3 py-2">
                     <span className={`inline-flex items-center gap-1.5 whitespace-nowrap ${stijl.tekst}`}>
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${stijl.stip}`} />
-                      {c.trainbaarheid ? `${c.trainbaarheid} trainbaar` : "onbekend"}
+                      {trainbaar}
                     </span>
                   </td>
-                  {/* Welke rollen het precies zijn is nuttig maar te lang voor de regel;
-                      staat daarom achter de muisaanwijzer. */}
-                  <td className="py-2 px-3 text-right text-slate-600 cursor-help" title={c.rollen.join("\n")}>
-                    {c.aantalRollen}
-                  </td>
-                  <td className="py-2 px-3 text-right text-slate-600">{nl(c.fte, 1)}</td>
-                  <td className="py-2 px-3 text-right text-slate-600">{nl(c.gemiddeldBelang, 1)}</td>
                 </tr>
               );
             })}
@@ -277,14 +282,14 @@ export function CompetentieAgenda({ results }) {
         </table>
       </div>
 
-      {nietTrainbaar.length > 0 && (
-        <p className="mt-3 text-xs text-amber-700 max-w-3xl">
-          {nietTrainbaar.length === 1 ? "Eén competentie" : `${nietTrainbaar.length} competenties`} in deze lijst
-          {nietTrainbaar.length === 1 ? " is" : " zijn"} laag trainbaar — disposities in plaats van vaardigheden. Die
-          los je niet op met een opleidingsbudget; de vraag is of je ze al in huis hebt. Toets daarop bij de huidige
-          bezetting.
-        </p>
+      {rest > 0 && <p className="mt-2 text-xs text-slate-500">{agendaRestZin(rest)}</p>}
+      {mogelijkRest && (
+        <button type="button" onClick={() => setAlles((a) => !a)} className="mt-2 text-xs text-indigo-600 hover:underline">
+          {alles ? "Alleen de breedste vijf tonen" : `Toon alle ${agenda.competenties.length} competenties`}
+        </button>
       )}
+
+      {laagZin && <p className="mt-3 text-xs text-amber-700 max-w-3xl">{laagZin}</p>}
     </Section>
   );
 }

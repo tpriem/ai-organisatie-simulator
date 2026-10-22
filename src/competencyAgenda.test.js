@@ -87,3 +87,52 @@ test("lege of onvolledige invoer levert een lege agenda, geen fout", () => {
   const zonder = calculateCompetentieAgenda([{ rolnaam: "A", scenarios: { realistisch: { fteOver: 1 } } }]);
   assert.deepEqual(zonder.competenties, []);
 });
+
+import { agendaRijen, agendaCellen, agendaZin, agendaRestZin, agendaLaagZin, AGENDA_KOLOMMEN } from "./competencyAgenda.js";
+
+const breedAgenda = () =>
+  calculateCompetentieAgenda([
+    rol("A", 2, [["kritisch evalueren", 5], ["anderen leiden", 4]]),
+    rol("B", 3, [["kritisch evalueren", 4]]),
+    rol("C", 9, [["omgaan met onzekerheid", 3]]),
+  ]);
+
+test("agenda: de competentie die de meeste functies raakt staat bovenaan, ook bij minder FTE", () => {
+  const a = breedAgenda();
+  // omgaan met onzekerheid hangt aan 9 FTE maar aan één functie; kritisch evalueren aan twee.
+  assert.equal(a.competenties[0].naam, "kritisch evalueren");
+  assert.equal(a.aantalRollenTotaal, 3);
+});
+
+test("agenda: de cellen zeggen in hoeveel van alle functies een competentie nodig is", () => {
+  const a = breedAgenda();
+  assert.deepEqual(agendaCellen(a.competenties[0], a.aantalRollenTotaal), ["kritisch evalueren", "2 van 3 functies", "hoog trainbaar"]);
+  assert.equal(agendaCellen(a.competenties[0], a.aantalRollenTotaal).length, AGENDA_KOLOMMEN.length);
+  assert.equal(agendaCellen({ naam: "x", aantalRollen: 1, trainbaarheid: null }, 1)[1], "1 van 1 functie");
+  assert.equal(agendaCellen({ naam: "x", aantalRollen: 1, trainbaarheid: null }, 1)[2], "onbekend");
+});
+
+test("agenda: de tabel toont de top en meldt hoeveel er buiten beeld blijven", () => {
+  const taken = Array.from({ length: 8 }, (_, i) => ["kritisch evalueren", 1].map((v, j) => (j === 0 ? `c${i}` : v)));
+  const a = calculateCompetentieAgenda([rol("A", 1, taken)]);
+  const { rijen, rest } = agendaRijen(a, 5);
+  assert.equal(rijen.length, 5);
+  assert.equal(rest, 3);
+  assert.equal(agendaRestZin(rest), "Daarnaast zijn nog 3 competenties nodig in minder functies.");
+  assert.equal(agendaRestZin(0), "");
+});
+
+test("agenda: één competentie boven de grens wordt niet weggelaten", () => {
+  const taken = Array.from({ length: 6 }, (_, i) => [`c${i}`, 1]);
+  const a = calculateCompetentieAgenda([rol("A", 1, taken)]);
+  assert.deepEqual(agendaRijen(a, 5), { rijen: a.competenties, rest: 0 });
+});
+
+test("agenda: de zinnen spreken over functies en noemen het niet-trainbare deel", () => {
+  const a = breedAgenda();
+  const z = agendaZin(a);
+  assert.match(z, /^3 competenties zijn nieuw nodig, waarvan 1 in meerdere functies./);
+  assert.match(z, /\d+% van de totale ontwikkelbehoefte is niet met training op te lossen \(1 van de 3 competenties\)/);
+  assert.match(agendaLaagZin(a), /^Eén competentie in deze lijst is laag trainbaar/);
+  assert.equal(agendaLaagZin(calculateCompetentieAgenda([rol("A", 1, [["kritisch evalueren", 5]])])), "");
+});
