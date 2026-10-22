@@ -83,8 +83,8 @@ function Legenda() {
 function RolBox({ knoop, aantalVerborgen, openKlap, onKlap }) {
   const heeftKinderen = knoop.kinderen.length > 0;
   return (
-    <div className="w-[208px] rounded-lg border border-slate-200 bg-white p-2.5 text-left shadow-sm">
-      <p className="line-clamp-2 text-xs font-semibold leading-snug text-slate-800" title={knoop.rolnaam}>
+    <div className="flex h-[160px] w-[208px] flex-col rounded-lg border border-slate-200 bg-white p-2.5 text-left shadow-sm">
+      <p className="line-clamp-2 h-8 text-xs font-semibold leading-4 text-slate-800" title={knoop.rolnaam}>
         {knoop.rolnaam}
       </p>
       <p className="mt-0.5 text-[11px] text-slate-500">{nl(knoop.fteHuidig, 1)} FTE</p>
@@ -98,15 +98,18 @@ function RolBox({ knoop, aantalVerborgen, openKlap, onKlap }) {
       <p className="mt-0.5 text-[11px]">
         <Bestemming vrijPerType={knoop.vrijPerType} />
       </p>
+      {/* Alle boxen even groot: de onderste regel is er ook zonder knop, zodat de hoogte niet verspringt. */}
+      <div className="mt-auto h-6">
       {heeftKinderen && (
         <button
           type="button"
           onClick={onKlap}
-          className="mt-2 w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
+          className="w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] text-slate-600 hover:bg-slate-100"
         >
           {openKlap ? "▾" : "▸"} {aantalVerborgen} {aantalVerborgen === 1 ? "rol" : "rollen"} eronder
         </button>
       )}
+      </div>
     </div>
   );
 }
