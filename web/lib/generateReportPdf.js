@@ -171,7 +171,7 @@ function herkomstBlock(rollen) {
   <h2>Waar komt de capaciteit vandaan?</h2>
   <p class="disclaimer">Waar het werk vandaan komt dat vrijkomt, per taakcategorie. Dit is dezelfde capaciteit als hierboven; daar staat waar die naartoe kan, hier waar die uit voortkomt.</p>
   <p>${esc(herkomstZin(herkomst))}</p>
-  <table>
+  <table class="keep">
     <thead><tr>${HERKOMST_KOLOMMEN.map((k, i) => `<th${i > 0 ? ' class="num"' : ""}>${esc(k)}</th>`).join("")}</tr></thead>
     <tbody>${rijen}</tbody>
   </table>`;
@@ -196,7 +196,7 @@ function ontwikkelagendaBlock(rollen) {
   <h2>Welke competenties raken de hele organisatie?</h2>
   <p class="disclaimer">${esc(AGENDA_INTRO)}</p>
   <p>${esc(agendaZin(agenda))}</p>
-  <table>
+  <table class="keep">
     <thead><tr>${AGENDA_KOLOMMEN.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead>
     <tbody>${rijen}</tbody>
   </table>
@@ -467,6 +467,8 @@ export function buildReportHtml(results) {
   th, td { border: 1px solid #d2d0e6; padding: 5px 8px; text-align: left; vertical-align: top; }
   th { background: #241b4b; color: white; }
   th.num, td.num { text-align: right; }
+  /* Korte tabellen blijven bij elkaar, zodat er geen losse rij op de vorige pagina achterblijft. */
+  table.keep { page-break-inside: avoid; }
   tr:nth-child(even) td { background: #f7f6fc; }
   .badge { display: inline-block; background: #ece6fd; color: #5b34c9; border-radius: 3px; padding: 1px 5px; font-size: 9px; }
   .role-block { page-break-inside: avoid; margin-bottom: 18px; }
@@ -550,7 +552,7 @@ export function buildReportHtml(results) {
   ${
     subtotalenPerAfdeling?.length
       ? `<h3>Subtotalen per afdeling</h3>
-    <table>
+    <table class="keep">
       <thead><tr>${SUBTOTALEN_KOLOMMEN.map((k) => `<th>${esc(k)}</th>`).join("")}</tr></thead>
       <tbody>
         ${subtotalenPerAfdeling

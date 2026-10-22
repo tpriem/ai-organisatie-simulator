@@ -19,7 +19,7 @@ function datum(iso) {
 
 function Antwoordknoppen({ stelling, waarde, onZet }) {
   return (
-    <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={stelling.tekst}>
+    <div className="flex flex-wrap gap-1.5 sm:w-[18.2rem] sm:shrink-0 sm:justify-end" role="radiogroup" aria-label={stelling.tekst}>
       {ANTWOORDEN.map((a) => (
         <button
           key={a.waarde}
