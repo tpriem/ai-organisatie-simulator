@@ -297,7 +297,9 @@ export function aansturingRegels(hierarchie, drempel = 0.4) {
         aandeelVrij: aandeel,
         hoog,
         tekst:
-          `${knoop.rolnaam} stuurt ${knoop.spanDirect} ${rollenWoord(knoop.spanDirect)} aan, samen ${nl(knoop.spanTotaalHuidig, 1)} FTE. ` +
+          `Onder ${knoop.rolnaam} ${knoop.spanAantalRollen === 1 ? "hangt" : "hangen"} ${knoop.spanAantalRollen} ${rollenWoord(knoop.spanAantalRollen)}` +
+          (knoop.spanAantalRollen !== knoop.spanDirect ? ` (waarvan ${knoop.spanDirect} direct)` : "") +
+          `, samen ${nl(knoop.spanTotaalHuidig, 1)} FTE. ` +
           `Daarvan komt ${nl(knoop.spanTotaalVrij, 1)} FTE (${Math.round(aandeel * 100)}%) aan capaciteit vrij.` +
           (hoog ? " Bekijk of de manier van aansturen mee moet veranderen." : ""),
       });

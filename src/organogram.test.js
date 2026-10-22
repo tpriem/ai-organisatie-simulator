@@ -77,8 +77,13 @@ test("de aansturing benoemt alleen leidinggevenden, en alleen de hoge krimp krij
   assert.equal(regels[0].rolnaam, "Manager");
   // 2,9 van 6 FTE = 48%: boven de drempel.
   assert.equal(regels[0].hoog, true);
-  assert.match(regels[0].tekst, /stuurt 2 rollen aan, samen 6,0 FTE/);
+  assert.match(regels[0].tekst, /Onder Manager hangen 2 rollen, samen 6,0 FTE/);
   assert.match(regels[0].tekst, /Bekijk of de manier van aansturen/);
+
+  // Een laag eronder telt mee, met de directe rapportage erbij genoemd.
+  const diep = aansturingRegels(buildOrgChartData([rol("Directeur"), rol("Manager", { rapporteertAan: "Directeur" }), rol("Medewerker", { rapporteertAan: "Manager" })]).hierarchie);
+  assert.match(diep[0].tekst, /Onder Directeur hangen 2 rollen \(waarvan 1 direct\)/);
+  assert.match(diep[1].tekst, /Onder Manager hangt 1 rol, samen/);
 
   const rustig = aansturingRegels(buildOrgChartData([rol("L", { fte: 1, over: 1 }), rol("M", { fte: 4, over: 3.5, rapporteertAan: "L" })]).hierarchie);
   assert.equal(rustig[0].hoog, false);
