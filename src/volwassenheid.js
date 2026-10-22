@@ -49,7 +49,10 @@ const ROL_IDS = new Set(ROLLEN.map((r) => r.id));
 //
 // invoer = {
 //   scope, doelen: { asId: 1-5 },
-//   invullers: [{ id, rol, label, antwoorden: { stellingId: "nee|deels|ja|nvt" }, bewijs: { stellingId: tekst } }],
+//   invullers: [{ id, rol, label, antwoorden: { stellingId: "nee|deels|ja|nvt" }, bewijs: { stellingId: tekst },
+//                 bron?: "adviseur" | "link", status?: "nieuw" | "bezig" | "ingediend", bijgewerktOp?, ingediendOp? }],
+//     Een invuller met bron "link" vult zelf in via een persoonlijke link; zijn antwoorden tellen pas
+//     mee zodra hij ze heeft verstuurd (status "ingediend").
 //   geldend: { antwoorden, bewijs, bewijsGezien: { stellingId: true } }   // het oordeel van de adviseur
 // }
 
@@ -91,13 +94,21 @@ export function schoonInvoer(invoer) {
     if (invullers.length >= MAX_INVULLERS) break;
     if (typeof i?.id !== "string" || !/^[a-z0-9_-]{1,40}$/.test(i.id) || gezien.has(i.id) || !ROL_IDS.has(i.rol)) continue;
     gezien.add(i.id);
-    invullers.push({
+    const schoon = {
       id: i.id,
       rol: i.rol,
       label: typeof i.label === "string" ? i.label.trim().slice(0, 60) : "",
       antwoorden: schoneAntwoorden(i.antwoorden),
       bewijs: schoneTeksten(i.bewijs, 500),
-    });
+    };
+    if (i.bron === "link") {
+      schoon.bron = "link";
+      schoon.status = ["nieuw", "bezig", "ingediend"].includes(i.status) ? i.status : "nieuw";
+      for (const veld of ["bijgewerktOp", "ingediendOp"]) {
+        if (typeof i[veld] === "string" && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(i[veld])) schoon[veld] = i[veld];
+      }
+    }
+    invullers.push(schoon);
   }
 
   const g = invoer?.geldend ?? {};
@@ -121,6 +132,9 @@ export function maakSnapshot(invoer, { op = new Date() } = {}) {
 
 // ---- Welke antwoorden gelden -------------------------------------------------------------------
 
+/** Telt een invuller mee? Wie via een link invult, telt pas mee nadat hij zijn antwoorden heeft verstuurd. */
+export const teltMee = (invuller) => invuller?.bron !== "link" || invuller?.status === "ingediend";
+
 /** Het strengste van meerdere antwoorden. Bij gelijk rang wint "ja" van "n.v.t.". */
 function strengste(lijst) {
   const gevuld = lijst.filter((a) => GELDIG.has(a));
@@ -140,7 +154,7 @@ export function effectieveAntwoorden(invoer) {
       uit[s.id] = geldend;
       continue;
     }
-    uit[s.id] = strengste((invoer?.invullers ?? []).map((i) => i.antwoorden?.[s.id]));
+    uit[s.id] = strengste((invoer?.invullers ?? []).filter(teltMee).map((i) => i.antwoorden?.[s.id]));
   }
   return uit;
 }
@@ -150,7 +164,7 @@ export function antwoordenPerRol(invoer) {
   const perRol = {};
   for (const r of ROLLEN) {
     if (r.id === "adviseur") continue;
-    const van = (invoer?.invullers ?? []).filter((i) => i.rol === r.id);
+    const van = (invoer?.invullers ?? []).filter((i) => i.rol === r.id && teltMee(i));
     if (van.length === 0) continue;
     const uit = {};
     for (const s of STELLINGEN) uit[s.id] = strengste(van.map((i) => i.antwoorden?.[s.id]));
@@ -274,6 +288,9 @@ export function berekenProfiel(invoer) {
   return {
     raamwerkVersie: RAAMWERK_VERSIE,
     scope: String(invoer?.scope ?? ""),
+    // In de bewustwordingsfase is de scan een zelfbeoordeling zonder bewijs. Zodra de adviseur
+    // bewijs gaat vastleggen (verdiepingsfase) tellen de onderbouwing en de overschattingsregel mee.
+    bewijsGebruikt: Object.keys(invoer?.geldend?.bewijsGezien ?? {}).length > 0,
     assen,
     gemeten: gemeten.length,
     telling,
@@ -384,6 +401,8 @@ export function tegenstrijdigheden(profiel) {
         meld(r, `${hoog.map((a) => a.naam).join(", ")} naast ${laag.map((a) => a.naam).join(", ")}`, { assen: [...hoog, ...laag].map((a) => a.id) });
       }
     } else if (r.soort === "overschatting") {
+      // Zonder vastgelegd bewijs zou deze regel bij elke zelfbeoordeling afgaan.
+      if (!profiel.bewijsGebruikt) continue;
       for (const a of profiel.assen.filter((x) => x.gemeten)) {
         const jaAandeel = a.totaal ? a.onderbouwing.voldaan / a.totaal : 0;
         if (jaAandeel > r.aandeelJa && (a.onderbouwing.aandeel ?? 0) < r.aandeelGezien) meld(r, a.naam, { assen: [a.id] });

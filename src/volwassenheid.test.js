@@ -200,7 +200,7 @@ test("E: regel over thema's, spreiding, overschatting, n.v.t. en ladder", () => 
   const ids = tegenstrijdigheden(p).map((s) => s.id);
   assert.ok(ids.includes("E5"));
   assert.ok(ids.includes("E6"), "beheer op 5 naast een as op 0");
-  assert.ok(ids.includes("E7"), "veel ja zonder gezien bewijs");
+  assert.ok(!ids.includes("E7"), "zonder vastgelegd bewijs is de overschattingsregel niet van toepassing");
 
   const nvt = {};
   for (const s of STELLINGEN.filter((x) => x.asId === "risico")) nvt[s.id] = "nvt";
@@ -440,4 +440,57 @@ test("D: niveaus met alleen borgingsstellingen laten de vaardigheidsladder niet 
   // data_kwaliteit: 1, 2 vaardigheid; 3, 4 borging; 5 vaardigheid. Niveau 2 zonder niveau 5.
   const c = beoordeelThema(thema("data_kwaliteit"), antwoordenOp({ data_kwaliteit: 2 }));
   assert.equal(c.losNiveau, 2);
+});
+
+import { teltMee } from "./volwassenheid.js";
+
+test("E7 geldt pas als de adviseur bewijs gaat vastleggen: veel ja met weinig gezien bewijs", () => {
+  const a = antwoordenOp(themasVan("beheer", 5));
+  const een = { beheer_bewaken_1: true }; // 1 van de 10 gezien: ruim onder de 20%
+  const p = berekenProfiel(metGeldend(a, { geldend: { antwoorden: a, bewijs: {}, bewijsGezien: een } }));
+  assert.equal(p.bewijsGebruikt, true);
+  assert.ok(tegenstrijdigheden(p).some((s) => s.id === "E7"));
+  assert.equal(berekenProfiel(metGeldend(a)).bewijsGebruikt, false);
+});
+
+test("invullers via een link tellen pas mee nadat ze hebben verstuurd", () => {
+  const maak = (status, ja) => ({
+    id: `d-${status}`,
+    rol: "directie",
+    label: "",
+    bron: "link",
+    status,
+    antwoorden: Object.fromEntries(thema("data_kwaliteit").stellingen.map((s) => [s.id, ja ? "ja" : "nee"])),
+    bewijs: {},
+  });
+  assert.equal(teltMee(maak("bezig", true)), false);
+  assert.equal(teltMee(maak("nieuw", true)), false);
+  assert.equal(teltMee(maak("ingediend", true)), true);
+  assert.equal(teltMee({ id: "x", rol: "hr", antwoorden: {} }), true, "een invuller zonder link telt altijd mee");
+
+  const bezig = { ...leegeInvoer(), invullers: [maak("bezig", true)] };
+  assert.equal(effectieveAntwoorden(bezig).data_kwaliteit_1, null);
+  const klaar = { ...leegeInvoer(), invullers: [maak("ingediend", true)] };
+  assert.equal(effectieveAntwoorden(klaar).data_kwaliteit_1, "ja");
+
+  // Ook in het verschil tussen rollen telt een nog bezige invuller niet mee.
+  const mix = { ...leegeInvoer(), invullers: [maak("ingediend", true), { ...maak("bezig", false), id: "w", rol: "werkvloer" }] };
+  assert.equal(verschilTussenInvullers(mix), null);
+});
+
+test("schoonInvoer bewaart bron, status en tijdstippen van een link-invuller en negeert ongeldige waarden", () => {
+  const s = schoonInvoer({
+    invullers: [
+      { id: "l-1", rol: "hr", bron: "link", status: "ingediend", bijgewerktOp: "2026-10-22T10:00:00.000Z", ingediendOp: "morgen", antwoorden: {} },
+      { id: "l-2", rol: "hr", bron: "link", status: "raar", antwoorden: {} },
+      { id: "a-1", rol: "hr", bron: "adviseur", status: "ingediend", antwoorden: {} },
+    ],
+  });
+  assert.equal(s.invullers[0].bron, "link");
+  assert.equal(s.invullers[0].status, "ingediend");
+  assert.equal(s.invullers[0].bijgewerktOp, "2026-10-22T10:00:00.000Z");
+  assert.equal("ingediendOp" in s.invullers[0], false, "ongeldig tijdstip valt weg");
+  assert.equal(s.invullers[1].status, "nieuw");
+  assert.equal("bron" in s.invullers[2], false, "een gewone invuller heeft geen bron of status");
+  assert.equal("status" in s.invullers[2], false);
 });
