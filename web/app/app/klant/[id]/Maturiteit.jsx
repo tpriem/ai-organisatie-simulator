@@ -387,7 +387,8 @@ export default function Maturiteit({ id }) {
           <ProfielRegel key={d.id} d={d} onOpen={() => openDimensie(d.id)} />
         ))}
 
-        <p className="mt-3 text-[11px] text-slate-500">
+        <p className="mt-3 text-xs font-medium text-indigo-600">Klik op een dimensie hierboven, of scroll naar de vragenlijst eronder, om de vragen in te vullen.</p>
+        <p className="mt-2 text-[11px] text-slate-500">
           Scoring (standaardmethode van het model): een practice telt als voldaan of niet van toepassing; een goal is behaald als alle
           toepasselijke practices voldaan zijn; een capability area krijgt het laagste niveau van zijn drie maturity indicators, ook
           als alle goals behaald zijn; een dimensie wordt beoordeeld naar zijn laagst scorende capability area (Table 2 van het model).
@@ -401,6 +402,12 @@ export default function Maturiteit({ id }) {
         )}
       </div>
 
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-semibold text-slate-800">Vragenlijst</h2>
+        <p className="text-xs text-slate-500">
+          Klik op een dimensie om de vragen te openen: per dimensie capability areas, daarin goals en practices.
+        </p>
+      </div>
       <div className="mb-5 space-y-3">
         {profiel.dimensies.map((d, i) => (
           <details
@@ -408,15 +415,16 @@ export default function Maturiteit({ id }) {
             ref={(el) => (dimensieRefs.current[d.id] = el)}
             open={geopend === d.id}
             onToggle={(e) => e.currentTarget.open && setGeopend(d.id)}
-            className="rounded-xl border border-slate-200 bg-slate-50/60"
+            className="group rounded-xl border border-slate-200 bg-slate-50/60"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3">
               <div>
                 <p className="text-sm font-semibold text-slate-800">{d.naam}</p>
                 <p className="text-xs text-slate-500">{d.beschrijving}</p>
               </div>
-              <span className="shrink-0 text-xs text-slate-500">
-                {d.niveau === null ? "—" : `Level ${d.niveau}`}
+              <span className="flex shrink-0 items-center gap-2 text-xs text-slate-500">
+                {d.telling.beantwoord}/{d.telling.totaal} beantwoord · {d.niveau === null ? "nog niet gemeten" : `Level ${d.niveau}`}
+                <span aria-hidden="true" className="text-slate-400 transition-transform group-open:rotate-90">▶</span>
               </span>
             </summary>
             <div className="space-y-2 px-4 pb-4">
