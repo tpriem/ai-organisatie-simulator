@@ -145,3 +145,12 @@ export function bevestigingZin(rollen) {
  */
 export const volwassenheidVerwijzingZin =
   "Of de organisatie deze capaciteit ook kan realiseren, staat in het afzonderlijke volwassenheidsrapport.";
+
+/**
+ * De kop boven een rol in het detailoverzicht: hoeveel FTE de rol telt en hoeveel capaciteit er
+ * vrijkomt, niet hoeveel er "overblijft". Zelfde formulering in PDF en Word.
+ */
+export function rolKop(rol) {
+  const vrij = (scenario) => rol.scenarios[scenario].fteWeg ?? Math.max(rol.fte - rol.scenarios[scenario].fteOver, 0);
+  return `${rol.roleLabel ?? rol.rolnaam} — ${nl(rol.fte, 1)} FTE, waarvan ${nl(vrij("realistisch"), 1)} FTE vrijkomt (realistisch) tot ${nl(vrij("agressief"), 1)} FTE (agressief)`;
+}

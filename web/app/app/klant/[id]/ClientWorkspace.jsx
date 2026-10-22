@@ -1933,9 +1933,8 @@ export default function ClientWorkspace({ id, nieuw = false }) {
 
         {results?.aanbevelingen && (
           <Section title="Bevindingen & Aanbevelingen" icon="💡">
-            {/* Het scherm is breed omwille van de tabellen, maar lopende tekst blijft
-                begrensd: over 1280px lezen volle regels niet prettig. */}
-            <p className="text-sm text-slate-700 mb-5 max-w-3xl">{results.aanbevelingen.bevindingenSamenvatting}</p>
+            {/* Even breed als de kolommen en aanbevelingen eronder, zodat de sectie één rechterrand heeft. */}
+            <p className="text-sm text-slate-700 mb-5">{results.aanbevelingen.bevindingenSamenvatting}</p>
 
             <div className="grid sm:grid-cols-3 gap-4 mb-5">
               <div>

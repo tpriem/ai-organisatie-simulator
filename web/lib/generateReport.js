@@ -34,6 +34,7 @@ import {
   waardetypeHerkomstZin,
   waardetypeHandmatigRegel,
   bevestigingZin,
+  rolKop,
   volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
@@ -733,7 +734,7 @@ export async function generateReportDocx(results) {
     heading("Detail per rol — taakverdeling & competenties"),
     ...rollen.flatMap((r) => [
       heading(
-        `${r.roleLabel ?? r.rolnaam} (${r.fte} FTE → ${nl(r.scenarios.realistisch.fteOver, 2)} realistisch / ${nl(r.scenarios.agressief.fteOver, 2)} agressief)`,
+        rolKop(r),
         HeadingLevel.HEADING_2
       ),
       ...(getWaardetype(r.waardetype)

@@ -449,3 +449,22 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(!tekst.includes("doorgroeien in de eigen, veranderde rol"));
   });
 }
+
+// ── Rolkoppen in capaciteit, niet in overblijvende FTE ────────────────────────────────
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: elke rolkop noemt de vrijkomende capaciteit uit de berekening`, async () => {
+    const { results, [formaat]: tekst } = await rapporten();
+    for (const r of results.rollen) {
+      const vrij = (s) => nl(r.scenarios[s].fteWeg, 1);
+      const kop = `${r.roleLabel ?? r.rolnaam} — ${nl(r.fte, 1)} FTE, waarvan ${vrij("realistisch")} FTE vrijkomt (realistisch) tot ${vrij("agressief")} FTE (agressief)`;
+      assert.ok(tekst.includes(kop), `kop van ${r.rolnaam} ontbreekt of klopt niet: ${kop}`);
+    }
+  });
+
+  test(`${formaat}: nergens staat nog 'FTE → x realistisch'`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    assert.doesNotMatch(tekst, /FTE → \d/);
+    assert.doesNotMatch(tekst, /realistisch \/ \d/);
+  });
+}

@@ -19,6 +19,7 @@ import {
   waardetypeHerkomstZin,
   waardetypeHandmatigRegel,
   bevestigingZin,
+  rolKop,
   volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
@@ -576,7 +577,7 @@ export function buildReportHtml(results) {
   ${rollen
     .map(
       (r) => `<div class="role-block">
-      <h3>${esc(r.roleLabel ?? r.rolnaam)} (${r.fte} FTE → ${nl(r.scenarios.realistisch.fteOver, 2)} realistisch / ${nl(r.scenarios.agressief.fteOver, 2)} agressief)</h3>
+      <h3>${esc(rolKop(r))}</h3>
       ${waardetypeLine(r)}
       ${beroepsmatchRegel(r.beroepsmatch) ? `<p class="disclaimer">${esc(beroepsmatchRegel(r.beroepsmatch))}</p>` : ""}
       <table>
