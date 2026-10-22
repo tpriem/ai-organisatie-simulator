@@ -131,7 +131,7 @@ export function herkomstRijen(herkomst, aantal = 5) {
   return rijen;
 }
 
-export const HERKOMST_KOLOMMEN = ["Taakcategorie", "Uren per week nu", "Komt vrij", "Van de categorie", "Aandeel in vrijkomend"];
+export const HERKOMST_KOLOMMEN = ["Taakcategorie", "Uren per week nu", "Komt vrij", "% van categorie vrij", "Aandeel in totaal vrij"];
 
 /** De zin boven de tabel: de drie grootste bronnen van de vrijkomende uren. */
 export function herkomstZin(herkomst) {
