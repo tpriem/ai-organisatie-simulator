@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
+import HodLogo from "@/components/HodLogo";
 
 export default function GebruikersPage() {
   const [users, setUsers] = useState([]);
@@ -54,8 +55,9 @@ export default function GebruikersPage() {
   }
 
   return (
-    <div className="flex-1 bg-slate-50">
+    <div className="flex-1">
       <main className="max-w-2xl mx-auto w-full px-6 py-10">
+        <HodLogo className="h-6 mb-6" />
         <div className="flex items-center justify-between">
           <a href="/app" className="text-sm text-slate-400 hover:text-indigo-400 transition-colors">
             ← Alle klanten

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import HodLogo from "@/components/HodLogo";
 
 // De pagina waar een klant via de aanleverlink zijn functieoverzicht en functieprofielen uploadt.
 // De bestanden komen in een inbox; de adviseur controleert ze en start de analyse zelf.
@@ -226,10 +227,10 @@ export default function Aanleveren({ token }) {
 
 function Omhulsel({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3">
-          <span className="text-sm font-semibold text-slate-900">House of Digital</span>
+          <HodLogo className="h-5" />
           <span className="text-xs text-slate-500">AI Organisatie Transformatie Simulator</span>
         </div>
       </header>

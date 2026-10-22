@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ASSEN, ANTWOORDEN } from "../../../../src/volwassenheid.js";
+import HodLogo from "@/components/HodLogo";
 
 // De pagina die een invuller via zijn persoonlijke link ziet. Alleen de vragen: geen resultaten,
 // geen andere gegevens. Antwoorden worden direct opgeslagen; "Versturen" markeert ze als klaar.
@@ -285,10 +286,10 @@ export default function Invullen({ token }) {
 
 function Omhulsel({ children }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-3">
-          <span className="text-sm font-semibold text-slate-900">House of Digital</span>
+          <HodLogo className="h-5" />
           <span className="text-xs text-slate-500">AI-volwassenheidsscan</span>
         </div>
       </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import HodLogo from "@/components/HodLogo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -18,9 +19,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-slate-50 px-6 py-16">
+    <div className="flex-1 flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
+          <HodLogo className="h-8 mx-auto mb-6" />
           <h1 className="text-xl font-bold text-slate-900">Wachtwoord vergeten</h1>
           <p className="text-sm text-slate-500 mt-1">Vul je e-mailadres in, dan sturen we een link om een nieuw wachtwoord in te stellen.</p>
         </div>

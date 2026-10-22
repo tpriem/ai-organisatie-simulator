@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import HodLogo from "@/components/HodLogo";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -91,9 +92,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex-1 flex items-center justify-center bg-slate-50 px-6 py-16">
+    <div className="flex-1 flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
+          <HodLogo className="h-8 mx-auto mb-6" />
           <h1 className="text-xl font-bold text-slate-900">Wachtwoord instellen</h1>
         </div>
         <Suspense>

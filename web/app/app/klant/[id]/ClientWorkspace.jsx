@@ -31,6 +31,7 @@ import Organogram from "./Organogram";
 import { BESTEMMING_STIJL } from "./bestemmingStijl";
 import KlantOpzet from "./KlantOpzet";
 import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
+import HodLogo from "@/components/HodLogo";
 
 export function CapaciteitBestemming({ results }) {
   const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
@@ -1293,13 +1294,13 @@ export default function ClientWorkspace({ id, nieuw = false }) {
 
   if (loading)
     return (
-      <div className="flex-1 bg-slate-50">
+      <div className="flex-1">
         <main className="max-w-7xl mx-auto px-6 py-12 text-sm text-slate-400">Laden...</main>
       </div>
     );
   if (!client)
     return (
-      <div className="flex-1 bg-slate-50">
+      <div className="flex-1">
         <main className="max-w-7xl mx-auto px-6 py-12 text-sm text-red-400">Klant niet gevonden.</main>
       </div>
     );
@@ -1311,7 +1312,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
   const bevestigingVan = (r) => bevestiging.rollen.find((x) => x.roleId === (r.roleId ?? r.rolnaam)) ?? null;
 
   return (
-    <div className="flex-1 bg-slate-50">
+    <div className="flex-1">
       {/* Breder dan de gebruikelijke leesbreedte: dit scherm bestaat vooral uit tabellen
           (rollen, taken, subtotalen per afdeling) en die worden met meer ruimte beter
           leesbaar, niet slechter. Wel een bovengrens, zodat regels op een breed scherm
@@ -1320,6 +1321,10 @@ export default function ClientWorkspace({ id, nieuw = false }) {
       <main className="max-w-7xl mx-auto w-full px-6 py-10">
         {/* Klant-switcher */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <a href="/app" aria-label="Naar alle klanten" className="shrink-0">
+            <HodLogo className="h-6" />
+          </a>
+          <span className="h-4 w-px bg-slate-200" />
           <a href="/app" className="text-sm text-slate-400 hover:text-indigo-400 transition-colors">
             ← Alle klanten
           </a>

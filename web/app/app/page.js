@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import HodLogo from "@/components/HodLogo";
 
 function initials(naam) {
   return naam
@@ -74,6 +75,7 @@ export default function HomePage() {
     <div className="flex-1 bg-gradient-to-b from-indigo-50/60 via-page to-page">
       <main className="mx-auto max-w-2xl w-full px-6 py-16">
         <div className="mb-10">
+          <HodLogo className="h-7 mb-8" />
           <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-medium text-indigo-700 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
             Intern tool

@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import HodLogo from "@/components/HodLogo";
 
 function LoginFormInner({ t }) {
   const router = useRouter();
@@ -64,9 +65,10 @@ function LoginFormInner({ t }) {
 
 export default function LoginForm({ t }) {
   return (
-    <div className="flex-1 flex items-center justify-center bg-slate-50 px-6 py-16">
+    <div className="flex-1 flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
+          <HodLogo className="h-8 mx-auto mb-6" />
           <h1 className="text-xl font-bold text-slate-900">AI Organisatie Transformatie Simulator</h1>
           <p className="text-sm text-slate-500 mt-1">{t.subtitle}</p>
         </div>
