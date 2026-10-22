@@ -1,6 +1,8 @@
 import { getClientMeta, readResults } from "@/lib/clientStore";
 import { generateReportPdf } from "@/lib/generateReportPdf";
 import { meldStoring } from "@/lib/alert";
+import { readMaturiteit } from "@/lib/maturiteitStore";
+import { berekenProfiel } from "../../../../../../src/volwassenheid.js";
 
 // De PDF is door de nieuwe secties ruim verdubbeld in rendertijd (1,8s naar 4,7s voor zes
 // rollen) en groeit mee met het aantal rollen. Expliciet een ruime limiet, in plaats van
@@ -24,6 +26,15 @@ export async function GET(request, { params }) {
   // PDF-generatie leunt op een Chromium-binary die op Vercel eerder ontbrak. Een
   // onbehandelde fout gaf de klant een kale 500; nu volgt een begrijpelijke melding
   // en weten wij het meteen.
+  // Het impactrapport verwijst naar het volwassenheidsrapport als er een meting is. Lukt het
+  // lezen niet, dan blijft het rapport gewoon werken zonder die verwijzing.
+  try {
+    const { huidig } = await readMaturiteit(id);
+    results.volwassenheidBeschikbaar = berekenProfiel(huidig).gemeten > 0;
+  } catch {
+    // verwijzing weglaten
+  }
+
   let buffer;
   try {
     buffer = await generateReportPdf(results);

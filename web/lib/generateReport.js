@@ -26,6 +26,7 @@ import {
   waardetypeHerkomstZin,
   waardetypeHandmatigRegel,
   bevestigingZin,
+  volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
@@ -830,6 +831,7 @@ export async function generateReportDocx(results) {
         )} (realistisch scenario) tot ${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)} (agressief scenario).`
     ),
     ...capaciteitSectie(organisatieTotaal, rollen),
+    ...(results.volwassenheidBeschikbaar ? [paragraph(volwassenheidVerwijzingZin, { italics: true, size: 18, color: "64748B" })] : []),
     financieelAlinea(organisatieTotaal),
 
     heading("Interne transformatie — overzicht per rol"),

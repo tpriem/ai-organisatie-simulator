@@ -36,7 +36,9 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: `Aanbevelingen genereren mislukt: ${err.message}` }, { status: 502 });
   }
 
-  const updated = { ...results, aanbevelingen };
+  // De sectoranalyse bestaat niet meer; oude resultaten nemen haar niet mee de nieuwe versie in.
+  const { sectorAnalyse: _oudeSectorAnalyse, ...zonderSector } = results;
+  const updated = { ...zonderSector, aanbevelingen };
   await writeResults(id, updated, { reden: "aanbevelingen gegenereerd" });
   return NextResponse.json(updated);
 }

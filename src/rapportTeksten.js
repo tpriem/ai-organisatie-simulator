@@ -138,3 +138,10 @@ export function bevestigingZin(rollen) {
     `${open.length === 1 ? "deze rol draagt" : "deze rollen dragen"} samen ${Math.round(b.onbevestigdAandeel * 100)}% van de vrijgekomen capaciteit.`
   );
 }
+
+/**
+ * Verwijzing in het impactrapport naar het volwassenheidsrapport. De twee onderzoeken hebben elk
+ * een eigen rapport; deze zin legt het verband zonder de uitkomsten te vermengen.
+ */
+export const volwassenheidVerwijzingZin =
+  "Of de organisatie deze capaciteit ook kan realiseren, staat in het afzonderlijke volwassenheidsrapport.";

@@ -910,6 +910,22 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           </h2>
           <div className="flex items-center gap-3">
             <OpslagStatus status={status} />
+            {profiel.gemeten > 0 && (
+              <>
+                <a
+                  href={`/api/clients/${id}/report-volwassenheid`}
+                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white shadow-sm hover:bg-indigo-500"
+                >
+                  ⬇ Volwassenheidsrapport (Word)
+                </a>
+                <a
+                  href={`/api/clients/${id}/report-volwassenheid-pdf`}
+                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white shadow-sm hover:bg-indigo-500"
+                >
+                  ⬇ Volwassenheidsrapport (PDF)
+                </a>
+              </>
+            )}
             <button type="button" onClick={onNaarVragen} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50">
               ← Naar de vragenlijst
             </button>

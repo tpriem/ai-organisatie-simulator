@@ -408,3 +408,21 @@ test("een rapport zonder rollen met capaciteit zegt niets over bevestiging", () 
   assert.equal(bevestigingZin([]), null);
   assert.equal(bevestigingZin(null), null);
 });
+
+// --- Verwijzing naar het volwassenheidsrapport -------------------------------------------------
+
+import { volwassenheidVerwijzingZin } from "./rapportTeksten.js";
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: het impactrapport verwijst naar het volwassenheidsrapport als er een meting is, en anders niet`, async () => {
+    const maak = async (results) => {
+      if (formaat === "pdf") return platHtml(buildReportHtml(results));
+      return (await mammoth.extractRawText({ buffer: await generateReportDocx(results) })).value.replace(/\s+/g, " ");
+    };
+    const met = await maak({ ...fixture(), volwassenheidBeschikbaar: true });
+    const zonder = await maak(fixture());
+    assert.ok(met.includes(volwassenheidVerwijzingZin), "verwijzing ontbreekt");
+    assert.ok(!zonder.includes(volwassenheidVerwijzingZin), "verwijzing hoort er niet te staan zonder meting");
+    assert.ok(!/volwassenheidsrapport/.test(zonder));
+  });
+}

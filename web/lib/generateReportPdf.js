@@ -11,6 +11,7 @@ import {
   waardetypeHerkomstZin,
   waardetypeHandmatigRegel,
   bevestigingZin,
+  volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
 
@@ -536,6 +537,7 @@ export function buildReportHtml(results) {
     <div class="stat-card"><div class="stat-label">Capaciteit die vrijkomt</div><div class="stat-value">${nl(organisatieTotaal.realistisch.totaalFteWeg, 1)} FTE</div></div>
   </div>
   ${capaciteitBlock(organisatieTotaal, rollen)}
+  ${results.volwassenheidBeschikbaar ? `<p class="disclaimer">${esc(volwassenheidVerwijzingZin)}</p>` : ""}
   ${financieelBlock(organisatieTotaal)}
   <h2>Interne transformatie — overzicht per rol</h2>
   <table>
@@ -699,7 +701,11 @@ export function buildReportHtml(results) {
  * @param {object} results - het resultaat-object zoals opgeslagen in results.json
  */
 export async function generateReportPdf(results) {
-  const html = buildReportHtml(results);
+  return renderHtmlToPdf(buildReportHtml(results));
+}
+
+/** Rendert een HTML-document naar PDF. Gedeeld door alle rapporten die een PDF leveren. */
+export async function renderHtmlToPdf(html) {
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
