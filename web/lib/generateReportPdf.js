@@ -4,7 +4,6 @@ import { getWaardetype } from "../../src/config.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
-import { calculateMobiliteit } from "../../src/mobiliteit.js";
 import {
   dekkingZinnen,
   beroepsmatchRegel,
@@ -218,46 +217,6 @@ function ontwikkelagendaBlock(rollen) {
         } in deze lijst ${nietTrainbaar.length === 1 ? "is" : "zijn"} laag trainbaar — disposities in plaats van vaardigheden. Die los je niet op met een opleidingsbudget; de vraag is of ze al in huis zijn. Toets daarop bij de huidige bezetting.</p>`
       : ""
   }`;
-}
-
-// Waar kunnen de mensen heen bij wie capaciteit vrijkomt? Als vergelijking met blijven,
-// niet als ranglijst: een ranglijst suggereert keuzevrijheid die de data niet draagt.
-function mobiliteitBlock(rollen) {
-  const m = calculateMobiliteit(rollen, { maxPerRol: 2 });
-  if (!m.heeftData) return "";
-
-  const metAlt = m.herkomsten.filter((h) => h.alternatieven.length > 0);
-  const beste = Math.max(0, ...metAlt.map((h) => h.alternatieven[0].verhouding));
-
-  const blokken = m.herkomsten
-    .map((h) => {
-      const alt = h.alternatieven
-        .map((a) => barTekst(`→ ${a.roleLabel}`, `${a.overlapPct}% · ${Math.round(a.verhouding * 100)}% hiervan`, a.overlapPct, "c-slate"))
-        .join("");
-      return `<div class="role-block">
-      <p style="font-weight:bold;font-size:11px;margin:0 0 3px;">${esc(h.roleLabel)} — ${nl(h.vrijgekomenFte, 2)} FTE komt vrij</p>
-      ${barTekst("Blijven, in de veranderde rol", `${h.blijvenOverlapPct}% aansluiting`, h.blijvenOverlapPct, "c-indigo")}
-      ${alt || `<p class="disclaimer" style="margin:2px 0;">Geen enkele andere rol komt in de buurt.</p>`}
-      ${
-        h.blijvenNietTrainbaarPct > 0
-          ? `<p class="disclaimer" style="margin:2px 0;">Van wat deze rol straks extra nodig heeft is ${h.blijvenNietTrainbaarPct}% niet met training te overbruggen — toetsing van de huidige bezetting is daar nodig.</p>`
-          : ""
-      }
-    </div>`;
-    })
-    .join("");
-
-  return `
-  <h2>Waar kunnen deze mensen heen?</h2>
-  <p class="disclaimer">Per rol waar capaciteit vrijkomt: hoe goed het huidige profiel aansluit op de eigen rol ná de transformatie, en hoe het dichtstbijzijnde alternatief daarbij afsteekt. Competenties zijn vergelijkbaar doordat alle rollen uit dezelfde ESCO-woordenschat putten.</p>
-  ${
-    beste > 0 && beste < 0.6
-      ? `<p>In deze organisatie is doorgroeien in de eigen, veranderde rol overal kansrijker dan overstappen — het beste alternatief komt nergens boven ${Math.round(
-          beste * 100
-        )}% van die aansluiting uit. Dat wijst op sterk gespecialiseerde rollen: reken niet op interne doorstroom als vanzelfsprekende uitweg.</p>`
-      : ""
-  }
-  ${blokken}`;
 }
 
 function bar(label, value, maxValue, colorClass) {
@@ -629,7 +588,6 @@ export function buildReportHtml(results) {
   ${organogramBlok(orgChart)}
 
   ${herkomstBlock(rollen)}
-  ${mobiliteitBlock(rollen)}
   ${ontwikkelagendaBlock(rollen)}
 
   <h2>Detail per rol — taakverdeling &amp; competenties</h2>

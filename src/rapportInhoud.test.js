@@ -5,7 +5,6 @@ import { calculateRole, calculateOrganisatie, calculateCapaciteitBestemming } fr
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen } from "./taakprofiel.js";
 import { calculateCompetentieProfiel } from "./competencyProfile.js";
 import { calculateCompetentieAgenda } from "./competencyAgenda.js";
-import { calculateMobiliteit } from "./mobiliteit.js";
 import {
   dekkingZinnen,
   beroepsmatchRegel,
@@ -193,16 +192,15 @@ test("pdf: het oude kopgetal 'Besparing/jaar' staat niet meer als samenvattingsk
   assert.ok(!html.includes('<div class="stat-label">Besparing/jaar</div>'));
 });
 
-// ── Blok 2: ontwikkelagenda en mobiliteit ─────────────────────────────────────────────
+// ── Blok 2: ontwikkelagenda ─────────────────────────────────────────────
 
-test("de fixture bevat genoeg om ontwikkelagenda en mobiliteit te laten zien", () => {
+test("de fixture bevat genoeg om de ontwikkelagenda te laten zien", () => {
   // Een test op een lege fixture toetst niets. Dit bewaakt dat de gegevens er echt zijn.
   const { rollen } = fixture();
   assert.ok(rollen.every((r) => r.competentieProfiel), "elke rol heeft een competentieprofiel nodig");
   const agenda = calculateCompetentieAgenda(rollen);
   assert.ok(agenda.competenties.some((c) => c.aantalRollen > 1), "geen competentie in meerdere rollen");
   assert.ok(agenda.competenties.some((c) => c.trainbaarheid === "laag"), "geen laag-trainbare competentie");
-  assert.equal(calculateMobiliteit(rollen, { maxPerRol: 2 }).heeftData, true, "mobiliteit levert niets op");
 });
 
 for (const formaat of ["pdf", "docx"]) {
@@ -218,34 +216,12 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(tekst.includes(`${agenda.competenties.length} competenties zijn nieuw nodig`), "aantal ontbreekt");
   });
 
-  test(`${formaat}: de mobiliteit toont per rol blijven tegenover de alternatieven`, async () => {
-    const { results, [formaat]: tekst } = await rapporten();
-    const m = calculateMobiliteit(results.rollen, { maxPerRol: 2 });
-    assert.ok(tekst.includes("Waar kunnen deze mensen heen?"), "sectie ontbreekt");
-    for (const h of m.herkomsten) {
-      assert.ok(tekst.includes(h.roleLabel), `herkomst "${h.roleLabel}" ontbreekt`);
-      assert.ok(tekst.includes(`${h.blijvenOverlapPct}% aansluiting`), `blijven-cijfer van ${h.roleLabel} ontbreekt`);
-      for (const a of h.alternatieven) {
-        assert.ok(tekst.includes(`${a.overlapPct}% · ${Math.round(a.verhouding * 100)}% hiervan`), `alternatief ${a.roleLabel} ontbreekt`);
-      }
-    }
-  });
-
   test(`${formaat}: zonder competentiegegevens ontbreken deze secties, zonder fout`, async () => {
     const { [formaat]: tekst } = await rapporten({ competenties: false });
     assert.ok(!tekst.includes("Ontwikkelagenda"));
-    assert.ok(!tekst.includes("Waar kunnen deze mensen heen?"));
     assert.ok(tekst.includes("Waar komt de capaciteit vandaan?"), "de rest van het rapport moet er gewoon zijn");
   });
 }
-
-test("de mobiliteitsconclusie verschijnt alleen als het beste alternatief ver achterblijft", async () => {
-  const { results, pdf } = await rapporten();
-  const m = calculateMobiliteit(results.rollen, { maxPerRol: 2 });
-  const beste = Math.max(0, ...m.herkomsten.filter((h) => h.alternatieven.length).map((h) => h.alternatieven[0].verhouding));
-  const verwacht = beste > 0 && beste < 0.6;
-  assert.equal(pdf.includes("doorgroeien in de eigen, veranderde rol"), verwacht);
-});
 
 // ── Blok 3: dekking en beroepsmatch ───────────────────────────────────────────────────
 
@@ -458,5 +434,17 @@ for (const formaat of ["pdf", "docx"]) {
     const organogram = deel.slice(0, deel.indexOf("Waar komt de capaciteit vandaan?") > 0 ? deel.indexOf("Waar komt de capaciteit vandaan?") : 4000);
     assert.doesNotMatch(organogram, /overgebleven|na transformatie/i);
     assert.doesNotMatch(organogram, /\d,\d+ → \d,\d+ FTE/);
+  });
+}
+
+// De mobiliteitsvergelijking (blijven tegenover andere rollen) staat niet meer in de rapporten: in
+// de awareness-fase zegt ze over functies, niet over mensen, en het aansluitingscijfer van de eigen
+// rol staat al per functie. De berekening zelf blijft bestaan voor een verdiepende fase.
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: het mobiliteitsblok staat niet meer in het rapport`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    assert.ok(!tekst.includes("Waar kunnen deze mensen heen?"));
+    assert.ok(!tekst.includes("Blijven, in de veranderde rol"));
+    assert.ok(!tekst.includes("doorgroeien in de eigen, veranderde rol"));
   });
 }

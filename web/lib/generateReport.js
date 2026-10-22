@@ -19,7 +19,6 @@ import { driedeling } from "../../src/competencyProfile.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
 import { calculateCapaciteitHerkomst, herkomstRijen, herkomstZin, herkomstCellen, HERKOMST_KOLOMMEN } from "../../src/taakprofiel.js";
 import { calculateCompetentieAgenda } from "../../src/competencyAgenda.js";
-import { calculateMobiliteit } from "../../src/mobiliteit.js";
 import {
   dekkingZinnen,
   beroepsmatchRegel,
@@ -569,68 +568,6 @@ function ontwikkelagendaSectie(rollen) {
   ];
 }
 
-// Waar kunnen de mensen heen bij wie capaciteit vrijkomt? Als vergelijking met blijven,
-// niet als ranglijst: een ranglijst suggereert keuzevrijheid die de data niet draagt.
-function mobiliteitSectie(rollen) {
-  const m = calculateMobiliteit(rollen, { maxPerRol: 2 });
-  if (!m.heeftData) return [];
-
-  const metAlt = m.herkomsten.filter((h) => h.alternatieven.length > 0);
-  const beste = Math.max(0, ...metAlt.map((h) => h.alternatieven[0].verhouding));
-
-  const out = [
-    heading("Waar kunnen deze mensen heen?"),
-    paragraph(
-      "Per rol waar capaciteit vrijkomt: hoe goed het huidige profiel aansluit op de eigen rol ná de transformatie, en hoe het dichtstbijzijnde alternatief daarbij afsteekt. Competenties zijn vergelijkbaar doordat alle rollen uit dezelfde ESCO-woordenschat putten.",
-      { italics: true, size: 18, color: "64748B" }
-    ),
-  ];
-
-  if (beste > 0 && beste < 0.6) {
-    out.push(
-      paragraph(
-        `In deze organisatie is doorgroeien in de eigen, veranderde rol overal kansrijker dan overstappen — het beste alternatief komt nergens boven ${Math.round(
-          beste * 100
-        )}% van die aansluiting uit. Dat wijst op sterk gespecialiseerde rollen: reken niet op interne doorstroom als vanzelfsprekende uitweg.`,
-        { bold: true }
-      )
-    );
-  }
-
-  for (const h of m.herkomsten) {
-    out.push(
-      new Paragraph({
-        spacing: { before: 200, after: 60 },
-        children: [new TextRun({ text: `${h.roleLabel} — ${nl(h.vrijgekomenFte, 2)} FTE komt vrij`, bold: true, size: 20 })],
-      })
-    );
-    out.push(paragraph(`Blijven, in de veranderde rol — ${h.blijvenOverlapPct}% aansluiting`, { size: 18, color: "475569" }));
-    out.push(miniBar(h.blijvenOverlapPct, 100, "6366F1"));
-    for (const a of h.alternatieven) {
-      out.push(
-        paragraph(`→ ${a.roleLabel} — ${a.overlapPct}% · ${Math.round(a.verhouding * 100)}% hiervan`, {
-          size: 18,
-          color: "64748B",
-        })
-      );
-      out.push(miniBar(a.overlapPct, 100, "94A3B8"));
-    }
-    if (h.alternatieven.length === 0) {
-      out.push(paragraph("Geen enkele andere rol komt in de buurt.", { italics: true, size: 18, color: "64748B" }));
-    }
-    if (h.blijvenNietTrainbaarPct > 0) {
-      out.push(
-        paragraph(
-          `Van wat deze rol straks extra nodig heeft is ${h.blijvenNietTrainbaarPct}% niet met training te overbruggen — toetsing van de huidige bezetting is daar nodig.`,
-          { italics: true, size: 18, color: "64748B" }
-        )
-      );
-    }
-  }
-
-  return out;
-}
-
 function competentieProfielTable(items) {
   const widths = [4200, 1500, 2000];
   const headerRow = new TableRow({
@@ -813,7 +750,6 @@ export async function generateReportDocx(results) {
       : []),
 
     ...herkomstSectie(rollen),
-    ...mobiliteitSectie(rollen),
     ...ontwikkelagendaSectie(rollen),
 
     heading("Detail per rol — taakverdeling & competenties"),
