@@ -7,7 +7,7 @@ import { schoonInvoer, maakSnapshot, berekenProfiel } from "../../../../../../sr
 export async function GET(request, { params }) {
   const { id } = await params;
   if (!(await getClientMeta(id))) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
-  return NextResponse.json(await readMaturiteit(id));
+  return NextResponse.json(await readMaturiteit(id), { headers: { "Cache-Control": "no-store" } });
 }
 
 // Het werkdocument: wordt bij elke wijziging opgeslagen.

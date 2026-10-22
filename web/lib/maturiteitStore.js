@@ -12,11 +12,17 @@ const leeg = () => ({ huidig: { scope: "", practices: {}, indicatoren: {}, notit
 const pad = (id) => `${id}/maturiteit.json`;
 
 export async function readMaturiteit(id) {
-  const { data, error } = await getSupabase().storage.from(FILES_BUCKET).download(pad(id));
+  // Een bestand dat vaak wordt overschreven mag niet uit de cache komen: de opslag van
+  // Supabase serveert objecten achter een CDN, en teruglezen direct na schrijven gaf dan
+  // de oude inhoud (gemeten in productie). Daarom een kortlevende ondertekende link met
+  // een tijdstempel in de URL en zonder cache.
+  const { data: link, error: linkFout } = await getSupabase().storage.from(FILES_BUCKET).createSignedUrl(pad(id), 60);
   // Nog geen bestand is de gewone beginsituatie, geen fout.
-  if (error) return leeg();
+  if (linkFout || !link?.signedUrl) return leeg();
+  const res = await fetch(`${link.signedUrl}&t=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) return leeg();
   try {
-    const gelezen = JSON.parse(await data.text());
+    const gelezen = JSON.parse(await res.text());
     return {
       huidig: gelezen.huidig ?? leeg().huidig,
       metingen: Array.isArray(gelezen.metingen) ? gelezen.metingen : [],
@@ -29,7 +35,11 @@ export async function readMaturiteit(id) {
 async function schrijf(id, inhoud) {
   const { error } = await getSupabase()
     .storage.from(FILES_BUCKET)
-    .upload(pad(id), Buffer.from(JSON.stringify(inhoud)), { contentType: "application/json", upsert: true });
+    .upload(pad(id), Buffer.from(JSON.stringify(inhoud)), {
+      contentType: "application/json",
+      upsert: true,
+      cacheControl: "0",
+    });
   if (error) throw error;
 }
 
