@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientMeta } from "@/lib/clientStore";
-import { readMaturiteit, saveHuidigeMeting, leggMetingVast } from "@/lib/maturiteitStore";
+import { readMaturiteit, saveHuidigeMeting, leggMetingVast, verwijderMeting } from "@/lib/maturiteitStore";
 import { meldStoring } from "@/lib/alert";
 import { schoonInvoer, maakSnapshot, berekenProfiel } from "../../../../../../src/aiMaturity.js";
 
@@ -41,5 +41,23 @@ export async function POST(request, { params }) {
   } catch (err) {
     meldStoring("Volwassenheidsmeting vastleggen mislukt", { klantId: id, fout: err.message });
     return NextResponse.json({ error: "Vastleggen mislukt." }, { status: 502 });
+  }
+}
+
+// Een vastgelegde meting weer verwijderen, bijvoorbeeld als hij per ongeluk is vastgelegd.
+export async function DELETE(request, { params }) {
+  const { id } = await params;
+  if (!(await getClientMeta(id))) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
+
+  const { op } = await request.json();
+  if (typeof op !== "string") return NextResponse.json({ error: "Geen meting opgegeven" }, { status: 400 });
+
+  try {
+    const metingen = await verwijderMeting(id, op);
+    if (!metingen) return NextResponse.json({ error: "Meting niet gevonden" }, { status: 404 });
+    return NextResponse.json({ metingen });
+  } catch (err) {
+    meldStoring("Volwassenheidsmeting verwijderen mislukt", { klantId: id, fout: err.message });
+    return NextResponse.json({ error: "Verwijderen mislukt." }, { status: 502 });
   }
 }

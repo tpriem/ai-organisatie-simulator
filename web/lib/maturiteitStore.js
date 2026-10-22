@@ -54,3 +54,11 @@ export async function leggMetingVast(id, snapshot) {
   await schrijf(id, { ...bestaand, metingen });
   return metingen;
 }
+
+export async function verwijderMeting(id, op) {
+  const bestaand = await readMaturiteit(id);
+  const metingen = bestaand.metingen.filter((m) => m.op !== op);
+  if (metingen.length === bestaand.metingen.length) return null;
+  await schrijf(id, { ...bestaand, metingen });
+  return metingen;
+}

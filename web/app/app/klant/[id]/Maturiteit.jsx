@@ -221,6 +221,7 @@ export default function Maturiteit({ id }) {
   const [vastleggen, setVastleggen] = useState(false);
   const [melding, setMelding] = useState(null);
   const [geopend, setGeopend] = useState(null);
+  const [verwijderOp, setVerwijderOp] = useState(null); // meting die om bevestiging vraagt
   const timer = useRef(null);
   const wacht = useRef(null);
   // De laatste staat, direct bijgewerkt. Twee klikken kort na elkaar mogen elkaar niet
@@ -323,6 +324,25 @@ export default function Maturiteit({ id }) {
       setMelding({ soort: "fout", tekst: err.message });
     } finally {
       setVastleggen(false);
+    }
+  }
+
+  async function verwijderMeting(op) {
+    setMelding(null);
+    try {
+      const res = await fetch(`/api/clients/${id}/maturiteit`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ op }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Verwijderen mislukt");
+      setMetingen(body.metingen);
+      setMelding({ soort: "ok", tekst: "Meting verwijderd." });
+    } catch (err) {
+      setMelding({ soort: "fout", tekst: err.message });
+    } finally {
+      setVerwijderOp(null);
     }
   }
 
@@ -459,8 +479,24 @@ export default function Maturiteit({ id }) {
                     {datum(m.op)}
                     {m.scope ? ` · ${m.scope}` : ""}
                   </span>
-                  <span className="text-slate-500">
-                    {p.gemeten} van 8 dimensies · levels {p.dimensies.map((d) => (d.niveau === null ? "–" : d.niveau)).join(" ")}
+                  <span className="flex items-center gap-3 text-slate-500">
+                    <span>
+                      {p.gemeten} van 8 dimensies · levels {p.dimensies.map((d) => (d.niveau === null ? "–" : d.niveau)).join(" ")}
+                    </span>
+                    {verwijderOp === m.op ? (
+                      <span className="flex items-center gap-1.5">
+                        <button onClick={() => verwijderMeting(m.op)} className="rounded bg-red-600 px-2 py-0.5 text-[11px] text-white hover:bg-red-500">
+                          Zeker weten
+                        </button>
+                        <button onClick={() => setVerwijderOp(null)} className="text-[11px] text-slate-500 hover:underline">
+                          Annuleren
+                        </button>
+                      </span>
+                    ) : (
+                      <button onClick={() => setVerwijderOp(m.op)} className="text-[11px] text-slate-400 hover:text-red-600 hover:underline">
+                        Verwijderen
+                      </button>
+                    )}
                   </span>
                 </li>
               );
