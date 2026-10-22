@@ -20,6 +20,7 @@ import {
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
 import Aanlevering from "./Aanlevering";
+import KlantOpzet from "./KlantOpzet";
 import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
 
 // Waar de vrijgekomen capaciteit naartoe gaat, per waardetype. Dit is de beslissing
@@ -1350,7 +1351,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
   );
 }
 
-export default function ClientWorkspace({ id }) {
+export default function ClientWorkspace({ id, nieuw = false }) {
   const router = useRouter();
   const [allClients, setAllClients] = useState([]);
   const [client, setClient] = useState(null);
@@ -1369,6 +1370,7 @@ export default function ClientWorkspace({ id }) {
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState("input");
   const [resultatenSub, setResultatenSub] = useState("functies"); // functies | maturity
+  const [opzetGesloten, setOpzetGesloten] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1500,7 +1502,7 @@ export default function ClientWorkspace({ id }) {
       body: JSON.stringify({ naam: newClientNaam }),
     });
     const created = await res.json();
-    router.push(`/app/klant/${created.id}`);
+    router.push(`/app/klant/${created.id}?nieuw=1`);
   }
 
   async function handleDeleteClient() {
@@ -1641,6 +1643,8 @@ export default function ClientWorkspace({ id }) {
           <MaturiteitIngevuld>{(klaar) => <StepChip done={klaar} label="AI-volwassenheid" />}</MaturiteitIngevuld>
           <StepChip done={!!results} label="Analyse" />
         </div>
+
+        {nieuw && !opzetGesloten && <KlantOpzet id={id} onSluit={() => setOpzetGesloten(true)} />}
 
         {savingAnswers && <p className="text-xs text-indigo-500 mb-4">Opslaan...</p>}
 

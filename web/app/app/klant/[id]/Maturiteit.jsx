@@ -41,7 +41,7 @@ function datum(iso) {
 
 const MaturiteitContext = createContext(null);
 
-function useMaturiteit() {
+export function useMaturiteit() {
   const ctx = useContext(MaturiteitContext);
   if (!ctx) throw new Error("MaturiteitProvider ontbreekt");
   return ctx;

@@ -62,7 +62,7 @@ export default function HomePage() {
         throw new Error(body.error ?? "Aanmaken mislukt");
       }
       const client = await res.json();
-      router.push(`/app/klant/${client.id}`);
+      router.push(`/app/klant/${client.id}?nieuw=1`);
     } catch (err) {
       setError(err.message);
     } finally {
