@@ -1748,7 +1748,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               </div>
             }
           >
-            <div className="mb-5 rounded-xl bg-indigo-600 text-white px-4 py-3 flex items-start gap-2.5">
+            <div className="mb-5 rounded-xl border border-indigo-300/40 bg-indigo-50/60 text-slate-800 px-4 py-3 flex items-start gap-2.5">
               <span className="text-lg leading-none">💬</span>
               <p className="text-sm leading-snug">
                 <span className="font-semibold">Richtinggevend, geen voorspelling.</span> Dit is een vertrekpunt voor

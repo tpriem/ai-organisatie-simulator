@@ -6,6 +6,6 @@
 export const BESTEMMING_STIJL = {
   kostenreductie: { balk: "bg-slate-400", tekst: "text-slate-700" },
   capaciteitsgroei: { balk: "bg-indigo-500", tekst: "text-indigo-700" },
-  kwaliteitsverbetering: { balk: "bg-emerald-500", tekst: "text-emerald-700" },
+  kwaliteitsverbetering: { balk: "bg-hod-cyan", tekst: "text-hod-cyan" },
   onbepaald: { balk: "bg-slate-200", tekst: "text-slate-400" },
 };
