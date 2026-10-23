@@ -168,13 +168,15 @@ function herkomstBlock(rollen) {
     .join("");
 
   return `
+  <div class="keep-blok">
   <h2>Waar komt de capaciteit vandaan?</h2>
   <p class="disclaimer">Waar het werk vandaan komt dat vrijkomt, per taakcategorie. Dit is dezelfde capaciteit als hierboven; daar staat waar die naartoe kan, hier waar die uit voortkomt.</p>
   <p>${esc(herkomstZin(herkomst))}</p>
   <table class="keep">
     <thead><tr>${HERKOMST_KOLOMMEN.map((k, i) => `<th${i > 0 ? ' class="num"' : ""}>${esc(k)}</th>`).join("")}</tr></thead>
     <tbody>${rijen}</tbody>
-  </table>`;
+  </table>
+  </div>`;
 }
 
 // De competenties die de hele organisatie raken. Zelfde berekening en teksten als in de app.
@@ -193,6 +195,7 @@ function ontwikkelagendaBlock(rollen) {
   const laagZin = agendaLaagZin(agenda);
 
   return `
+  <div class="keep-blok">
   <h2>Welke competenties raken de hele organisatie?</h2>
   <p class="disclaimer">${esc(AGENDA_INTRO)}</p>
   <p>${esc(agendaZin(agenda))}</p>
@@ -201,7 +204,8 @@ function ontwikkelagendaBlock(rollen) {
     <tbody>${rijen}</tbody>
   </table>
   ${rest > 0 ? `<p class="disclaimer">${esc(agendaRestZin(rest))}</p>` : ""}
-  ${laagZin ? `<p class="disclaimer">${esc(laagZin)}</p>` : ""}`;
+  ${laagZin ? `<p class="disclaimer">${esc(laagZin)}</p>` : ""}
+  </div>`;
 }
 
 function bar(label, value, maxValue, colorClass) {
@@ -469,6 +473,7 @@ export function buildReportHtml(results) {
   th.num, td.num { text-align: right; }
   /* Korte tabellen blijven bij elkaar, zodat er geen losse rij op de vorige pagina achterblijft. */
   table.keep { page-break-inside: avoid; }
+  .keep-blok { page-break-inside: avoid; }
   tr:nth-child(even) td { background: #f7f6fc; }
   .badge { display: inline-block; background: #ece6fd; color: #5b34c9; border-radius: 3px; padding: 1px 5px; font-size: 9px; }
   .role-block { page-break-inside: avoid; margin-bottom: 18px; }
