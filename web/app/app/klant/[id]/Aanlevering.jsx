@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import LinkMailen from "./LinkMailen";
 
 // Bij de input van een klant: een aanleverlink om de klant zelf zijn functieoverzicht en
 // functieprofielen te laten uploaden, en de inbox met wat er is binnengekomen. De adviseur neemt
@@ -151,6 +152,7 @@ export default function Aanlevering({ id, onOvergenomen }) {
             </button>
           </div>
           <p className="mt-1 text-[11px] text-emerald-800">Deze link wordt maar één keer getoond. Een nieuwe link vervangt de vorige.</p>
+          <LinkMailen key={nieuweUrl} klantId={id} url={nieuweUrl} soort="aanlever" />
         </div>
       )}
 

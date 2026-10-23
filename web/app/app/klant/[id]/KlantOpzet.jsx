@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ROLLEN } from "../../../../../src/volwassenheid.js";
 import { useMaturiteit } from "./Maturiteit";
+import LinkMailen from "./LinkMailen";
 
 // Verschijnt direct nadat een klant is aangemaakt: de links voor de klant maak je meteen hier,
 // zodat je ze in één keer kunt kopiëren en versturen. De links worden maar één keer getoond; deze
@@ -40,7 +41,8 @@ export default function KlantOpzet({ id, onSluit }) {
     const uit = await maakInvullink(rol, label);
     setBezig(false);
     if (uit.fout) return setFout(uit.fout);
-    setLinks((l) => [...l, { soort: "invuller", wie: `Vragenlijst: ${rolNaam(rol)}${label.trim() ? ` · ${label.trim()}` : ""}`, url: uit.url }]);
+    const rolTekst = `${rolNaam(rol)}${label.trim() ? ` · ${label.trim()}` : ""}`;
+    setLinks((l) => [...l, { soort: "invuller", wie: `Vragenlijst: ${rolTekst}`, rolTekst, url: uit.url }]);
     setLabel("");
   }
 
@@ -134,6 +136,7 @@ export default function KlantOpzet({ id, onSluit }) {
                     {gekopieerd === `${l.soort}-${n}` ? "Gekopieerd" : "Kopieer"}
                   </button>
                 </div>
+                <LinkMailen klantId={id} url={l.url} soort={l.soort} rol={l.rolTekst} />
               </li>
             ))}
           </ul>

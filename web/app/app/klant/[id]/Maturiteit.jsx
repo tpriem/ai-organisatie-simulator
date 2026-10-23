@@ -14,6 +14,7 @@ import {
   berekenProfiel,
   vergelijkMetingen,
 } from "../../../../../src/volwassenheid.js";
+import LinkMailen from "./LinkMailen";
 
 // Tabbladen voor het AI-volwassenheidsraamwerk van House of Digital. De vragenlijst (invoer)
 // staat onder "AI-volwassenheid", de uitkomsten onder Resultaten → AI-volwassenheid. Het
@@ -348,7 +349,7 @@ const statusTekst = (i) => (i.bron !== "link" ? "" : i.status === "ingediend" ? 
 
 function InvullerKeuze() {
   const {
-    huidig, actief, setActief, voegInvullerToe, verwijderInvuller, maakInvullink, vernieuwLink, verwijderLinkInvuller,
+    id, huidig, actief, setActief, voegInvullerToe, verwijderInvuller, maakInvullink, vernieuwLink, verwijderLinkInvuller,
     ververs, bewijsModus, setBewijsModus, profiel,
   } = useMaturiteit();
   const [nieuw, setNieuw] = useState(false);
@@ -477,6 +478,7 @@ function InvullerKeuze() {
           <p className="mt-1 text-[11px] text-emerald-800">
             Deze link wordt maar één keer getoond en is 45 dagen geldig. Is hij kwijt? Maak dan een nieuwe link voor deze invuller; de oude werkt dan niet meer.
           </p>
+          <LinkMailen key={gemaakt.url} klantId={id} url={gemaakt.url} soort="invuller" rol={gemaakt.wie} />
           <button type="button" onClick={() => setGemaakt(null)} className="mt-1 text-[11px] text-emerald-700 hover:underline">
             Verbergen
           </button>

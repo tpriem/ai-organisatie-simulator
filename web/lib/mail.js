@@ -35,3 +35,22 @@ export async function sendSetPasswordEmail({ origin, to, name, token, isInvite }
 
   if (error) throw new Error(error.message ?? "Versturen mislukt.");
 }
+
+/**
+ * Een mail van een adviseur aan een klant met een invul- of aanleverlink. De inhoud wordt in
+ * src/mailLink.js opgebouwd; hier gaat het alleen om het versturen. Antwoorden van de klant gaan
+ * naar de adviseur (replyTo), niet naar het noreply-adres.
+ */
+export async function sendLinkEmail({ to, replyTo, bcc, subject, text, html }) {
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: "House of Digital <noreply@transformation-simulation.ai>",
+    to,
+    ...(replyTo ? { replyTo } : {}),
+    ...(bcc ? { bcc } : {}),
+    subject,
+    text,
+    html,
+  });
+  if (error) throw new Error(error.message ?? "Versturen mislukt.");
+}
