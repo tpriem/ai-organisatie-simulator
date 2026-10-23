@@ -68,3 +68,14 @@ test("alleen een invul- of aanleverlink van deze site komt door de controle", ()
     assert.equal(urlPastBijLink(slecht, ORIGIN), null, `"${slecht}" had geweigerd moeten worden`);
   }
 });
+
+test("met een logo-url staat het logo op een donkere balk bovenaan, zonder niet", () => {
+  const met = bouwMail({ tekst: "Hallo", url: `${ORIGIN}/invullen/${TOKEN}`, soort: "invuller", logoUrl: `${ORIGIN}/hod-logo-white.png` });
+  assert.match(met.html, /<img src="https:\/\/www\.transformation-simulation\.ai\/hod-logo-white\.png" alt="House of Digital"/);
+  assert.ok(met.html.indexOf("<img") < met.html.indexOf("Hallo"), "logo hoort boven het bericht");
+  assert.match(met.html, /background:#241b4b/);
+  // De enige link is nog steeds die van de knop; het logo is een plaatje, geen link.
+  assert.equal([...met.html.matchAll(/<a href="/g)].length, 1);
+  const zonder = bouwMail({ tekst: "Hallo", url: `${ORIGIN}/invullen/${TOKEN}`, soort: "invuller" });
+  assert.doesNotMatch(zonder.html, /<img/);
+});

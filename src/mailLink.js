@@ -49,8 +49,9 @@ const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
  * @param {string} url   de link, door de server gecontroleerd
  * @param {string} soort "invuller" | "aanlever"
  * @param {string|null} geldigTot leesbare datum
+ * @param {string|null} logoUrl  absolute url van het (witte) logo; het komt op een donkere balk bovenaan
  */
-export function bouwMail({ tekst, url, soort, geldigTot = null }) {
+export function bouwMail({ tekst, url, soort, geldigTot = null, logoUrl = null }) {
   const knop = soort === "aanlever" ? "Gegevens aanleveren" : "Vragenlijst openen";
   const voet = `Deze link is persoonlijk. Deel hem niet verder.${geldigTot ? ` Hij is geldig tot ${geldigTot}.` : ""}`;
   const bericht = String(tekst).replace(/\r\n/g, "\n").trim();
@@ -58,8 +59,14 @@ export function bouwMail({ tekst, url, soort, geldigTot = null }) {
   const text = `${bericht}\n\n${knop}: ${url}\n\n${voet}\n`;
 
   const alinea = (deel) => `<p style="margin:0 0 14px;line-height:1.55;">${esc(deel).replace(/\n/g, "<br>")}</p>`;
+  // Het logo is wit, dus het staat op een donkere balk. Zonder plaatjes (veel mailprogramma's blokkeren die
+  // eerst) blijft de balk met de naam leesbaar.
+  const kop = logoUrl
+    ? `<div style="background:#241b4b;border-radius:10px;padding:16px 20px;margin:0 0 22px;"><img src="${esc(logoUrl)}" alt="House of Digital" height="30" style="height:30px;width:auto;display:block;border:0;color:#ffffff;font-size:14px;font-weight:bold;"></div>`
+    : "";
   const html =
     `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#241b4b;max-width:560px;">` +
+    kop +
     bericht.split(/\n{2,}/).map(alinea).join("") +
     `<p style="margin:20px 0;"><a href="${esc(url)}" style="background:#7b4feb;color:#ffffff;text-decoration:none;padding:11px 20px;border-radius:8px;display:inline-block;font-weight:bold;">${esc(knop)}</a></p>` +
     `<p style="margin:0 0 6px;font-size:12px;color:#6b6a8f;">Werkt de knop niet? Kopieer dan deze link in uw browser:<br><span style="word-break:break-all;">${esc(url)}</span></p>` +

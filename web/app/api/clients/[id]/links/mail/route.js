@@ -63,7 +63,13 @@ export async function POST(request, { params }) {
 
   const sessie = await auth();
   const afzender = sessie?.user?.email ?? null;
-  const { text, html } = bouwMail({ tekst, url: body.url, soort: onderdelen.soort, geldigTot: datum(gevonden.link.verlooptOp) });
+  const { text, html } = bouwMail({
+    tekst,
+    url: body.url,
+    soort: onderdelen.soort,
+    geldigTot: datum(gevonden.link.verlooptOp),
+    logoUrl: `${siteOrigin(request)}/hod-logo-white.png`,
+  });
 
   try {
     await sendLinkEmail({
