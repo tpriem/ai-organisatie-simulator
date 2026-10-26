@@ -136,7 +136,7 @@ export default function KlantOpzet({ id, onSluit }) {
                     {gekopieerd === `${l.soort}-${n}` ? "Gekopieerd" : "Kopieer"}
                   </button>
                 </div>
-                <LinkMailen klantId={id} url={l.url} soort={l.soort} rol={l.rolTekst} />
+                <LinkMailen key={l.url} klantId={id} url={l.url} soort={l.soort} rol={l.rolTekst} />
               </li>
             ))}
           </ul>

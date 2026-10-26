@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "AI Organisatie Transformatie Simulator",
-  description: "Intern tool voor organisatie- en sectoranalyse",
+  description: "Simulatie van wat AI betekent voor functies, capaciteit en AI-volwassenheid van een organisatie",
 };
 
 export default function RootLayout({ children }) {

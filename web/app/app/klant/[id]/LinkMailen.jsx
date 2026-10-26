@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { conceptMail, MAIL_LIMIETEN } from "../../../../../src/mailLink.js";
 
 // Een zojuist gemaakte link per mail naar de klant sturen. Er gaat nooit iets vanzelf de deur uit: de
@@ -18,6 +18,8 @@ export default function LinkMailen({ klantId, url, soort, rol = "" }) {
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState(null);
   const [verstuurdNaar, setVerstuurdNaar] = useState(null);
+  // Synchrone guard: state is pas na de volgende render bijgewerkt, een tweede klik zou er nog doorheen komen.
+  const bezigRef = useRef(false);
 
   async function openen() {
     setOpen(true);
@@ -41,7 +43,8 @@ export default function LinkMailen({ klantId, url, soort, rol = "" }) {
 
   async function verstuur(e) {
     e.preventDefault();
-    if (bezig) return;
+    if (bezigRef.current) return;
+    bezigRef.current = true;
     setBezig(true);
     setFout(null);
     try {
@@ -58,6 +61,7 @@ export default function LinkMailen({ klantId, url, soort, rol = "" }) {
     } catch (err) {
       setFout(err.message);
     } finally {
+      bezigRef.current = false;
       setBezig(false);
     }
   }

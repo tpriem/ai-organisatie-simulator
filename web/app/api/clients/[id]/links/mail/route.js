@@ -5,7 +5,10 @@ import { zoekLink } from "@/lib/linkStore";
 import { sendLinkEmail } from "@/lib/mail";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { meldStoring } from "@/lib/alert";
-import { valideerOntvanger, bouwMail, urlPastBijLink, MAIL_LIMIETEN } from "../../../../../../../src/mailLink.js";
+import { valideerOntvanger, bouwMail, urlPastBijLink, maakMailBegrenzer, MAIL_LIMIETEN } from "../../../../../../../src/mailLink.js";
+
+// Per afzender hooguit 10 mails per uur (best-effort, per serverinstantie).
+const toegestaan = maakMailBegrenzer({ limiet: 10 });
 
 // Een invul- of aanleverlink per mail naar een klant sturen. Alleen voor ingelogde adviseurs.
 // De link wordt hier gecontroleerd (van deze site, bij deze klant, nog geldig) en door de server onder
@@ -24,11 +27,8 @@ export async function GET(request, { params }) {
 }
 
 const datum = (iso) => {
-  try {
-    return new Date(iso).toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
-  } catch {
-    return null;
-  }
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
 };
 
 export async function POST(request, { params }) {
@@ -63,9 +63,12 @@ export async function POST(request, { params }) {
 
   const sessie = await auth();
   const afzender = sessie?.user?.email ?? null;
+  if (!toegestaan(afzender ?? "onbekend")) {
+    return NextResponse.json({ error: "Je hebt het maximum aantal mails per uur bereikt. Probeer het later opnieuw." }, { status: 429 });
+  }
   const { text, html } = bouwMail({
     tekst,
-    url: body.url,
+    url: onderdelen.url,
     soort: onderdelen.soort,
     geldigTot: datum(gevonden.link.verlooptOp),
     logoUrl: `${siteOrigin(request)}/hod-logo-white.png`,

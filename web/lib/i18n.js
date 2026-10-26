@@ -37,7 +37,7 @@ const dictionaries = {
         "Welke vaardigheden nu belangrijk zijn — en welke dat na de transformatie worden. Zo weet je waar om- en bijscholing het meeste verschil maakt.",
       card3Title: "Organisatiebreed beeld",
       card3Text:
-        "Krimpende en groeiende rollen, kansen voor samenvoeging, en concrete aanbevelingen — inclusief een visueel voor/na-organogram.",
+        "Krimpende en groeiende rollen, kansen voor samenvoeging, en concrete aanbevelingen — inclusief een organogram dat laat zien waar de capaciteit vrijkomt.",
       howHeading: "Hoe het werkt",
       step1Title: "Roster & functieprofielen aanleveren",
       step1Text: "Jullie rollen met FTE, uren en kosten, plus de bijbehorende functieprofielen. Wij verzorgen de verwerking.",
@@ -98,7 +98,7 @@ const dictionaries = {
         "Which skills matter now — and which will matter after the transformation. So you know where reskilling makes the biggest difference.",
       card3Title: "Organization-wide view",
       card3Text:
-        "Shrinking and growing roles, opportunities for consolidation, and concrete recommendations — including a visual before/after org chart.",
+        "Shrinking and growing roles, opportunities for consolidation, and concrete recommendations — including an org chart that shows where capacity is freed up.",
       howHeading: "How it works",
       step1Title: "Provide roster & role profiles",
       step1Text: "Your roles with FTE, hours and costs, plus the matching role profiles. We handle the processing.",

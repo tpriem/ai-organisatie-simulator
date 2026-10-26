@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, BESTEMMING_VOLGORDE } from "@/lib/orgChartData";
+import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, onderdeelRegel, BESTEMMING_VOLGORDE } from "@/lib/orgChartData";
 import { getWaardetype } from "../../../../../src/config.js";
 import { nl } from "../../../../../src/formatNl.js";
 import { BESTEMMING_STIJL } from "./bestemmingStijl";
@@ -24,7 +24,10 @@ const BOOM_CSS = `
 .og-boom li:last-child::before { border-right: 1px solid var(--color-slate-300); border-radius: 0 6px 0 0; }
 .og-boom li:first-child::after { border-radius: 6px 0 0 0; }
 .og-boom ul ul::before { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: 1px solid var(--color-slate-300); }
-.og-boom > ul { padding-top: 0; }
+.og-boom > div > ul { padding-top: 0; }
+/* Bovenaan hangen losse toppen niet onder één rol: geen verbindingslijnen tussen hen. */
+.og-boom > div > ul > li { padding-top: 0; }
+.og-boom > div > ul > li::before, .og-boom > div > ul > li::after { display: none !important; }
 `;
 
 function StapelBalk({ fteHuidig, vrijPerType, dun = false }) {
@@ -212,13 +215,12 @@ function RolRij({ rol }) {
 }
 
 function AfdelingKaart({ naam, x, rollen }) {
-  const teksten = { onderdeel: (v) => `${nl(v.fteHuidig, 1)} FTE · ${nl(v.fteVrij, 1)} FTE vrij (${pct(v.fteVrij, v.fteHuidig)}%)` };
   return (
     <div className="rounded-lg border border-slate-200 bg-card shadow-sm">
       <div className="border-b border-slate-100 px-3 py-2.5">
         <div className="mb-1.5 flex items-baseline justify-between gap-3">
           <p className="text-sm font-semibold text-slate-800">{naam}</p>
-          <p className="shrink-0 text-xs text-slate-500">{teksten.onderdeel(x)}</p>
+          <p className="shrink-0 text-xs text-slate-500">{onderdeelRegel(x)}</p>
         </div>
         <StapelBalk fteHuidig={x.fteHuidig} vrijPerType={x.vrijPerType} />
       </div>

@@ -547,7 +547,7 @@ export function realisatieVoorwaarden(profiel, results) {
     return { totaal: l.length, voldaan: l.filter((v) => v.status === "voldaan").length };
   };
 
-  // De ontwikkelagenda uit de rolanalyse naast het niveau van vaardigheden.
+  // De competenties die de rolanalyse extra nodig noemt, naast het niveau van vaardigheden.
   const vaardigheden = themas.get("mensen_vaardigheden");
   const agenda = calculateCompetentieAgenda(rollen, "realistisch");
   const agendaLengte = agenda?.competenties?.length ?? 0;

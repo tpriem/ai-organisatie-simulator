@@ -1029,7 +1029,7 @@ function Realisatie({ realisatie, heeftAnalyse }) {
       {scenario("kwaliteitsverbetering", "Rollen met bestemming kwaliteitsverbetering", null)}
       {realisatie.knelpuntVaardigheden && (
         <Waarschuwing>
-          De ontwikkelagenda uit de analyse van functies telt {realisatie.agendaLengte} competenties, terwijl het niveau van Mensen en cultuur: vaardigheden laag
+          De analyse van functies noemt {realisatie.agendaLengte} competenties die straks extra nodig zijn, terwijl het niveau van Mensen en cultuur: vaardigheden laag
           is. Dat is een concreet knelpunt voor de realisatie.
         </Waarschuwing>
       )}

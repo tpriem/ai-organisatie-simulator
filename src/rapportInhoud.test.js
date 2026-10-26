@@ -14,7 +14,7 @@ import {
 } from "./rapportTeksten.js";
 import { stelWaardetypeIn, rollenDieBevestigingVragen } from "./waardetype.js";
 import { nl } from "./formatNl.js";
-import { buildOrgChartData, organogramTeksten } from "../web/lib/orgChartData.js";
+import { buildOrgChartData, organogramTeksten, aansturingRegels } from "../web/lib/orgChartData.js";
 import { calculateSubtotalenPerAfdeling } from "./calculate.js";
 import { SUBTOTALEN_KOLOMMEN, subtotaalCellen } from "./rapportTeksten.js";
 import { buildReportHtml } from "../web/lib/generateReportPdf.js";
@@ -494,5 +494,30 @@ for (const formaat of ["pdf", "docx"]) {
     assert.ok(!tekst.includes("FTE realist."));
     assert.ok(!tekst.includes("FTE agress."));
     assert.ok(!tekst.includes("Besparing/jaar"));
+  });
+}
+
+// ── Organogram met rapportagelijnen: de boomvariant in beide rapporten ───────────────
+
+async function rapportenMetRapportagelijnen() {
+  const results = fixture();
+  const baas = results.rollen[0].rolnaam;
+  results.rollen.slice(1).forEach((r) => {
+    r.rapporteertAan = baas;
+  });
+  const pdf = platHtml(buildReportHtml(results));
+  const docx = (await mammoth.extractRawText({ buffer: await generateReportDocx(results) })).value.replace(/\s+/g, " ");
+  return { results, pdf, docx };
+}
+
+for (const formaat of ["pdf", "docx"]) {
+  test(`${formaat}: met rapportagelijnen staat de boom met de aansturing in het rapport`, async () => {
+    const { results, [formaat]: tekst } = await rapportenMetRapportagelijnen();
+    const chart = buildOrgChartData(results.rollen);
+    assert.ok(chart.hierarchie, "de fixture moet een hiërarchie opleveren");
+    const t = organogramTeksten(chart);
+    assert.ok(tekst.includes(t.uitleg), "uitleg met het aantal lagen ontbreekt");
+    for (const r of aansturingRegels(chart.hierarchie)) assert.ok(tekst.includes(r.tekst), `aansturingszin voor ${r.rolnaam} ontbreekt`);
+    for (const k of chart.hierarchie.top) assert.ok(tekst.includes(`${k.rolnaam} — ${t.onderdeel(k)}`), `knoop ${k.rolnaam} ontbreekt`);
   });
 }

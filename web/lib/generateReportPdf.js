@@ -1,3 +1,4 @@
+import { BESTEMMING_HEX } from "./bestemmingKleur.js";
 import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, BESTEMMING_VOLGORDE } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
 import { getWaardetype } from "../../src/config.js";
@@ -81,22 +82,17 @@ function waardetypeLine(rol) {
 
 // Balk met een eigen waardetekst, voor percentages en gecombineerde cijfers. bar()
 // hierboven toont altijd één getal met twee decimalen en past daar niet bij.
-function barTekst(label, tekst, breedtePct, colorClass) {
+function barTekst(label, tekst, breedtePct, kleur) {
   const breedte = Math.max(Math.min(breedtePct, 100), 1.5);
+  // Een kleurklasse (c-slate) of een hex-kleur (#7b4feb).
+  const vulling = kleur.startsWith("#") ? `bar-fill" style="width:${breedte}%;background:${kleur}` : `bar-fill ${kleur}" style="width:${breedte}%`;
   return `
     <div class="bar-row">
       <span class="bar-label-wide">${esc(label)}</span>
-      <div class="bar-track"><div class="bar-fill ${colorClass}" style="width:${breedte}%"></div></div>
+      <div class="bar-track"><div class="${vulling}"></div></div>
       <span class="bar-value" style="width:130px;">${tekst}</span>
     </div>`;
 }
-
-const BESTEMMING_KLASSE = {
-  kostenreductie: "c-slate",
-  capaciteitsgroei: "c-indigo",
-  kwaliteitsverbetering: "c-emerald",
-  onbepaald: "c-indigo-light",
-};
 
 // Waar de vrijgekomen capaciteit naartoe gaat. Zelfde berekening als in de app
 // (calculateCapaciteitBestemming), zodat beide altijd dezelfde cijfers tonen.
@@ -119,7 +115,7 @@ function capaciteitBlock(organisatieTotaal, rollen) {
             label,
             `${nl(b.fte, 1)} FTE · ${b.rollen} ${b.rollen === 1 ? "rol" : "rollen"}`,
             b.aandeel * 100,
-            BESTEMMING_KLASSE[b.waardetype] ?? "c-slate"
+            BESTEMMING_HEX[b.waardetype] ?? BESTEMMING_HEX.onbepaald
           );
         })
         .join("")
@@ -249,8 +245,6 @@ function competentieTop5Block(title, items) {
       .join("")}`;
 }
 
-const BESTEMMING_HEX = { kostenreductie: "#9d9bbd", capaciteitsgroei: "#7b4feb", kwaliteitsverbetering: "#10b981", onbepaald: "#d5c9fb" };
-
 /** Eén balk: het gekleurde deel komt vrij (per bestemming), de rest blijft. */
 function stapelBalk(fteHuidig, vrijPerType) {
   const segmenten = balkSegmenten(fteHuidig, vrijPerType)
@@ -262,7 +256,7 @@ function stapelBalk(fteHuidig, vrijPerType) {
 function bestemmingRegel(vrijPerType) {
   const namen = BESTEMMING_VOLGORDE.filter((t) => (vrijPerType?.[t] ?? 0) > 0).map((t) => {
     const w = getWaardetype(t);
-    return `<span style="color:${BESTEMMING_HEX[t] === "#d5c9fb" ? "#6b6a8f" : BESTEMMING_HEX[t]};">${w ? `${w.icon} ${esc(w.label)}` : "nog niet bepaald"}</span>`;
+    return `<span style="color:${t === "onbepaald" ? "#6b6a8f" : BESTEMMING_HEX[t]};">${w ? `${w.icon} ${esc(w.label)}` : "nog niet bepaald"}</span>`;
   });
   return namen.length ? `<p style="font-size:9px;margin:0 0 2px;">${namen.join(" &nbsp; ")}</p>` : "";
 }
@@ -270,7 +264,7 @@ function bestemmingRegel(vrijPerType) {
 function legendaOrganogram() {
   const stip = (kleur, tekst) => `<span><span class="tier-stip" style="background:${kleur};"></span>${tekst}</span>`;
   return `<div class="tier-legenda" style="margin:0 0 8px;">
-    ${stip("#e4e2f2", "blijft")}<span>komt vrij en kan naar:</span>
+    ${stip("#e9e7f5", "blijft")}<span>komt vrij en kan naar:</span>
     ${["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"].map((t) => stip(BESTEMMING_HEX[t], esc(getWaardetype(t).label.toLowerCase()))).join("")}
   </div>`;
 }
@@ -280,10 +274,12 @@ function hierarchieKnoop(knoop, teksten, diepte = 0) {
   const inspringen = diepte * 14;
   return `<div style="margin-left:${inspringen}px;border-left:${
     diepte > 0 ? "1px solid #e4e2f2" : "none"
-  };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;page-break-inside:avoid;">
-    <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${teksten.onderdeel(knoop)}</p>
-    ${stapelBalk(knoop.fteHuidig, knoop.vrijPerType)}
-    ${bestemmingRegel(knoop.vrijPerType)}
+  };padding-left:${diepte > 0 ? 8 : 0}px;margin-top:6px;">
+    <div style="page-break-inside:avoid;">
+      <p style="font-weight:bold;font-size:11px;margin:0 0 2px;">${esc(knoop.rolnaam)} — ${teksten.onderdeel(knoop)}</p>
+      ${stapelBalk(knoop.fteHuidig, knoop.vrijPerType)}
+      ${bestemmingRegel(knoop.vrijPerType)}
+    </div>
     ${knoop.kinderen.map((k) => hierarchieKnoop(k, teksten, diepte + 1)).join("")}
   </div>`;
 }
@@ -482,7 +478,7 @@ export function buildReportHtml(results) {
   .bar-track { flex: 1; height: 14px; background: #f1f0f9; border-radius: 3px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 3px; }
   .bar-value { width: 40px; text-align: right; font-size: 9px; font-weight: bold; flex-shrink: 0; }
-  .stapel { display: flex; height: 10px; background: #f1f0f9; border-radius: 5px; overflow: hidden; margin: 2px 0 3px; }
+  .stapel { display: flex; height: 10px; background: #e9e7f5; border-radius: 5px; overflow: hidden; margin: 2px 0 3px; }
   .c-slate { background: #9d9bbd; } .c-indigo { background: #7b4feb; } .c-indigo-light { background: #d5c9fb; }
   .c-emerald { background: #10b981; } .c-blue { background: #3b82f6; } .c-orange { background: #f97316; }
   .profiel-grid { display: flex; gap: 16px; }

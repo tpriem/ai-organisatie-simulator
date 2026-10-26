@@ -37,7 +37,8 @@ test("aansturing telt alles wat eronder hangt, nu en straks", () => {
   const leider = h.top[0];
   assert.equal(leider.spanDirect, 2);
   assert.equal(leider.spanTotaalHuidig, 6);
-  assert.equal(leider.spanTotaalRealistisch, 1.5);
+  // 4 − 1 en 2 − 0,5 FTE vrij bij de medewerkers; de leidinggevende zelf telt niet mee.
+  assert.equal(leider.spanTotaalVrij, 4.5);
 });
 
 test("een verwijzing naar een onbekende rol wordt gemeld, niet genegeerd", () => {
@@ -85,4 +86,19 @@ test("meerdere personen aan de top blijven naast elkaar staan", () => {
     rol("Medewerker", { rapporteertAan: "Directeur A" }),
   ]);
   assert.equal(h.top.length, 2);
+});
+
+test("rollen zonder roleId vallen niet samen tot één knoop", () => {
+  const zonderId = (rolnaam, rapporteertAan = "") => ({ ...rol(rolnaam, { rapporteertAan }), roleId: undefined });
+  const h = buildHierarchy([zonderId("Directeur"), zonderId("Manager", "Directeur"), zonderId("Medewerker", "Manager")]);
+  assert.equal(h.top.length, 1);
+  assert.equal(h.lagen, 3);
+});
+
+test("vrijkomend komt uit fteWeg als dat er is, anders uit fte min fteOver", () => {
+  const met = { ...rol("A", { fte: 4, over: 1 }), scenarios: { realistisch: { fteOver: 1, fteWeg: 2.5 }, agressief: { fteOver: 0 } } };
+  const zonder = rol("B", { fte: 4, over: 1 });
+  const h = buildHierarchy([met, { ...zonder, rapporteertAan: "A" }]);
+  assert.equal(h.top[0].fteVrij, 2.5);
+  assert.equal(h.top[0].kinderen[0].fteVrij, 3);
 });

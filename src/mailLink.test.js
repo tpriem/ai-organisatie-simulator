@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { valideerOntvanger, conceptMail, bouwMail, urlPastBijLink, MAIL_LIMIETEN } from "./mailLink.js";
+import { valideerOntvanger, conceptMail, bouwMail, urlPastBijLink, maakMailBegrenzer, MAIL_LIMIETEN } from "./mailLink.js";
 
 const ORIGIN = "https://www.transformation-simulation.ai";
 const TOKEN = "a7a47c8c-2acf-42f6-aada-9d9a89d5b282.xlL6uAvmsxj5OD7ikKtUJ_i_9Wu7YA1_";
@@ -52,8 +52,8 @@ test("alinea's en regeleinden blijven behouden", () => {
 });
 
 test("alleen een invul- of aanleverlink van deze site komt door de controle", () => {
-  assert.deepEqual(urlPastBijLink(`${ORIGIN}/invullen/${TOKEN}`, ORIGIN), { soort: "invuller", token: TOKEN });
-  assert.deepEqual(urlPastBijLink(`${ORIGIN}/aanleveren/${TOKEN}`, ORIGIN), { soort: "aanlever", token: TOKEN });
+  assert.deepEqual(urlPastBijLink(`${ORIGIN}/invullen/${TOKEN}`, ORIGIN), { soort: "invuller", token: TOKEN, url: `${ORIGIN}/invullen/${TOKEN}` });
+  assert.deepEqual(urlPastBijLink(`${ORIGIN}/aanleveren/${TOKEN}`, ORIGIN), { soort: "aanlever", token: TOKEN, url: `${ORIGIN}/aanleveren/${TOKEN}` });
   for (const slecht of [
     `https://kwaad.nl/invullen/${TOKEN}`,
     `${ORIGIN}/app/klant/x`,
@@ -78,4 +78,32 @@ test("met een logo-url staat het logo op een donkere balk bovenaan, zonder niet"
   assert.equal([...met.html.matchAll(/<a href="/g)].length, 1);
   const zonder = bouwMail({ tekst: "Hallo", url: `${ORIGIN}/invullen/${TOKEN}`, soort: "invuller" });
   assert.doesNotMatch(zonder.html, /<img/);
+});
+
+test("de url die verstuurd wordt is de genormaliseerde, zonder witruimte of regeleinden", () => {
+  const r = urlPastBijLink(`  ${ORIGIN}/invul\nlen/${TOKEN}\t`, ORIGIN);
+  assert.equal(r.url, `${ORIGIN}/invullen/${TOKEN}`);
+  assert.doesNotMatch(r.url, /\s/);
+});
+
+test("een ongeldige basis-url geeft null in plaats van een uitzondering", () => {
+  assert.equal(urlPastBijLink(`${ORIGIN}/invullen/${TOKEN}`, "www.transformation-simulation.ai"), null);
+  assert.equal(urlPastBijLink(`${ORIGIN}/invullen/${TOKEN}`, ""), null);
+});
+
+test("de voetnoot verschilt per soort: invullink persoonlijk, aanleverlink binnen de organisatie", () => {
+  const inv = bouwMail({ tekst: "x", url: `${ORIGIN}/invullen/${TOKEN}`, soort: "invuller" });
+  const aan = bouwMail({ tekst: "x", url: `${ORIGIN}/aanleveren/${TOKEN}`, soort: "aanlever" });
+  assert.match(inv.text, /persoonlijk. Deel hem niet verder/);
+  assert.doesNotMatch(aan.text, /persoonlijk/);
+  assert.match(aan.text, /alleen binnen uw organisatie/);
+});
+
+test("de begrenzer laat per afzender een beperkt aantal mails per uur toe", () => {
+  let nu = 0;
+  const toegestaan = maakMailBegrenzer({ limiet: 3, tijdvakMs: 1000, nu: () => nu });
+  assert.deepEqual([1, 2, 3, 4].map(() => toegestaan("a@b.nl")), [true, true, true, false]);
+  assert.equal(toegestaan("andere@b.nl"), true, "een andere afzender heeft zijn eigen teller");
+  nu = 1500;
+  assert.equal(toegestaan("a@b.nl"), true, "na het tijdvak mag het weer");
 });

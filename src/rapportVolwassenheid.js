@@ -237,7 +237,7 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
     if (r.knelpuntVaardigheden) {
       blokken.push(
         alinea(
-          `De ontwikkelagenda uit de analyse van functies telt ${r.agendaLengte} competenties, terwijl het niveau van vaardigheden laag is. Dat is een concreet knelpunt voor de realisatie.`,
+          `De analyse van functies noemt ${r.agendaLengte} competenties die straks extra nodig zijn, terwijl het niveau van vaardigheden laag is. Dat is een concreet knelpunt voor de realisatie.`,
           "waarschuwing"
         )
       );

@@ -53,7 +53,13 @@ const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
  */
 export function bouwMail({ tekst, url, soort, geldigTot = null, logoUrl = null }) {
   const knop = soort === "aanlever" ? "Gegevens aanleveren" : "Vragenlijst openen";
-  const voet = `Deze link is persoonlijk. Deel hem niet verder.${geldigTot ? ` Hij is geldig tot ${geldigTot}.` : ""}`;
+  // Een invullink is voor één invuller; een aanleverlink is één link per klant en mag binnen de organisatie
+  // naar degene die de bestanden heeft.
+  const wie =
+    soort === "aanlever"
+      ? "Deze link is bedoeld voor het aanleveren van uw gegevens. Deel hem alleen binnen uw organisatie."
+      : "Deze link is persoonlijk. Deel hem niet verder.";
+  const voet = `${wie}${geldigTot ? ` Hij is geldig tot ${geldigTot}.` : ""}`;
   const bericht = String(tekst).replace(/\r\n/g, "\n").trim();
 
   const text = `${bericht}\n\n${knop}: ${url}\n\n${voet}\n`;
@@ -87,9 +93,37 @@ export function urlPastBijLink(url, origin) {
   } catch {
     return null;
   }
-  if (u.origin !== new URL(origin).origin) return null;
+  let eigen;
+  try {
+    eigen = new URL(origin).origin;
+  } catch {
+    // Een ongeldige basis-url (SITE_URL zonder https://) mag geen crash geven, maar laat ook nooit een link door.
+    return null;
+  }
+  if (u.origin !== eigen) return null;
   if (u.search || u.hash) return null;
   const m = u.pathname.match(/^\/(invullen|aanleveren)\/([A-Za-z0-9._-]{20,120})$/);
   if (!m) return null;
-  return { soort: m[1] === "invullen" ? "invuller" : "aanlever", token: m[2] };
+  // De genormaliseerde url, zodat precies dat wat gecontroleerd is ook verstuurd wordt.
+  return { soort: m[1] === "invullen" ? "invuller" : "aanlever", token: m[2], url: u.href };
+}
+
+/**
+ * Een eenvoudige begrenzer: hoeveel mails één afzender per tijdvak mag versturen. Bewust in het geheugen:
+ * op serverless is dat een best-effort rem per instantie, geen harde garantie, maar het houdt een
+ * foutieve lus of een misbruikt account binnen de perken zonder extra opslag.
+ */
+export function maakMailBegrenzer({ limiet = 10, tijdvakMs = 60 * 60 * 1000, nu = () => Date.now() } = {}) {
+  const per = new Map();
+  return function toegestaan(sleutel) {
+    const t = nu();
+    const recent = (per.get(sleutel) ?? []).filter((x) => t - x < tijdvakMs);
+    if (recent.length >= limiet) {
+      per.set(sleutel, recent);
+      return false;
+    }
+    recent.push(t);
+    per.set(sleutel, recent);
+    return true;
+  };
 }

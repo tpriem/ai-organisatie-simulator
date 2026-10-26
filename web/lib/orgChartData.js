@@ -1,13 +1,12 @@
 /**
- * Bereidt de data voor het organogram voor: organisatie → afdelingen → rollen.
+ * Bereidt de data voor het organogram voor: organisatie → afdelingen → rollen, of de echte
+ * rapportagestructuur als het roster een kolom "rapporteert aan" heeft.
  *
- * Het roster kent geen rapportagelijnen ("rapporteert aan"), dus dit is geen echte
- * hiërarchie. De afdeling is wél beschikbaar en geeft een herkenbaar organisatiebeeld
- * in plaats van een platte lijst rollen. Per afdeling tonen we het FTE-totaal nu versus
- * na de transformatie, met de rollen eronder.
+ * Alles draait om de capaciteit die vrijkomt (en waar die naartoe kan), niet om hoeveel FTE
+ * overblijft: per knoop de huidige FTE, de vrijkomende FTE en die per bestemming.
  *
- * Zonder afdelingen in het roster valt het terug op één naamloze groep met alle rollen —
- * dan is het beeld gelijk aan de oude platte weergave.
+ * Zonder rapportagelijnen valt het terug op de afdelingen; zonder afdelingen op één groep met alle
+ * rollen.
  */
 import { nl } from "../../src/formatNl.js";
 
@@ -17,9 +16,16 @@ import { nl } from "../../src/formatNl.js";
  */
 export const BESTEMMING_VOLGORDE = ["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering", "onbepaald"];
 
-/** Wat een rol aan capaciteit vrijmaakt (realistisch), met de bestemming erbij. */
+/** De sleutel van een rol, ook voor analyses zonder roleId. */
+const idVan = (r) => r.roleId ?? `${r.afdeling ?? ""}::${r.rolnaam}`;
+
+/**
+ * Wat een rol aan capaciteit vrijmaakt (realistisch), met de bestemming erbij. Dezelfde bron als de
+ * kaarten en de rolkoppen (fteWeg); fte − fteOver alleen voor resultaten die dat veld niet hebben.
+ */
 function vrijVan(r) {
-  const vrij = Math.max(r.fte - r.scenarios.realistisch.fteOver, 0);
+  const s = r.scenarios.realistisch;
+  const vrij = Math.max(s.fteWeg ?? r.fte - s.fteOver, 0);
   return { vrij, type: r.waardetype || "onbepaald" };
 }
 
@@ -64,7 +70,8 @@ function normaliseerNaam(naam) {
  *
  * @returns {null} als geen enkele rol een leidinggevende heeft
  */
-export function buildHierarchy(rollen) {
+export function buildHierarchy(rollenIn) {
+  const rollen = rollenIn.map((r) => (r.roleId ? r : { ...r, roleId: idVan(r) }));
   const metVerwijzing = rollen.filter((r) => normaliseerNaam(r.rapporteertAan));
   if (metVerwijzing.length === 0) return null;
 
@@ -130,8 +137,6 @@ export function buildHierarchy(rollen) {
         label: r.roleLabel ?? r.rolnaam,
         afdeling: r.afdeling ?? "",
         fteHuidig: r.fte,
-        fteRealistisch: r.scenarios.realistisch.fteOver,
-        fteAgressief: r.scenarios.agressief.fteOver,
         waardetype: r.waardetype || null,
         fteVrij: vrijVan(r).vrij,
         vrijPerType: telOp([vrijVan(r)]).perType,
@@ -154,19 +159,16 @@ export function buildHierarchy(rollen) {
   const berekenSpan = (knoop, diepte = 0) => {
     knoop.diepte = diepte;
     let onderHuidig = 0;
-    let onderRealistisch = 0;
     let onderVrij = 0;
     let onderRollen = 0;
     for (const kind of knoop.kinderen) {
       berekenSpan(kind, diepte + 1);
       onderHuidig += kind.fteHuidig + kind.spanTotaalHuidig;
-      onderRealistisch += kind.fteRealistisch + kind.spanTotaalRealistisch;
       onderVrij += kind.fteVrij + kind.spanTotaalVrij;
       onderRollen += 1 + kind.spanAantalRollen;
     }
     knoop.spanDirect = knoop.kinderen.length;
     knoop.spanTotaalHuidig = onderHuidig;
-    knoop.spanTotaalRealistisch = onderRealistisch;
     knoop.spanTotaalVrij = onderVrij;
     knoop.spanAantalRollen = onderRollen;
     return knoop;
@@ -184,16 +186,15 @@ export function buildHierarchy(rollen) {
   };
 }
 
-export function buildOrgChartData(rollen) {
-  const maxFte = Math.max(...rollen.map((r) => r.fte), 1);
+export function buildOrgChartData(rollenIn) {
+  // Elke rol een sleutel geven, ook als de analyse die niet heeft: zonder sleutel vallen rollen samen.
+  const rollen = rollenIn.map((r) => (r.roleId ? r : { ...r, roleId: idVan(r) }));
 
   const naarRol = (r) => ({
-    roleId: r.roleId ?? r.rolnaam,
+    roleId: r.roleId,
     rolnaam: r.rolnaam,
     label: r.roleLabel ?? r.rolnaam,
     fteHuidig: r.fte,
-    fteRealistisch: r.scenarios.realistisch.fteOver,
-    fteAgressief: r.scenarios.agressief.fteOver,
     waardetype: r.waardetype || null,
     fteVrij: vrijVan(r).vrij,
     vrijPerType: telOp([vrijVan(r)]).perType,
@@ -216,8 +217,6 @@ export function buildOrgChartData(rollen) {
       afdeling: naam || "Overig",
       rollen: rolData,
       fteHuidig: som((r) => r.fteHuidig),
-      fteRealistisch: som((r) => r.fteRealistisch),
-      fteAgressief: som((r) => r.fteAgressief),
       fteVrij: vrij.vrij,
       vrijPerType: vrij.perType,
     };
@@ -230,18 +229,13 @@ export function buildOrgChartData(rollen) {
   const vrijTotaal = telOp(rollen.map(vrijVan));
 
   return {
-    maxFte,
     heeftAfdelingen,
     // Echte rapportagelijnen als het roster ze bevat; anders null en valt de weergave
     // terug op de groepering per afdeling.
     hierarchie: buildHierarchy(rollen),
-    // Schaal voor de afdelingsbalken; die zijn groter dan losse rollen.
-    maxAfdelingFte: Math.max(...afdelingen.map((a) => a.fteHuidig), 1),
     afdelingen,
     organisatie: {
       fteHuidig: totaal((a) => a.fteHuidig),
-      fteRealistisch: totaal((a) => a.fteRealistisch),
-      fteAgressief: totaal((a) => a.fteAgressief),
       fteVrij: vrijTotaal.vrij,
       vrijPerType: vrijTotaal.perType,
     },
@@ -251,6 +245,9 @@ export function buildOrgChartData(rollen) {
 }
 
 const procent = (deel, geheel) => (geheel > 0 ? Math.round((deel / geheel) * 100) : 0);
+
+/** "4,0 FTE · 2,4 FTE vrij (61%)", voor een rol, afdeling of de hele organisatie. */
+export const onderdeelRegel = (x) => `${nl(x.fteHuidig, 1)} FTE · ${nl(x.fteVrij, 1)} FTE vrij (${procent(x.fteVrij, x.fteHuidig)}%)`;
 const rollenWoord = (n) => (n === 1 ? "rol" : "rollen");
 
 /**
@@ -271,7 +268,7 @@ export function organogramTeksten(chart) {
   return {
     uitleg,
     totaal: `Hele organisatie: ${nl(o.fteHuidig, 1)} FTE, waarvan ${nl(o.fteVrij, 1)} FTE (${procent(o.fteVrij, o.fteHuidig)}%) aan capaciteit vrijkomt`,
-    onderdeel: (x) => `${nl(x.fteHuidig, 1)} FTE · ${nl(x.fteVrij, 1)} FTE vrij (${procent(x.fteVrij, x.fteHuidig)}%)`,
+    onderdeel: onderdeelRegel,
   };
 }
 

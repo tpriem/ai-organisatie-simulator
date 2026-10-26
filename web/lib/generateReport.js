@@ -14,6 +14,7 @@ import {
   HeightRule,
 } from "docx";
 import { getWaardetype } from "../../src/config.js";
+import { BESTEMMING_WORD } from "./bestemmingKleur.js";
 import { buildOrgChartData, balkSegmenten, aansturingRegels, organogramTeksten, BESTEMMING_VOLGORDE } from "./orgChartData.js";
 import { driedeling } from "../../src/competencyProfile.js";
 import { calculateCapaciteitBestemming } from "../../src/calculate.js";
@@ -211,12 +212,7 @@ const BAR_TOTAL_WIDTH = 5200; // DXA
 const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const NO_BORDERS = { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER };
 
-const BESTEMMING_KLEUR = {
-  kostenreductie: "9D9BBD",
-  capaciteitsgroei: "7B4FEB",
-  kwaliteitsverbetering: "10B981",
-  onbepaald: "D5C9FB",
-};
+const BESTEMMING_KLEUR = BESTEMMING_WORD;
 
 // Waar de vrijgekomen capaciteit naartoe gaat. Zelfde berekening als in de app
 // (calculateCapaciteitBestemming), zodat beide altijd dezelfde cijfers tonen.
@@ -350,8 +346,11 @@ function miniBar(value, maxValue, colorHex) {
   });
 }
 
+// Het deel van de balk dat blijft, ook als kleur van "blijft" in de legenda.
+const BLIJFT_KLEUR = "E9E7F5";
+
 /** Eén balk: het gekleurde deel komt vrij (per bestemming), de rest blijft. */
-function stapelBalk(fteHuidig, vrijPerType) {
+function stapelBalk(fteHuidig, vrijPerType, indent = 0) {
   const segmenten = balkSegmenten(fteHuidig, vrijPerType);
   let breedtes = segmenten.map((sg) => Math.max(Math.round(sg.aandeel * BAR_TOTAL_WIDTH), 40));
   const gebruikt = breedtes.reduce((t, b) => t + b, 0);
@@ -367,10 +366,11 @@ function stapelBalk(fteHuidig, vrijPerType) {
       children: [new Paragraph({ children: [] })],
     });
   const cellen = [...segmenten.map((sg, i) => cel(breedtes[i], BESTEMMING_KLEUR[sg.soort] ?? BESTEMMING_KLEUR.onbepaald))];
-  if (rest > 0) cellen.push(cel(rest, LIGHT_FILL));
+  if (rest > 0) cellen.push(cel(rest, BLIJFT_KLEUR));
 
   return new Table({
     width: { size: BAR_TOTAL_WIDTH, type: WidthType.DXA },
+    indent: { size: indent, type: WidthType.DXA },
     columnWidths: [...breedtes, ...(rest > 0 ? [rest] : [])],
     borders: NO_BORDERS,
     rows: [new TableRow({ children: cellen, height: { value: 200, rule: HeightRule.ATLEAST } })],
@@ -398,7 +398,7 @@ function legendaParagraaf() {
   return new Paragraph({
     spacing: { after: 120 },
     children: [
-      ...kleurBlok("D2D0E6", "blijft"),
+      ...kleurBlok(BLIJFT_KLEUR, "blijft"),
       new TextRun({ text: "komt vrij en kan naar:  ", size: 16, color: "9D9BBD" }),
       ...["kostenreductie", "capaciteitsgroei", "kwaliteitsverbetering"].flatMap((t) =>
         kleurBlok(BESTEMMING_KLEUR[t], getWaardetype(t).label.toLowerCase())
@@ -416,8 +416,8 @@ function onderdeelKop(out, tekst, x, { indent = 0, size = 20, before = 160 } = {
       keepNext: true,
     })
   );
-  out.push(stapelBalk(x.fteHuidig, x.vrijPerType));
-  const best = bestemmingParagraaf(x.vrijPerType);
+  out.push(stapelBalk(x.fteHuidig, x.vrijPerType, indent));
+  const best = bestemmingParagraaf(x.vrijPerType, indent);
   if (best) out.push(best);
 }
 
