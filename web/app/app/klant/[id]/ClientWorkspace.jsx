@@ -25,13 +25,41 @@ import {
   bevestigtInschatting,
 } from "../../../../../src/waardetype.js";
 import { WAARDETYPES, getWaardetype } from "../../../../../src/config.js";
-import { nl, euroKort } from "../../../../../src/formatNl.js";
+import { nl, euroKort, fteBereik, urenRond } from "../../../../../src/formatNl.js";
+import { isGoedgekeurd } from "../../../../../src/aanbevelingen.js";
+import { kernpunten, kernpuntTekst } from "../../../../../src/samenvatting.js";
 import Aanlevering from "./Aanlevering";
 import Organogram from "./Organogram";
 import { BESTEMMING_STIJL } from "./bestemmingStijl";
 import KlantOpzet from "./KlantOpzet";
-import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld } from "./Maturiteit";
+import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitIngevuld, RealisatieKort } from "./Maturiteit";
+import Aanbevelingen from "./Aanbevelingen";
+import Logboek from "./Logboek";
 import HodLogo from "@/components/HodLogo";
+
+/** De kern op één scherm: waar de meeste tijd vrijkomt, en of dat haalbaar is volgens de scan. */
+function KernSamenvatting({ results, onOpenScan }) {
+  const kern = useMemo(() => kernpunten(results), [results]);
+  if (kern.functies.length === 0) return null;
+  return (
+    <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">In het kort</p>
+      <ul className="space-y-1.5">
+        {kern.afdelingen.length > 0 && (
+          <li className="text-xs leading-relaxed text-slate-600">
+            <span className="font-semibold text-slate-800">Waar de meeste tijd vrijkomt:</span> {kern.afdelingen.map(kernpuntTekst).join(", ")}.
+          </li>
+        )}
+        <li className="text-xs leading-relaxed text-slate-600">
+          <span className="font-semibold text-slate-800">Grootste functies:</span> {kern.functies.map(kernpuntTekst).join(", ")}.
+        </li>
+        <li>
+          <RealisatieKort results={results} onOpen={onOpenScan} />
+        </li>
+      </ul>
+    </div>
+  );
+}
 
 export function CapaciteitBestemming({ results }) {
   const bestemming = useMemo(() => calculateCapaciteitBestemming(results.rollen, "realistisch"), [results.rollen]);
@@ -94,7 +122,7 @@ export function CapaciteitBestemming({ results }) {
         })}
       </div>
 
-      <p className="mt-3 text-[11px] text-slate-400">
+      <p className="mt-3 text-xs text-slate-400">
         De bedragen zijn de waarde van de vrijgekomen uren tegen de kosten per uur. Het is alleen een besparing als die uren daadwerkelijk uit de kosten verdwijnen; bij groei of kwaliteit
         is het extra output of beter werk.
       </p>
@@ -105,12 +133,12 @@ export function CapaciteitBestemming({ results }) {
           de capaciteit draagt. Bij die rollen keert één afwijkende inschatting de verdeling om. */}
       {bevestiging.rollen.length > 0 &&
         (bevestiging.alleBevestigd ? (
-          <p className="mt-3 text-[11px] text-emerald-700">
+          <p className="mt-3 text-xs text-emerald-700">
             De {bevestiging.rollen.length === 1 ? "rol die" : `${bevestiging.rollen.length} rollen die`} samen de helft
             van de capaciteit {bevestiging.rollen.length === 1 ? "draagt is" : "dragen zijn"} bevestigd.
           </p>
         ) : (
-          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2 text-[11px] text-amber-800">
+          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2 text-xs text-amber-800">
             <span className="font-semibold">Nog te bevestigen:</span>{" "}
             {bevestiging.rollen
               .filter((r) => !r.bevestigd)
@@ -123,7 +151,7 @@ export function CapaciteitBestemming({ results }) {
         ))}
 
       {herkomst.handmatig > 0 && (
-        <p className="mt-3 text-[11px] text-slate-500">
+        <p className="mt-3 text-xs text-slate-500">
           Voor {herkomst.handmatig} van de {herkomst.totaal} {herkomst.totaal === 1 ? "rol" : "rollen"} is de bestemming
           handmatig bepaald
           {herkomst.afwijkend > 0 ? ` — ${herkomst.afwijkend} daarvan wijkt af van de inschatting van Claude` : ""}.
@@ -149,7 +177,7 @@ function BeroepsmatchRegel({ beroepsmatch }) {
   const stijl = MATCH_KLEUR[kwaliteit] ?? { stip: "bg-slate-300", tekst: "text-slate-400" };
 
   return (
-    <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1.5 flex-wrap">
+    <p className="text-xs text-slate-400 mb-2 flex items-center gap-1.5 flex-wrap">
       <span>Competenties ontleend aan ESCO-beroep</span>
       <span className="font-medium text-slate-600">{beroepsmatch.label}</span>
       <span className={`inline-flex items-center gap-1 ${stijl.tekst}`}>
@@ -320,7 +348,7 @@ function StepChip({ done, label }) {
       }`}
     >
       <span
-        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-[9px] ${
+        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full text-[11px] ${
           done ? "bg-emerald-500 text-white" : "bg-slate-300 text-white"
         }`}
       >
@@ -354,7 +382,7 @@ function StatCard({ label, value, sub, noot }) {
       <p className="text-xs font-medium text-slate-400 mb-1">{label}</p>
       <p className="text-2xl font-bold text-slate-900">{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
-      {noot && <p className="mt-auto pt-2 text-[11px] leading-snug text-slate-400">{noot}</p>}
+      {noot && <p className="mt-auto pt-2 text-xs leading-snug text-slate-400">{noot}</p>}
     </div>
   );
 }
@@ -439,21 +467,21 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
           <p className="text-xs font-semibold text-slate-700">
             {huidig?.label ?? "Waardetype nog niet bepaald"}
             {handmatig && (
-              <span className="ml-1.5 rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
+              <span className="ml-1.5 rounded bg-card px-1.5 py-0.5 text-[11px] font-medium text-indigo-700">
                 {bevestigtInschatting(role) ? "bevestigd" : "handmatig bepaald"}
               </span>
             )}
           </p>
           {role.waardetypeToelichting && <p className="text-xs text-slate-500 mt-0.5">{role.waardetypeToelichting}</p>}
           {handmatig && ai && ai.id !== huidig?.id && (
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Inschatting van Claude was: {ai.icon} {ai.label}
             </p>
           )}
         </div>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="shrink-0 text-[11px] text-indigo-400 hover:text-indigo-400 hover:underline"
+          className="shrink-0 text-xs text-indigo-400 hover:text-indigo-400 hover:underline"
         >
           {open ? "Sluiten" : "Bijsturen"}
         </button>
@@ -464,7 +492,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
           omkeert. Bevestigen kan in één klik; het is dezelfde actie als bijsturen. */}
       {bevestiging && !bevestiging.bevestigd && huidig && (
         <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2">
-          <p className="text-[11px] text-amber-800">
+          <p className="text-xs text-amber-800">
             Deze rol draagt <span className="font-semibold">{Math.round(bevestiging.aandeel * 100)}%</span> van de
             vrijgekomen capaciteit. Eén afwijkende inschatting verschuift hier het kopgetal merkbaar — bevestig het
             waardetype of stuur het bij.
@@ -472,7 +500,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
           <button
             onClick={() => kies(role.waardetype, "bevestigen")}
             disabled={bezig}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-card border border-amber-300 px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-500/20 disabled:opacity-50"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-card border border-amber-300 px-2 py-1 text-xs font-medium text-amber-800 hover:bg-amber-500/20 disabled:opacity-50"
           >
             {bezigMet === "bevestigen" && <Spinner />}
             {bezigMet === "bevestigen" ? "Bevestigen…" : "Bevestigen"}
@@ -482,7 +510,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
 
       {open && (
         <div className="mt-2 border-t border-indigo-100 pt-2">
-          <p className="text-[11px] text-slate-500 mb-1.5">Waar moet de vrijgekomen tijd van deze rol naartoe?</p>
+          <p className="text-xs text-slate-500 mb-1.5">Waar moet de vrijgekomen tijd van deze rol naartoe?</p>
           <div className="flex flex-wrap gap-1.5">
             {WAARDETYPES.map((w) => (
               <button
@@ -512,18 +540,18 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
             <button
               onClick={() => kies(null, "terugzetten")}
               disabled={bezig}
-              className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-700 hover:underline disabled:opacity-50"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 hover:underline disabled:opacity-50"
             >
               {bezigMet === "terugzetten" && <Spinner />}
               {bezigMet === "terugzetten" ? "Terugzetten…" : "Terug naar de inschatting van Claude"}
             </button>
           )}
           {bezigMet === "opslaan" && (
-            <p className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-slate-500">
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-500">
               <Spinner /> Opslaan…
             </p>
           )}
-          {fout && <p className="mt-1.5 text-[11px] text-red-400">{fout}</p>}
+          {fout && <p className="mt-1.5 text-xs text-red-400">{fout}</p>}
         </div>
       )}
     </div>
@@ -534,7 +562,7 @@ function WaardetypeBeheer({ id, role, onSaved, bevestiging = null }) {
 function TakenOvernameMelding({ role }) {
   if (role.takenAangepastVervallen) {
     return (
-      <p className="mb-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-[11px] text-amber-800">
+      <p className="mb-2 rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-1.5 text-xs text-amber-800">
         Je eerder aangepaste taakverdeling voor deze rol is niet overgenomen: {role.takenAangepastVervallen.reden} De
         eerdere versie staat in de versiehistorie.
       </p>
@@ -542,7 +570,7 @@ function TakenOvernameMelding({ role }) {
   }
   if (role.takenAangepastOvername === "categorie") {
     return (
-      <p className="mb-2 text-[11px] text-slate-500">
+      <p className="mb-2 text-xs text-slate-500">
         Je aangepaste taakverdeling is overgenomen per categorie; de taken zelf zijn bij de nieuwe analyse opnieuw
         geformuleerd. Controleer de aandelen hieronder.
       </p>
@@ -598,7 +626,7 @@ function CompetentieTop5Block({ title, subtitle, items }) {
   return (
     <div className="mb-4">
       <p className="text-xs font-semibold text-slate-700">{title}</p>
-      <p className="text-[11px] text-slate-400 mb-2">{subtitle}</p>
+      <p className="text-xs text-slate-400 mb-2">{subtitle}</p>
       <div className="space-y-1.5">
         {items.map((c) => (
           <div key={c.naam} className="flex items-center gap-2">
@@ -635,9 +663,9 @@ function OverlapKpis({ profiel }) {
   return (
     <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div className="rounded-lg bg-card p-3">
-        <p className="text-[11px] text-slate-500">Sluit nu al aan</p>
+        <p className="text-xs text-slate-500">Sluit nu al aan</p>
         <p className="text-2xl font-semibold text-slate-800">{profiel.overlapPct}%</p>
-        <p className="text-[11px] text-slate-400 mt-0.5">
+        <p className="text-xs text-slate-400 mt-0.5">
           {d
             ? `van de toekomstige behoefte — nog ${d.teOntwikkelenPct}% is te ontwikkelen`
             : "van de toekomstige competentiebehoefte vraagt de rol nu al"}
@@ -647,12 +675,12 @@ function OverlapKpis({ profiel }) {
           toestand die je bereikt, terwijl het een bovengrens is; wat je niet kunt
           trainen is het getal waar een beslissing aan hangt. */}
       <div className="rounded-lg bg-card p-3">
-        <p className="text-[11px] text-slate-500">Niet met training te overbruggen</p>
+        <p className="text-xs text-slate-500">Niet met training te overbruggen</p>
         <p className="text-2xl font-semibold text-slate-800">
           {d ? d.nietTrainbaarPct : "—"}
           {d && "%"}
         </p>
-        <p className="text-[11px] text-slate-400 mt-0.5">
+        <p className="text-xs text-slate-400 mt-0.5">
           {!d
             ? "→ onbekend zonder ESCO-gegevens"
             : eersteToets
@@ -694,12 +722,12 @@ function TijdsbestedingsBalk({ taken }) {
   return (
     <div className="mb-4">
       <p className="text-xs font-semibold text-slate-700">Tijdsbesteding — nu versus straks</p>
-      <p className="text-[11px] text-slate-400 mb-2">Beweeg over een blok voor de taaknaam</p>
-      <p className="text-[10px] text-slate-400 mb-0.5">Nu</p>
+      <p className="text-xs text-slate-400 mb-2">Beweeg over een blok voor de taaknaam</p>
+      <p className="text-[11px] text-slate-400 mb-0.5">Nu</p>
       {rij(false)}
-      <p className="text-[10px] text-slate-400 mt-1.5 mb-0.5">Straks</p>
+      <p className="text-[11px] text-slate-400 mt-1.5 mb-0.5">Straks</p>
       {rij(true)}
-      <div className="mt-1.5 flex gap-4 text-[10px] text-slate-400">
+      <div className="mt-1.5 flex gap-4 text-[11px] text-slate-400">
         <span className="flex items-center gap-1">
           <span className="inline-block h-2 w-2 rounded-sm bg-indigo-500" /> blijft
         </span>
@@ -715,7 +743,7 @@ function ProfielKolom({ titel, items, acties }) {
   if (!items?.length) return null;
   return (
     <div>
-      <p className="text-[10px] text-slate-400 mb-2">{titel}</p>
+      <p className="text-[11px] text-slate-400 mb-2">{titel}</p>
       <div className="space-y-2">
         {items.slice(0, 6).map((c) => {
           const kleur = kleurVan(c.trainbaarheid);
@@ -724,10 +752,10 @@ function ProfielKolom({ titel, items, acties }) {
             <div key={c.naam}>
               <div className="flex items-center gap-1.5 mb-0.5">
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${kleur.stip}`} />
-                <span className="flex-1 truncate text-[11px] text-slate-700" title={c.naam}>
+                <span className="flex-1 truncate text-xs text-slate-700" title={c.naam}>
                   {c.naam}
                 </span>
-                {actie && <span className={`shrink-0 text-[10px] ${actie.klasse}`}>{actie.label}</span>}
+                {actie && <span className={`shrink-0 text-[11px] ${actie.klasse}`}>{actie.label}</span>}
               </div>
               <div className="h-1.5 overflow-hidden rounded bg-slate-200">
                 <div className={`h-full ${kleur.balk}`} style={{ width: `${c.relatiefPct}%` }} />
@@ -757,14 +785,14 @@ function CompetentieProfielVergelijking({ profiel }) {
   return (
     <div className="mb-4">
       <p className="text-xs font-semibold text-slate-700">Competentieprofiel — nu versus straks</p>
-      <p className="text-[11px] text-slate-400 mb-2">
+      <p className="text-xs text-slate-400 mb-2">
         Competenties uit de ESCO-classificatie (EU); kleur toont hoe goed ze te ontwikkelen zijn
       </p>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <ProfielKolom titel="Nu" items={profiel.profielNu} />
         <ProfielKolom titel="Straks" items={profiel.profielStraks} acties={acties} />
       </div>
-      <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-slate-400">
+      <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-slate-400">
         {["hoog", "midden", "laag"].map((tier) => (
           <span key={tier} className="flex items-center gap-1">
             <span className={`inline-block h-2 w-2 rounded-full ${kleurVan(tier).stip}`} /> {tier} trainbaar
@@ -774,7 +802,7 @@ function CompetentieProfielVergelijking({ profiel }) {
       {/* Voorwaarde 1 van de ESCO-gebruiksvoorwaarden schrijft de Engelse zin letterlijk
           voor; voorwaarde 2 vraagt eigen bewerkingen als zodanig te markeren — de
           trainbaarheidsweging is onze afleiding, niet die van ESCO. */}
-      <p className="mt-2 text-[10px] leading-relaxed text-slate-400">
+      <p className="mt-2 text-[11px] leading-relaxed text-slate-400">
         This service uses the ESCO classification of the European Commission. De indeling naar trainbaarheid is een
         eigen afleiding op basis van ESCO-metadata en maakt geen deel uit van ESCO zelf.
       </p>
@@ -837,14 +865,14 @@ function VersieHistorie({ id, onHersteld }) {
       {open && (
         <div className="absolute right-0 z-20 mt-1 w-80 rounded-lg border border-slate-200 bg-card p-3 shadow-lg">
           <p className="text-xs font-semibold text-slate-700 mb-1">Eerdere versies</p>
-          <p className="text-[11px] text-slate-400 mb-2">
+          <p className="text-xs text-slate-400 mb-2">
             Elke analyse bewaart de vorige uitkomst. De huidige versie wordt bewaard voordat je terugzet.
           </p>
 
-          {fout && <p className="text-[11px] text-red-400 mb-2">{fout}</p>}
-          {versies === null && <p className="text-[11px] text-slate-400">Laden…</p>}
+          {fout && <p className="text-xs text-red-400 mb-2">{fout}</p>}
+          {versies === null && <p className="text-xs text-slate-400">Laden…</p>}
           {versies?.length === 0 && !fout && (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Nog geen eerdere versies bewaard. Ze verschijnen zodra een analyse opnieuw gedraaid wordt.
             </p>
           )}
@@ -853,15 +881,15 @@ function VersieHistorie({ id, onHersteld }) {
             {versies?.map((v) => (
               <div key={v.id} className="flex items-center gap-2 rounded border border-slate-100 px-2 py-1.5">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-slate-700">
+                  <p className="text-xs text-slate-700">
                     {new Date(v.created_at).toLocaleString("nl-NL", { dateStyle: "short", timeStyle: "short" })}
                   </p>
-                  {v.reden && <p className="text-[10px] text-slate-400 truncate">{v.reden}</p>}
+                  {v.reden && <p className="text-[11px] text-slate-400 truncate">{v.reden}</p>}
                 </div>
                 <button
                   onClick={() => herstel(v.id)}
                   disabled={bezig}
-                  className="shrink-0 text-[11px] rounded bg-slate-100 px-2 py-1 hover:bg-slate-200 disabled:opacity-50"
+                  className="shrink-0 text-xs rounded bg-slate-100 px-2 py-1 hover:bg-slate-200 disabled:opacity-50"
                 >
                   {bezig ? "…" : "Terugzetten"}
                 </button>
@@ -902,7 +930,7 @@ function RolBestemming({ role, children }) {
           >
             <span className={`font-medium ${o.gekozen ? "text-indigo-800" : "text-slate-600"}`}>
               {o.icon} {o.label}
-              {o.gekozen && <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">bestemming</span>}
+              {o.gekozen && <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[11px] font-medium text-indigo-700">bestemming</span>}
             </span>
             <span className="shrink-0 text-right">{gevolg(o)}</span>
           </li>
@@ -1008,17 +1036,17 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
         <span className="font-medium text-slate-700">
           {Math.round(liveResult.scenarios.realistisch.automatiseerbareUrenPerWeek)} uur per week
         </span>{" "}
-        vrij ({nl(liveResult.scenarios.realistisch.fteWeg, 2)} FTE), agressief{" "}
+        vrij ({nl(liveResult.scenarios.realistisch.fteWeg, 2)} FTE), ambitieus{" "}
         {Math.round(liveResult.scenarios.agressief.automatiseerbareUrenPerWeek)} uur.
       </p>
-      <p className="text-[11px] text-slate-400 mb-2">
+      <p className="text-xs text-slate-400 mb-2">
         Als besparing ingeboekt: €
         {Math.round(liveResult.scenarios.realistisch.kostenBesparingPerJaar).toLocaleString("nl-NL")} – €
         {Math.round(liveResult.scenarios.agressief.kostenBesparingPerJaar).toLocaleString("nl-NL")} per jaar (à €
         {role.kostenPerUur}/uur).
       </p>
       <div className="flex items-center justify-between mb-1.5">
-        <span className={`text-[11px] ${totaalAandeelPct !== 100 ? "text-red-400 font-medium" : "text-slate-400"}`}>
+        <span className={`text-xs ${totaalAandeelPct !== 100 ? "text-red-400 font-medium" : "text-slate-400"}`}>
           Totaal aandeel: {totaalAandeelPct}%{totaalAandeelPct !== 100 ? " — moet 100% zijn" : ""}
         </span>
         {(isDirtyFromSaved || isAdjustedFromOrigineel) && (
@@ -1026,7 +1054,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
             {isAdjustedFromOrigineel && (
               <button
                 onClick={handleReset}
-                className="text-[11px] text-slate-400 hover:text-indigo-400 hover:underline"
+                className="text-xs text-slate-400 hover:text-indigo-400 hover:underline"
               >
                 Herstel naar AI-inschatting
               </button>
@@ -1035,7 +1063,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="text-[11px] rounded-md bg-indigo-600 text-white px-2.5 py-1 hover:bg-indigo-500 disabled:opacity-40"
+                className="text-xs rounded-md bg-indigo-600 text-white px-2.5 py-1 hover:bg-indigo-500 disabled:opacity-40"
               >
                 {saving ? "Opslaan..." : "Opslaan"}
               </button>
@@ -1063,7 +1091,7 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
               <tr key={i} className="border-b border-slate-100 last:border-0">
                 <td className="py-1.5 pr-2">{t.omschrijving}</td>
                 <td className="py-1.5 pr-2">
-                  <span className="inline-block rounded bg-indigo-500/20 text-indigo-700 px-1.5 py-0.5 text-[10px]">
+                  <span className="inline-block rounded bg-indigo-500/20 text-indigo-700 px-1.5 py-0.5 text-[11px]">
                     {t.categorieLabel}
                   </span>
                 </td>
@@ -1091,9 +1119,9 @@ function TaakTable({ id, role, onSaved, bevestiging = null }) {
                     <div className="flex-1 h-3 rounded bg-slate-200 overflow-hidden">
                       <div className="h-full bg-indigo-500" style={{ width: `${realistischPct}%` }} />
                     </div>
-                    <span className="text-[10px] text-slate-500 w-8 text-right">{realistischPct}%</span>
+                    <span className="text-[11px] text-slate-500 w-8 text-right">{realistischPct}%</span>
                   </div>
-                  <div className="text-[9px] text-slate-400 mt-0.5">agressief {agressiefPct}%</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">ambitieus {agressiefPct}%</div>
                 </td>
               </tr>
             );
@@ -1148,6 +1176,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
   const [activeTab, setActiveTab] = useState("input");
   const [resultatenSub, setResultatenSub] = useState("functies"); // functies | maturity
   const [opzetGesloten, setOpzetGesloten] = useState(false);
+  const [vraagAnalyse, setVraagAnalyse] = useState(null); // { opnieuw } zolang de waarschuwing openstaat
 
   // Twee losse onderzoeken, elk met invoer en uitkomst: de capaciteitsanalyse (functieoverzicht en
   // functieprofielen) en de AI-volwassenheidsscan (vragenlijst). Welk van de twee je ziet volgt uit het
@@ -1222,14 +1251,21 @@ export default function ClientWorkspace({ id, nieuw = false }) {
     setError(null);
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(`/api/clients/${id}/upload-roster`, { method: "POST", body: formData });
-    if (!res.ok) {
-      const body = await res.json();
-      setError(body.error ?? "Upload mislukt");
+    const invoer = e.target;
+    try {
+      const res = await fetch(`/api/clients/${id}/upload-roster`, { method: "POST", body: formData });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Het uploaden van het functieoverzicht is mislukt. Probeer het opnieuw.");
+      }
+    } catch {
+      setError("Het uploaden van het functieoverzicht is mislukt: geen verbinding met de server. Probeer het opnieuw.");
+    } finally {
+      // Altijd terugzetten, ook na een fout: anders blijft de knop op "Uploaden..." staan.
+      setUploadingRoster(false);
+      invoer.value = "";
     }
-    setUploadingRoster(false);
-    await load();
-    e.target.value = "";
+    await verversKlant();
   }
 
   async function handleProfilesUpload(e) {
@@ -1239,19 +1275,26 @@ export default function ClientWorkspace({ id, nieuw = false }) {
     setError(null);
     const formData = new FormData();
     for (const f of files) formData.append("files", f);
-    const res = await fetch(`/api/clients/${id}/upload-profiles`, { method: "POST", body: formData });
-    if (!res.ok) {
-      const body = await res.json();
-      setError(body.error ?? "Upload mislukt");
-    } else {
-      const body = await res.json();
-      if (body.skipped?.length) {
+    const invoer = e.target;
+    try {
+      const res = await fetch(`/api/clients/${id}/upload-profiles`, { method: "POST", body: formData });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          body.error ??
+            `Het uploaden van ${files.length === 1 ? "het functieprofiel" : "de functieprofielen"} is mislukt. Controleer hieronder welke bestanden er staan en probeer de rest opnieuw.`
+        );
+      } else if (body.skipped?.length) {
         setError(`Overgeslagen (onbekend bestandstype): ${body.skipped.join(", ")}`);
       }
+    } catch {
+      setError("Het uploaden is mislukt: geen verbinding met de server. Controleer hieronder welke bestanden er staan en probeer de rest opnieuw.");
+    } finally {
+      // Altijd terugzetten, ook na een fout: anders blijft de knop op "Uploaden..." staan.
+      setUploadingProfiles(false);
+      invoer.value = "";
     }
-    setUploadingProfiles(false);
-    await load();
-    e.target.value = "";
+    await verversKlant();
   }
 
   async function handleDeleteProfile(fileName) {
@@ -1263,15 +1306,29 @@ export default function ClientWorkspace({ id, nieuw = false }) {
     await load();
   }
 
-  async function handleAnalyze() {
+  // Rollen zonder functieprofiel tellen niet mee. Dat hoort de adviseur vóór de analyse te weten, niet
+  // erna: eerder startte een analyse terwijl een derde van de profielen nog niet was geüpload.
+  const zonderProfiel = client?.rosterCheck?.zonderProfiel ?? [];
+  function startAnalyse(opties = {}) {
+    if (zonderProfiel.length > 0 && !opties.bevestigd) {
+      setVraagAnalyse({ opnieuw: Boolean(opties.opnieuw) });
+      return;
+    }
+    setVraagAnalyse(null);
+    handleAnalyze(opties);
+  }
+
+  async function handleAnalyze({ opnieuw = false } = {}) {
     setAnalyzing(true);
     setError(null);
     try {
       setAnalyzeStage("rollen");
-      const rolesRes = await fetch(`/api/clients/${id}/analyze-roles`, { method: "POST" });
+      const rolesRes = await fetch(`/api/clients/${id}/analyze-roles${opnieuw ? "?opnieuw=1" : ""}`, { method: "POST" });
       const rolesBody = await rolesRes.json();
       if (!rolesRes.ok) throw new Error(rolesBody.error ?? "Rol-analyse mislukt");
       setClient((c) => ({ ...c, results: rolesBody }));
+      // Niets veranderd: de aanbevelingen (en hun goedkeuring) zijn blijven staan.
+      if (rolesBody.aanbevelingen) return;
 
       setAnalyzeStage("aanbevelingen");
       const aanbevelingenRes = await fetch(`/api/clients/${id}/analyze-aanbevelingen`, { method: "POST" });
@@ -1484,8 +1541,8 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         {/* De analyse hoort alleen bij de capaciteitsanalyse; de scan rekent zelf mee bij elke wijziging. */}
         {onderzoek === "capaciteit" && (
           <button
-            onClick={handleAnalyze}
-            disabled={analyzing || !client.rosterFileName || client.profileFiles?.length === 0}
+            onClick={() => startAnalyse()}
+            disabled={analyzing || uploadingProfiles || uploadingRoster || !client.rosterFileName || client.profileFiles?.length === 0}
             className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:hover:bg-indigo-600 mb-6"
           >
             {analyzing
@@ -1494,6 +1551,49 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 : "Rollen analyseren... (kan even duren)"
               : "⚡ Analyseer de capaciteit"}
           </button>
+        )}
+        {onderzoek === "capaciteit" && vraagAnalyse && !analyzing && (
+          <div className="-mt-3 mb-6 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-800">
+              {zonderProfiel.length} van de {client.rosterCheck?.totaalRollen ?? "?"} rollen {zonderProfiel.length === 1 ? "heeft" : "hebben"} geen functieprofiel en{" "}
+              {zonderProfiel.length === 1 ? "telt" : "tellen"} niet mee in de analyse
+            </p>
+            <p className="mt-1 text-xs text-amber-700">
+              {zonderProfiel.slice(0, 12).join(", ")}
+              {zonderProfiel.length > 12 ? ` en nog ${zonderProfiel.length - 12}` : ""}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => startAnalyse({ ...vraagAnalyse, bevestigd: true })}
+                className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
+              >
+                Toch analyseren
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setVraagAnalyse(null);
+                  setActiveTab("input");
+                }}
+                className="rounded-md border border-slate-300 bg-card px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-300"
+              >
+                Eerst de profielen aanvullen
+              </button>
+            </div>
+          </div>
+        )}
+        {onderzoek === "capaciteit" && results && !analyzing && !vraagAnalyse && (
+          <p className="-mt-4 mb-6 text-xs text-slate-500">
+            Een nieuwe analyse hergebruikt de eerdere inschatting voor functies waarvan het profiel niet is veranderd, zodat dezelfde invoer dezelfde uitkomst geeft
+            {typeof results.hergebruikteRollen === "number" && results.hergebruikteRollen > 0
+              ? ` (laatste keer: ${results.hergebruikteRollen} van ${results.rollen.length} hergebruikt)`
+              : ""}
+            .{" "}
+            <button type="button" onClick={() => startAnalyse({ opnieuw: true })} className="text-indigo-400 underline-offset-2 hover:underline">
+              Alles opnieuw laten inschatten
+            </button>
+          </p>
         )}
 
         {/* Tabbladen van het gekozen onderzoek: eerst de invoer, dan de uitkomsten. */}
@@ -1557,14 +1657,14 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               <FileDropLabel
                 htmlFor="roster-upload"
                 uploading={uploadingRoster}
-                label="Upload roster"
-                hint="Excel/CSV: rolnaam, FTE, uren/week, kosten/uur. Optioneel: afdeling, en rapporteert_aan voor een organogram met rapportagelijnen."
+                label="Upload functieoverzicht"
+                hint="Excel/CSV: rolnaam, FTE, uren/week, loonkosten per contractuur. Optioneel: afdeling, en rapporteert_aan voor een organogram met rapportagelijnen."
               />
               <a
                 href="/api/roster-template"
                 className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-400 hover:underline"
               >
-                ⬇ Download het rostersjabloon (.xlsx)
+                ⬇ Download het sjabloon voor het functieoverzicht (.xlsx)
               </a>
               {client.rosterFileName && (
                 <p className="text-xs text-emerald-700 mt-2 flex items-center gap-1">
@@ -1590,8 +1690,8 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 hint=".docx, .pdf, .txt — één per rol"
               />
               {client.rosterCheck?.rollen?.some((r) => r.afdeling) && (
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  Roster bevat afdelingen — geef bestandsnamen een afdeling-prefix (bijv. "NL_Klantenservice.docx",
+                <p className="text-xs text-slate-400 mt-1.5">
+                  Het functieoverzicht bevat afdelingen — geef bestandsnamen een afdeling-prefix (bijv. "NL_Klantenservice.docx",
                   "BE_Klantenservice.docx") zodat rollen met dezelfde naam in verschillende afdelingen apart
                   gekoppeld worden.
                 </p>
@@ -1623,7 +1723,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 <span className={client.rosterCheck.gekoppeld === client.rosterCheck.totaalRollen ? "text-emerald-700" : "text-amber-400"}>
                   {client.rosterCheck.gekoppeld} / {client.rosterCheck.totaalRollen}
                 </span>{" "}
-                rollen uit het roster gekoppeld aan een functieprofiel
+                rollen uit het functieoverzicht gekoppeld aan een functieprofiel
               </p>
               <div className="rounded-lg border border-slate-200 overflow-hidden">
                 <table className="w-full text-xs">
@@ -1778,18 +1878,23 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                   href={`/api/clients/${id}/report`}
                   className="text-xs rounded-lg bg-indigo-600 text-white px-3 py-1.5 shadow-sm hover:bg-indigo-500 transition-colors"
                 >
-                  ⬇ Impactrapport (Word)
+                  ⬇ Capaciteitsrapport (Word)
                 </a>
                 <a
                   href={`/api/clients/${id}/report-pdf`}
                   className="text-xs rounded-lg bg-card text-indigo-400 border border-indigo-200 px-3 py-1.5 shadow-sm hover:bg-indigo-50 transition-colors"
                 >
-                  ⬇ Impactrapport (PDF)
+                  ⬇ Capaciteitsrapport (PDF)
                 </a>
                 <VersieHistorie id={id} onHersteld={(updated) => setClient((c) => ({ ...c, results: updated }))} />
               </div>
             }
           >
+            {results.aanbevelingen && !isGoedgekeurd(results.aanbevelingen) && (
+              <p className="mb-3 text-xs text-amber-700">
+                De bevindingen en aanbevelingen zijn nog een concept en staan daarom niet in het rapport. Keur ze onderaan deze pagina goed om ze mee te nemen.
+              </p>
+            )}
             <div className="mb-5 rounded-xl border border-indigo-300/40 bg-indigo-50/60 text-slate-800 px-4 py-3 flex items-start gap-2.5">
               <span className="text-lg leading-none">💬</span>
               <p className="text-sm leading-snug">
@@ -1803,7 +1908,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
             {results.missingProfiles?.length > 0 && (
               <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2">
                 <p className="text-xs font-semibold text-amber-800">Niet meegenomen in de totalen: geen functieprofiel aangeleverd</p>
-                <p className="mt-0.5 text-[11px] text-amber-700">{results.missingProfiles.join(", ")}</p>
+                <p className="mt-0.5 text-xs text-amber-700">{results.missingProfiles.join(", ")}</p>
               </div>
             )}
 
@@ -1813,13 +1918,13 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                   Niet meegenomen in de totalen: {results.mislukteRollen.length}{" "}
                   {results.mislukteRollen.length === 1 ? "rol is" : "rollen zijn"} niet geanalyseerd
                 </p>
-                <p className="text-[11px] text-red-700 mt-0.5">
+                <p className="text-xs text-red-700 mt-0.5">
                   De overige rollen zijn wél volledig. Draai de analyse opnieuw om deze rollen alsnog mee te nemen;
                   eerder geslaagde rollen blijven behouden.
                 </p>
                 <ul className="mt-1.5 space-y-1">
                   {results.mislukteRollen.map((r) => (
-                    <li key={r.roleId ?? r.roleLabel} className="text-[11px] text-red-700">
+                    <li key={r.roleId ?? r.roleLabel} className="text-xs text-red-700">
                       <span className="font-medium">{r.roleLabel}</span> — {r.fout}
                     </li>
                   ))}
@@ -1836,28 +1941,30 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               <StatCard
                 label="Automatiseerbaar"
                 value={`${nl((results.organisatieTotaal.realistisch.reductiePercentageOrganisatie * 100), 0)}–${nl((results.organisatieTotaal.agressief.reductiePercentageOrganisatie * 100), 0)}%`}
-                sub="realistisch – agressief"
+                sub="realistisch – ambitieus"
               />
               {/* De kop-KPI is de vrijgekomen capaciteit, niet de besparing. Dezelfde
                   som, maar het stelt de vervolgvraag — waar zet je die uren op in —
                   in plaats van 'm te beantwoorden met kostenreductie. */}
               <StatCard
                 label="Capaciteit die vrijkomt"
-                value={`${nl(results.organisatieTotaal.realistisch.totaalFteWeg, 1)} FTE`}
-                sub={`${Math.round(
+                value={fteBereik(results.organisatieTotaal.realistisch.totaalFteWeg, results.organisatieTotaal.agressief.totaalFteWeg)}
+                sub={`realistisch – ambitieus · circa ${urenRond(
                   results.organisatieTotaal.realistisch.totaalVrijgekomenUrenPerWeek ??
                     results.organisatieTotaal.realistisch.totaalFteWeg * 36
-                )} uur per week`}
+                )} uur per week (realistisch)`}
               />
               {/* Het financiële beeld naast de capaciteit: dezelfde uren, uitgedrukt in geld. De
                   opties om ze in te zetten staan er direct onder. */}
               <StatCard
                 label="Waarde van die tijd"
                 value={`${euroKort(results.organisatieTotaal.realistisch.totaalKostenBesparingPerJaar)}–${euroKort(results.organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}`}
-                sub="per jaar, realistisch – agressief"
+                sub="per jaar, realistisch – ambitieus"
                 noot="Alleen een besparing als de uren uit de kosten verdwijnen."
               />
             </div>
+
+            <KernSamenvatting results={results} onOpenScan={() => naarUitkomsten("maturity")} />
 
             <CapaciteitBestemming results={results} />
 
@@ -1943,8 +2050,8 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                         <th className="py-2 px-3 font-medium">Rollen</th>
                         <th className="py-2 px-3 font-medium">FTE huidig</th>
                         <th className="py-2 px-3 font-medium">Komt vrij (realistisch)</th>
-                        <th className="py-2 px-3 font-medium">Komt vrij (agressief)</th>
-                        <th className="py-2 px-3 font-medium">Waarde per jaar (realistisch–agressief)</th>
+                        <th className="py-2 px-3 font-medium">Komt vrij (ambitieus)</th>
+                        <th className="py-2 px-3 font-medium">Waarde per jaar (realistisch–ambitieus)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1979,77 +2086,16 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         <CompetentieAgenda results={results} />
 
         {results?.aanbevelingen && (
-          <Section title="Bevindingen & Aanbevelingen" icon="💡">
-            {/* Even breed als de kolommen en aanbevelingen eronder, zodat de sectie één rechterrand heeft. */}
-            <p className="text-sm text-slate-700 mb-5">{results.aanbevelingen.bevindingenSamenvatting}</p>
-
-            <div className="grid sm:grid-cols-3 gap-4 mb-5">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-red-500 mb-2">Krimpende rollen</p>
-                {results.aanbevelingen.krimpendeRollen?.length > 0 ? (
-                  <ul className="space-y-2">
-                    {results.aanbevelingen.krimpendeRollen.map((r, i) => (
-                      <li key={i} className="text-xs">
-                        <span className="font-medium text-slate-800">{r.rolnaam}</span>
-                        <p className="text-slate-500">{r.toelichting}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs text-slate-400">—</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400 mb-2">Groeiende rollen</p>
-                {results.aanbevelingen.groeiendeRollen?.length > 0 ? (
-                  <ul className="space-y-2">
-                    {results.aanbevelingen.groeiendeRollen.map((r, i) => (
-                      <li key={i} className="text-xs">
-                        <span className="font-medium text-slate-800">{r.rolnaam}</span>
-                        <p className="text-slate-500">{r.toelichting}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs text-slate-400">—</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-400 mb-2">Samenvoegkandidaten</p>
-                {results.aanbevelingen.samenvoegKandidaten?.length > 0 ? (
-                  <ul className="space-y-2">
-                    {results.aanbevelingen.samenvoegKandidaten.map((s, i) => (
-                      <li key={i} className="text-xs">
-                        <span className="font-medium text-slate-800">{s.rollen.join(" + ")}</span>
-                        <p className="text-slate-500">{s.toelichting}</p>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-xs text-slate-400">—</p>
-                )}
-              </div>
-            </div>
-
-            {results.aanbevelingen.aanbevelingen?.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Aanbevelingen</p>
-                <ul className="space-y-3">
-                  {results.aanbevelingen.aanbevelingen.map((a, i) => (
-                    <li key={i} className="rounded-lg bg-indigo-50/60 p-3">
-                      <p className="text-sm font-medium text-indigo-900">{a.titel}</p>
-                      <p className="text-sm text-slate-600 mt-0.5">{a.beschrijving}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <Section title="Bevindingen & aanbevelingen" icon="💡">
+            <Aanbevelingen id={id} aanbevelingen={results.aanbevelingen} onOpgeslagen={(updated) => setClient((c) => ({ ...c, results: updated }))} />
           </Section>
         )}
           </>
           )}
         </>
         )}
+
+        <Logboek id={id} />
       </main>
       </MaturiteitProvider>
     </div>

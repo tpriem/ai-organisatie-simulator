@@ -286,7 +286,7 @@ function Vinkje({ label }) {
       role="img"
       aria-label={label}
       title={label}
-      className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold leading-none text-white"
+      className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[11px] font-bold leading-none text-white"
     >
       ✓
     </span>
@@ -301,7 +301,7 @@ function Laden({ status, huidig }) {
 
 function Voetnoot() {
   return (
-    <p className="mb-8 text-[11px] leading-relaxed text-slate-400">
+    <p className="mb-8 text-xs leading-relaxed text-slate-400">
       {RAAMWERK.naam}, versie {RAAMWERK.versie}. Een eerste beeld op basis van zelfbeoordeling; een verdiepend onderzoek volgt in het vervolgtraject. Er
       is geen vergelijking met andere organisaties en geen totaalscore.
     </p>
@@ -318,7 +318,7 @@ function ProfielRegel({ a, onOpen, toonOnderbouwing = false }) {
     >
       <div className="min-w-0">
         <p className="truncate text-sm text-slate-700">{a.naam}</p>
-        <p className="text-[10px] text-slate-400">
+        <p className="text-[11px] text-slate-400">
           {a.beantwoord}/{a.totaal} beantwoord
         </p>
       </div>
@@ -332,8 +332,8 @@ function ProfielRegel({ a, onOpen, toonOnderbouwing = false }) {
             <span className="font-semibold text-slate-800">
               {a.niveau} · {a.niveauNaam}
             </span>
-            {toonOnderbouwing && a.niveau > 0 && !a.onderbouwd && <span className="ml-1.5 text-[10px] text-amber-400">indicatief</span>}
-            {a.onvolledig && <span className="ml-1.5 text-[10px] text-amber-400">onvolledig</span>}
+            {toonOnderbouwing && a.niveau > 0 && !a.onderbouwd && <span className="ml-1.5 text-[11px] text-amber-400">indicatief</span>}
+            {a.onvolledig && <span className="ml-1.5 text-[11px] text-amber-400">onvolledig</span>}
           </>
         ) : (
           <span className="text-slate-400">niet gemeten</span>
@@ -410,7 +410,7 @@ function InvullerKeuze() {
     <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2.5">
       <div className="mb-1.5 flex items-center justify-between">
         <p className="text-xs font-medium text-slate-700">Wie vult in?</p>
-        <button type="button" onClick={ververs} className="text-[11px] text-slate-500 hover:text-indigo-400 hover:underline">
+        <button type="button" onClick={ververs} className="text-xs text-slate-500 hover:text-indigo-400 hover:underline">
           ↻ Antwoorden van invullers verversen
         </button>
       </div>
@@ -443,7 +443,7 @@ function InvullerKeuze() {
             </label>
           </div>
           <div className="mt-2 flex flex-wrap items-end gap-2">
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Rol
               <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700">
                 {ROLLEN.filter((r) => r.id !== "adviseur").map((r) => (
@@ -453,7 +453,7 @@ function InvullerKeuze() {
                 ))}
               </select>
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Omschrijving (geen naam), bijvoorbeeld &quot;teamleider klantenservice&quot;
               <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className="mt-0.5 block w-64 rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700" />
             </label>
@@ -464,7 +464,7 @@ function InvullerKeuze() {
         </div>
       )}
 
-      {fout && <p className="mt-2 text-[11px] text-red-400">{fout}</p>}
+      {fout && <p className="mt-2 text-xs text-red-400">{fout}</p>}
 
       {gemaakt && (
         <div className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2">
@@ -475,17 +475,17 @@ function InvullerKeuze() {
               {gekopieerd ? "Gekopieerd" : "Kopieer"}
             </button>
           </div>
-          <p className="mt-1 text-[11px] text-emerald-800">
+          <p className="mt-1 text-xs text-emerald-800">
             Deze link wordt maar één keer getoond en is 45 dagen geldig. Is hij kwijt? Maak dan een nieuwe link voor deze invuller; de oude werkt dan niet meer.
           </p>
           <LinkMailen key={gemaakt.url} klantId={id} url={gemaakt.url} soort="invuller" rol={gemaakt.wie} />
-          <button type="button" onClick={() => setGemaakt(null)} className="mt-1 text-[11px] text-emerald-700 hover:underline">
+          <button type="button" onClick={() => setGemaakt(null)} className="mt-1 text-xs text-emerald-700 hover:underline">
             Verbergen
           </button>
         </div>
       )}
 
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+      <p className="mt-2 text-xs leading-relaxed text-slate-500">
         {actief === ADVISEUR
           ? "Je legt hier het geldende oordeel vast: dat telt in alle analyses. Zolang je bij een stelling niets invult, geldt het strengste antwoord van de invullers die al hebben verstuurd."
           : viaLinkActief
@@ -494,14 +494,14 @@ function InvullerKeuze() {
       </p>
 
       {actief === ADVISEUR && (
-        <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+        <label className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
           <input type="checkbox" checked={bewijsModus || profiel.bewijsGebruikt} disabled={profiel.bewijsGebruikt} onChange={(e) => setBewijsModus(e.target.checked)} className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-400" />
           Bewijs vastleggen (verdiepingsfase)
         </label>
       )}
 
       {viaLinkActief && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px]">
+        <div className="mt-1.5 flex flex-wrap items-center gap-3 text-xs">
           <span className="text-slate-500">
             {actieveInvuller.status === "ingediend" ? "Verstuurd" : actieveInvuller.status === "bezig" ? "Bezig met invullen" : "Nog niet gestart"}
             {actieveInvuller.bijgewerktOp ? ` · laatst bijgewerkt ${new Date(actieveInvuller.bijgewerktOp).toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" })}` : ""}
@@ -542,7 +542,7 @@ function InvullerKeuze() {
       {actief !== ADVISEUR && !viaLinkActief && (
         <div className="mt-1.5">
           {verwijder ? (
-            <span className="flex items-center gap-2 text-[11px]">
+            <span className="flex items-center gap-2 text-xs">
               <span className="text-slate-600">Deze invuller en alle antwoorden verwijderen?</span>
               <button
                 type="button"
@@ -559,7 +559,7 @@ function InvullerKeuze() {
               </button>
             </span>
           ) : (
-            <button type="button" onClick={() => setVerwijder(true)} className="text-[11px] text-slate-400 hover:text-red-400 hover:underline">
+            <button type="button" onClick={() => setVerwijder(true)} className="text-xs text-slate-400 hover:text-red-400 hover:underline">
               Deze invuller verwijderen
             </button>
           )}
@@ -569,7 +569,7 @@ function InvullerKeuze() {
   );
 }
 
-function StellingRij({ stelling }) {
+function StellingRij({ stelling, nietNodig = false }) {
   const { huidig, effectief, actief, zetAntwoord, zetBewijs, zetBewijsGezien, bewijsModus, profiel } = useMaturiteit();
   const adviseur = actief === ADVISEUR;
   const bron = adviseur ? huidig.geldend : huidig.invullers.find((i) => i.id === actief);
@@ -587,12 +587,20 @@ function StellingRij({ stelling }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <p className="text-sm text-slate-700">
-            <span className="mr-1.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-400">Niveau {stelling.niveau}</span>
-            <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">{stelling.kant}</span>
+            <span className="mr-1.5 rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-semibold text-indigo-400">Niveau {stelling.niveau}</span>
+            <span className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">{stelling.kant}</span>
+            {nietNodig && (
+              <span
+                className="mr-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500"
+                title="Een lagere stelling over wat de organisatie kan is niet voldaan. Deze stelling verandert het niveau daardoor niet meer en mag leeg blijven."
+              >
+                niet nodig voor de uitkomst
+              </span>
+            )}
             {stelling.tekst}
           </p>
           {toonBewijs && (
-            <p className="mt-1 text-[11px] italic text-slate-500">
+            <p className="mt-1 text-xs italic text-slate-500">
               {stelling.bewijsvraag} <span className="not-italic text-slate-400">Bijvoorbeeld: {stelling.bewijsvoorbeelden.join("; ")}.</span>
             </p>
           )}
@@ -606,7 +614,7 @@ function StellingRij({ stelling }) {
               aria-checked={antwoord === a.waarde}
               disabled={alleenLezen}
               onClick={() => zetAntwoord(stelling.id, antwoord === a.waarde ? null : a.waarde)}
-              className={`rounded border px-2 py-0.5 text-[11px] transition-colors disabled:cursor-default ${
+              className={`rounded border px-2 py-0.5 text-xs transition-colors disabled:cursor-default ${
                 antwoord === a.waarde
                   ? a.waarde === "ja"
                     ? "border-emerald-600 bg-emerald-600 text-white"
@@ -625,7 +633,7 @@ function StellingRij({ stelling }) {
       </div>
 
       {adviseur && (anderen.length > 0 || (antwoord === null && geldendEffectief)) && (
-        <p className="mt-1.5 text-[11px] text-slate-500">
+        <p className="mt-1.5 text-xs text-slate-500">
           {anderen.length > 0 && (
             <>
               Invullers:{" "}
@@ -654,7 +662,7 @@ function StellingRij({ stelling }) {
             className="w-full rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
           {adviseur && (
-            <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-slate-600">
+            <label className="flex shrink-0 items-center gap-1.5 text-xs text-slate-600">
               <input
                 type="checkbox"
                 checked={huidig.geldend.bewijsGezien?.[stelling.id] === true}
@@ -678,14 +686,14 @@ function ThemaPaneel({ thema, bron }) {
           <p className="text-sm font-medium text-slate-800">{thema.naam}</p>
           <p className="truncate text-xs text-slate-500">{thema.beschrijving}</p>
         </div>
-        <span className="flex shrink-0 items-center gap-2 text-[11px] text-slate-400">
+        <span className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
           {thema.beantwoord}/{thema.totaal}
           {thema.ingevuld && <Vinkje label={`${thema.naam} is helemaal ingevuld`} />}
         </span>
       </summary>
       <ul className="border-t border-slate-100 px-4 py-1">
         {bron.stellingen.map((s) => (
-          <StellingRij key={s.id} stelling={s} />
+          <StellingRij key={s.id} stelling={s} nietNodig={thema.stellingen?.some((x) => x.id === s.id && x.nietNodig) ?? false} />
         ))}
       </ul>
     </details>
@@ -774,7 +782,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
               <div>
                 <p className="text-sm font-semibold text-slate-800">
                   {a.naam}
-                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[10px] font-normal text-slate-500">{a.kant}kant</span>
+                  <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[11px] font-normal text-slate-500">{a.kant}kant</span>
                 </p>
                 <p className="text-xs text-slate-500">{a.beschrijving}</p>
               </div>
@@ -824,7 +832,7 @@ function Kaart({ titel, uitleg, children }) {
 }
 
 function Waarschuwing({ children }) {
-  return <p className="mt-2 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-[11px] text-amber-800">{children}</p>;
+  return <p className="mt-2 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-800">{children}</p>;
 }
 
 function ZwaksteSchakel({ profiel }) {
@@ -861,7 +869,7 @@ function Volgorde({ volgorde }) {
       <ol className="space-y-3">
         {volgorde.map((i) => (
           <li key={i.thema} className="flex gap-3">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[11px] font-semibold text-indigo-400">{i.volgorde}</span>
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-400">{i.volgorde}</span>
             <div className="min-w-0">
               <p className="text-sm text-slate-800">
                 <span className="font-medium">{i.naam}</span>
@@ -915,7 +923,7 @@ function Signalen({ signalen }) {
       <ul className="space-y-2">
         {signalen.map((s, n) => (
           <li key={n} className="text-xs text-slate-700">
-            <span className="mr-1.5 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">{s.id}</span>
+            <span className="mr-1.5 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">{s.id}</span>
             <span className="font-medium">{s.plek}.</span> {s.uitleg}
           </li>
         ))}
@@ -941,7 +949,7 @@ function Verschillen({ verschillen }) {
                 {t.naam}: {Object.entries(t.niveausPerRol).map(([r, n]) => `${rolNaam(r)} niveau ${n}`).join(" · ")}
               </p>
               {t.tegenspraken.slice(0, 3).map((x) => (
-                <p key={x.stellingId} className="text-[11px] text-slate-600">
+                <p key={x.stellingId} className="text-xs text-slate-600">
                   Niveau {x.niveau}: {x.rollenJa.map(rolNaam).join(", ")} zegt ja, {x.rollenNee.map(rolNaam).join(", ")} zegt nee — {x.tekst}
                 </p>
               ))}
@@ -1001,7 +1009,7 @@ function Realisatie({ realisatie, heeftAnalyse }) {
           {l.map((v, n) => (
             <li key={n} className="text-xs text-slate-700">
               <span
-                className={`mr-1.5 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                className={`mr-1.5 inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold ${
                   v.status === "voldaan" ? "bg-emerald-50 text-emerald-700" : v.status === "niet voldaan" ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"
                 }`}
               >
@@ -1145,7 +1153,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           <>
             {["organisatie", "systeem"].map((kant) => (
               <div key={kant} className="mb-2">
-                <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-400">{kant}kant</p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-400">{kant}kant</p>
                 {profiel.assen
                   .filter((a) => a.kant === kant)
                   .map((a) => (
@@ -1153,7 +1161,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
                   ))}
               </div>
             ))}
-            <p className="mt-1 text-[11px] text-slate-400">Klik op een as om de bijbehorende vragen te openen.</p>
+            <p className="mt-1 text-xs text-slate-400">Klik op een as om de bijbehorende vragen te openen.</p>
           </>
         )}
 
@@ -1164,7 +1172,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           </Waarschuwing>
         )}
         {profiel.gemeten > 0 && !profiel.bewijsGebruikt && (
-          <p className="mt-2 text-[11px] text-slate-500">
+          <p className="mt-2 text-xs text-slate-500">
             Dit is een eerste beeld op basis van zelfbeoordeling. Een verdiepend onderzoek met gesprekken en bewijs volgt in het vervolgtraject.
           </p>
         )}
@@ -1233,15 +1241,15 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
                     </span>
                     {verwijderOp === m.op ? (
                       <span className="flex items-center gap-1.5">
-                        <button onClick={() => verwijderMeting(m.op)} className="rounded bg-red-600 px-2 py-0.5 text-[11px] text-white hover:bg-red-500">
+                        <button onClick={() => verwijderMeting(m.op)} className="rounded bg-red-600 px-2 py-0.5 text-xs text-white hover:bg-red-500">
                           Zeker weten
                         </button>
-                        <button onClick={() => setVerwijderOp(null)} className="text-[11px] text-slate-500 hover:underline">
+                        <button onClick={() => setVerwijderOp(null)} className="text-xs text-slate-500 hover:underline">
                           Annuleren
                         </button>
                       </span>
                     ) : (
-                      <button onClick={() => setVerwijderOp(m.op)} className="text-[11px] text-slate-400 hover:text-red-400 hover:underline">
+                      <button onClick={() => setVerwijderOp(m.op)} className="text-xs text-slate-400 hover:text-red-400 hover:underline">
                         Verwijderen
                       </button>
                     )}
@@ -1264,4 +1272,42 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
 export function MaturiteitIngevuld({ children }) {
   const { profiel } = useMaturiteit();
   return children(profiel ? profiel.ingevuld : false);
+}
+
+/**
+ * De koppeling tussen de twee onderzoeken, kort: zijn de voorwaarden voldaan om de vrijgekomen
+ * capaciteit ook te realiseren? Staat bovenaan de resultaten van de capaciteitsanalyse, omdat een
+ * getal zonder deze voorwaarden te rooskleurig leest.
+ */
+export function RealisatieKort({ results, onOpen }) {
+  const { huidig, profiel } = useMaturiteit();
+  const realisatie = useMemo(() => (huidig && profiel?.gemeten > 0 ? analyseer(huidig, { results }).realisatie : null), [huidig, profiel, results]);
+
+  if (!profiel || profiel.gemeten === 0) {
+    return (
+      <p className="text-xs leading-relaxed text-slate-600">
+        <span className="font-semibold text-slate-800">Is dit haalbaar?</span> Dat hangt af van hoe ver de organisatie is met AI. Vul de AI-volwassenheidsscan in om te zien
+        welke voorwaarden al voldaan zijn.{" "}
+        <button type="button" onClick={onOpen} className="text-indigo-400 underline-offset-2 hover:underline">
+          Naar de scan
+        </button>
+      </p>
+    );
+  }
+  if (!realisatie) return null;
+
+  const open = realisatie.voorwaarden.filter((v) => v.scenario === "realistisch" && v.status === "niet voldaan");
+  const r = realisatie.realistisch;
+  const a = realisatie.agressief;
+  return (
+    <p className="text-xs leading-relaxed text-slate-600">
+      <span className="font-semibold text-slate-800">Is dit haalbaar?</span> Van de {r.totaal} voorwaarden voor het realistische scenario {r.voldaan === 1 ? "is" : "zijn"} er{" "}
+      <span className="font-semibold text-slate-800">{r.voldaan} voldaan</span>
+      {a.totaal > 0 ? ` (ambitieus scenario: ${a.voldaan} van ${a.totaal})` : ""}.
+      {open.length > 0 && <> Nog te doen: {open.map((v) => `${v.naam} (niveau ${v.huidig} → ${v.vereist})`).join(", ")}.</>}{" "}
+      <button type="button" onClick={onOpen} className="text-indigo-400 underline-offset-2 hover:underline">
+        Bekijk de scan
+      </button>
+    </p>
+  );
 }

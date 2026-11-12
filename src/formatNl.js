@@ -25,3 +25,27 @@ export function euroKort(bedrag) {
   if (abs >= 1000) return `€${Math.round(bedrag / 1000).toLocaleString("nl-NL")}k`;
   return `€${Math.round(bedrag).toLocaleString("nl-NL")}`;
 }
+
+// Totalen voor de hele organisatie zijn een optelsom van inschattingen. "59,9 FTE" suggereert een
+// precisie die er niet is; daarom worden kopgetallen afgerond en als bandbreedte getoond (realistisch
+// tot ambitieus). Per functie blijft één decimaal staan, anders verdwijnen kleine functies.
+
+/** Een FTE-getal voor een kopcijfer: vanaf 10 op hele FTE, daaronder op één decimaal. */
+export function fteRond(fte) {
+  if (typeof fte !== "number" || !Number.isFinite(fte)) return "—";
+  return Math.abs(fte) >= 10 ? nl(Math.round(fte), 0) : nl(fte, 1);
+}
+
+/** De bandbreedte tussen twee scenario's: "60–86 FTE", of één getal als ze afgerond gelijk zijn. */
+export function fteBereik(realistisch, ambitieus) {
+  const a = fteRond(realistisch);
+  const b = fteRond(ambitieus);
+  if (a === "—") return "—";
+  return b === "—" || a === b ? `${a} FTE` : `${a}–${b} FTE`;
+}
+
+/** Uren per week voor een kopcijfer: vanaf 100 op tientallen, met punt als duizendtal. */
+export function urenRond(uren) {
+  if (typeof uren !== "number" || !Number.isFinite(uren)) return "—";
+  return nl(Math.abs(uren) >= 100 ? Math.round(uren / 10) * 10 : Math.round(uren), 0);
+}

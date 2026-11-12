@@ -33,7 +33,7 @@ export function buildTextReport({ bedrijfsnaam, roleResults, orgTotals, missingP
     `Huidig: ${orgTotals.realistisch.totaalFteHuidig.toFixed(1)} FTE, ${roleResults.length} rollen geanalyseerd`
   );
   push(
-    `Automatiseerbare capaciteit (range Realistisch–Agressief): ${pct(
+    `Automatiseerbare capaciteit (range realistisch–ambitieus): ${pct(
       orgTotals.realistisch.reductiePercentageOrganisatie
     )} – ${pct(orgTotals.agressief.reductiePercentageOrganisatie)}`
   );

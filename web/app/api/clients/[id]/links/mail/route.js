@@ -5,6 +5,7 @@ import { zoekLink } from "@/lib/linkStore";
 import { sendLinkEmail } from "@/lib/mail";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 import { valideerOntvanger, bouwMail, urlPastBijLink, maakMailBegrenzer, MAIL_LIMIETEN } from "../../../../../../../src/mailLink.js";
 
 // Per afzender hooguit 10 mails per uur (best-effort, per serverinstantie).
@@ -88,5 +89,7 @@ export async function POST(request, { params }) {
     meldStoring("Link mailen mislukt", { klantId: id, fout: err.message });
     return NextResponse.json({ error: `De mail kon niet worden verstuurd: ${err.message}` }, { status: 502 });
   }
+  // Het adres van de klant komt bewust niet in het logboek.
+  await logActie(id, "link_gemaild", { soort: onderdelen.soort });
   return NextResponse.json({ ok: true });
 }

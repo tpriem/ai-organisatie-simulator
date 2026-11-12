@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getClientMeta } from "@/lib/clientStore";
 import { readMaturiteit, saveHuidigeMeting, leggMetingVast, verwijderMeting } from "@/lib/maturiteitStore";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 import { schoonInvoer, maakSnapshot, berekenProfiel } from "../../../../../../src/volwassenheid.js";
 
 export async function GET(request, { params }) {
@@ -37,6 +38,7 @@ export async function POST(request, { params }) {
 
   try {
     const metingen = await leggMetingVast(id, maakSnapshot(huidig));
+    await logActie(id, "meting_vastgelegd");
     return NextResponse.json({ metingen });
   } catch (err) {
     meldStoring("Volwassenheidsmeting vastleggen mislukt", { klantId: id, fout: err.message });

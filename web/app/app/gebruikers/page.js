@@ -106,7 +106,7 @@ export default function GebruikersPage() {
                   : `Uitnodigingsmail kon niet verstuurd worden (nog geen domein geverifieerd bij Resend) — deel deze link handmatig:`}
               </p>
               {!lastInvite.emailSent && (
-                <p className="break-all font-mono text-[11px] bg-card rounded px-2 py-1.5 border border-emerald-100">
+                <p className="break-all font-mono text-xs bg-card rounded px-2 py-1.5 border border-emerald-100">
                   {lastInvite.setupLink}
                 </p>
               )}

@@ -151,13 +151,13 @@ export default function Aanlevering({ id, onOvergenomen }) {
               {gekopieerd ? "Gekopieerd" : "Kopieer"}
             </button>
           </div>
-          <p className="mt-1 text-[11px] text-emerald-800">Deze link wordt maar één keer getoond. Een nieuwe link vervangt de vorige.</p>
+          <p className="mt-1 text-xs text-emerald-800">Deze link wordt maar één keer getoond. Een nieuwe link vervangt de vorige.</p>
           <LinkMailen key={nieuweUrl} klantId={id} url={nieuweUrl} soort="aanlever" />
         </div>
       )}
 
       {link ? (
-        <p className="mb-3 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+        <p className="mb-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
           <span>
             Actieve link, aangemaakt {datum(link.aangemaaktOp)}, geldig tot {datum(link.verlooptOp)}.
           </span>
@@ -166,7 +166,7 @@ export default function Aanlevering({ id, onOvergenomen }) {
           </button>
         </p>
       ) : (
-        <p className="mb-3 text-[11px] text-slate-400">Er is geen actieve aanleverlink.</p>
+        <p className="mb-3 text-xs text-slate-400">Er is geen actieve aanleverlink.</p>
       )}
 
       <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-400">Aangeleverd door de klant ({bestanden.length})</h3>
@@ -177,12 +177,12 @@ export default function Aanlevering({ id, onOvergenomen }) {
           {bestanden.map((b) => (
             <li key={`${b.soort}/${b.naam}`} className="flex items-center justify-between gap-3 py-1.5 text-xs">
               <span className="min-w-0 truncate text-slate-700">
-                <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">{b.soort === "roster" ? "functieoverzicht" : "functieprofiel"}</span>
+                <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">{b.soort === "roster" ? "functieoverzicht" : "functieprofiel"}</span>
                 {b.naam}
               </span>
               <span className="flex shrink-0 items-center gap-3 text-slate-400">
                 {formaat(b.grootte)}
-                <button type="button" onClick={() => overnemen(b)} disabled={bezig} className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 hover:bg-indigo-500/20 disabled:opacity-50">
+                <button type="button" onClick={() => overnemen(b)} disabled={bezig} className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 hover:bg-indigo-500/20 disabled:opacity-50">
                   Overnemen
                 </button>
                 <button type="button" onClick={() => verwijder(b)} disabled={bezig} className="text-slate-500 hover:text-red-400 hover:underline">
@@ -194,7 +194,7 @@ export default function Aanlevering({ id, onOvergenomen }) {
         </ul>
       )}
       {bestanden.some((b) => b.soort === "roster") && (
-        <p className="mt-2 text-[11px] text-amber-700">Een functieoverzicht overnemen vervangt het roster dat nu bij deze klant staat.</p>
+        <p className="mt-2 text-xs text-amber-700">Een functieoverzicht overnemen vervangt het overzicht dat nu bij deze klant staat.</p>
       )}
     </section>
   );

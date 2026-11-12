@@ -192,7 +192,30 @@ function ladder(stellingen, antwoorden, filter = () => true) {
   return niveau;
 }
 
+/**
+ * De stellingen van een thema die niet meer nodig zijn voor de uitkomst.
+ *
+ * De ladder stopt bij de eerste stelling die niet voldaan is. Is dat een vaardigheidsstelling ("de
+ * organisatie kan dit niet of maar deels"), dan stoppen daar beide ladders: het strikte niveau én
+ * het niveau van alleen de vaardigheden (analyse D). Wat daarboven staat verandert geen enkel niveau
+ * meer en hoeft dus niet beantwoord te worden. Na een "nee" op een borgingsstelling loopt de ladder
+ * van de vaardigheden nog door; daar blijven de hogere stellingen dus wel nodig.
+ *
+ * Zo wordt de vragenlijst korter voor wie nog aan het begin staat, zonder dat de uitkomst verandert.
+ * @returns {Set<string>} id's van stellingen boven het breekpunt
+ */
+export function nietNodig(thema, antwoorden) {
+  const uit = new Set();
+  let breuk = null;
+  for (const s of [...thema.stellingen].sort((a, b) => a.niveau - b.niveau)) {
+    if (breuk !== null && s.niveau > breuk) uit.add(s.id);
+    else if (s.kant === "vaardigheid" && (antwoorden?.[s.id] === "nee" || antwoorden?.[s.id] === "deels")) breuk = s.niveau;
+  }
+  return uit;
+}
+
 export function beoordeelThema(thema, antwoorden, gezien = {}) {
+  const over = nietNodig(thema, antwoorden);
   const lijst = thema.stellingen.map((s) => ({
     id: s.id,
     niveau: s.niveau,
@@ -202,10 +225,13 @@ export function beoordeelThema(thema, antwoorden, gezien = {}) {
     bewijsvoorbeelden: s.bewijsvoorbeelden,
     antwoord: antwoorden[s.id] ?? null,
     gezien: gezien[s.id] === true,
+    // Onbeantwoord en niet meer nodig: telt niet als "nog te doen".
+    nietNodig: over.has(s.id) && (antwoorden[s.id] ?? null) === null,
   }));
   const niveau = ladder(thema.stellingen, antwoorden);
   const losNiveau = ladder(thema.stellingen, antwoorden, (s) => s.kant === "vaardigheid");
   const beantwoord = lijst.filter((s) => s.antwoord !== null).length;
+  const totaal = lijst.filter((s) => !s.nietNodig).length;
 
   // Alle voldane stellingen tot en met het bereikte niveau moeten door de adviseur zijn gezien.
   // n.v.t. hoeft niet onderbouwd. Niveau 0 claimt niets en is dus niet "indicatief".
@@ -224,9 +250,11 @@ export function beoordeelThema(thema, antwoorden, gezien = {}) {
     borgingBeantwoord: borging.some((s) => s.antwoord !== null),
     gemeten: beantwoord > 0,
     beantwoord,
-    totaal: lijst.length,
-    onvolledig: beantwoord < lijst.length,
-    ingevuld: beantwoord === lijst.length,
+    // Het aantal stellingen dat nodig is voor de uitkomst; zie nietNodig.
+    totaal,
+    overgeslagen: lijst.length - totaal,
+    onvolledig: beantwoord < totaal,
+    ingevuld: beantwoord === totaal,
     onderbouwd,
     volgendeStap: volgende && { stellingId: volgende.id, niveau: volgende.niveau, tekst: volgende.tekst },
     stellingen: lijst,

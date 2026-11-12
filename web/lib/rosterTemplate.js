@@ -17,7 +17,7 @@ const TOELICHTING = [
   ["rolnaam", "ja", "De functienaam. Rollen met dezelfde naam in verschillende afdelingen worden apart behandeld."],
   ["fte", "ja", "Aantal FTE in deze rol. Een getal groter dan 0, bijvoorbeeld 8 of 2,5."],
   ["uren_per_week", "ja", "Gemiddeld aantal uren per week per FTE, bijvoorbeeld 36."],
-  ["kosten_per_uur", "ja", "Gemiddelde kosten per uur in euro's, inclusief werkgeverslasten."],
+  ["kosten_per_uur", "ja", "Loonkosten per contractuur in euro's, inclusief werkgeverslasten: de jaarlijkse loonkosten van één FTE gedeeld door (uren per week × 52). Reken dus met contracturen, niet met gewerkte uren; verlof en verzuim zitten dan al in het tarief."],
   ["afdeling", "nee", "Afdeling of business unit. Zonder deze kolom worden alle rollen als één geheel getoond."],
   [
     "rapporteert_aan",

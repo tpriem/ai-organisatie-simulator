@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import path from "node:path";
 import { getClientMeta, uploadProfiles, deleteProfileFile } from "@/lib/clientStore";
+import { logActie } from "@/lib/logboek";
 
 const ALLOWED_EXT = [".docx", ".pdf", ".txt", ".md"];
 
@@ -30,6 +31,7 @@ export async function POST(request, { params }) {
 
   const saved = toUpload.length > 0 ? await uploadProfiles(id, toUpload) : [];
 
+  if (saved.length > 0) await logActie(id, "profielen_geupload", { aantal: saved.length });
   return NextResponse.json({ ok: true, saved, skipped });
 }
 

@@ -134,7 +134,7 @@ export default function Aanleveren({ token }) {
       <section className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
         <h2 className="text-base font-semibold text-slate-900">1. Functieoverzicht</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Een Excel- of CSV-bestand met per functie het aantal FTE, de uren per week en de kosten per uur (kolommen: rolnaam, fte, uren_per_week, kosten_per_uur; optioneel afdeling en
+          Een Excel- of CSV-bestand met per functie het aantal FTE, de uren per week en de loonkosten per contractuur (jaarlijkse loonkosten gedeeld door uren per week × 52; kolommen: rolnaam, fte, uren_per_week, kosten_per_uur; optioneel afdeling en
           rapporteert_aan).{" "}
           <a href="/api/roster-template" className="text-indigo-400 underline">
             Download het sjabloon

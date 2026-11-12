@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ASSEN, ANTWOORDEN } from "../../../../src/volwassenheid.js";
+import { ASSEN, ANTWOORDEN, nietNodig } from "../../../../src/volwassenheid.js";
 import HodLogo from "@/components/HodLogo";
 
 // De pagina die een invuller via zijn persoonlijke link ziet. Alleen de vragen: geen resultaten,
@@ -54,6 +54,8 @@ export default function Invullen({ token }) {
   const [opslaan, setOpslaan] = useState("");
   const [vraagBevestiging, setVraagBevestiging] = useState(false);
   const [geopend, setGeopend] = useState(null);
+  // Thema's waarvan de invuller de overgeslagen stellingen toch wil zien.
+  const [alles, setAlles] = useState(() => new Set());
   const laatste = useRef({});
   const timer = useRef(null);
   const wacht = useRef(false);
@@ -128,6 +130,21 @@ export default function Invullen({ token }) {
 
   const beantwoord = useMemo(() => Object.keys(antwoorden).length, [antwoorden]);
 
+  // De lijst past zich aan: zegt de invuller bij een stelling dat de organisatie iets niet of maar deels
+  // kan, dan zijn de verdergaande stellingen van dat thema niet meer nodig (zie nietNodig). Per thema:
+  // welke stellingen daardoor wegvallen en nog niet beantwoord zijn.
+  const overgeslagen = useMemo(() => {
+    const uit = new Map();
+    for (const as of ASSEN) {
+      for (const th of as.themas) {
+        const over = nietNodig(th, antwoorden);
+        uit.set(th.id, new Set([...over].filter((id) => !antwoorden[id])));
+      }
+    }
+    return uit;
+  }, [antwoorden]);
+  const nodig = useMemo(() => TOTAAL - [...overgeslagen.values()].reduce((s, set) => s + set.size, 0), [overgeslagen]);
+
   async function versturen() {
     setOpslaan("Versturen…");
     clearTimeout(timer.current);
@@ -159,7 +176,7 @@ export default function Invullen({ token }) {
   }
 
   const ingediend = status === "ingediend";
-  const onbeantwoord = TOTAAL - beantwoord;
+  const onbeantwoord = Math.max(0, nodig - beantwoord);
 
   return (
     <Omhulsel>
@@ -180,8 +197,8 @@ export default function Invullen({ token }) {
         </p>
         <div className="mt-4 space-y-2 text-sm leading-relaxed text-slate-600">
           <p>
-            Deze vragenlijst geeft een eerste beeld van hoe ver {info.organisatie} is met het inzetten van AI. Het zijn {TOTAAL} stellingen in acht onderdelen; reken op
-            ongeveer 30 tot 45 minuten. U kunt tussendoor stoppen: uw antwoorden worden steeds bewaard en u gaat verder met dezelfde link.
+            Deze vragenlijst geeft een eerste beeld van hoe ver {info.organisatie} is met het inzetten van AI. Het zijn hooguit {TOTAAL} stellingen in acht onderdelen. De lijst past zich aan uw antwoorden aan: is iets er nog niet, dan slaan we de verdergaande stellingen over dat
+            onderwerp over. Reken op 20 tot 45 minuten. U kunt tussendoor stoppen: uw antwoorden worden steeds bewaard en u gaat verder met dezelfde link.
           </p>
           <ul className="list-disc space-y-1 pl-5">
             <li>
@@ -195,12 +212,12 @@ export default function Invullen({ token }) {
         <div className="mt-5">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>
-              {beantwoord} van {TOTAAL} beantwoord
+              {beantwoord} van {nodig} beantwoord
             </span>
             <span aria-live="polite">{opslaan}</span>
           </div>
           <div className="mt-1 h-2 rounded-full bg-slate-100" aria-hidden="true">
-            <div className="h-2 rounded-full bg-indigo-500 transition-all" style={{ width: `${(beantwoord / TOTAAL) * 100}%` }} />
+            <div className="h-2 rounded-full bg-indigo-500 transition-all" style={{ width: `${nodig > 0 ? Math.min(100, (beantwoord / nodig) * 100) : 0}%` }} />
           </div>
         </div>
       </div>
@@ -208,7 +225,7 @@ export default function Invullen({ token }) {
       <div className="space-y-3">
         {ASSEN.map((as) => {
           const aantal = as.themas.reduce((s, t) => s + t.stellingen.filter((st) => antwoorden[st.id]).length, 0);
-          const totaal = as.themas.reduce((s, t) => s + t.stellingen.length, 0);
+          const totaal = as.themas.reduce((s, t) => s + t.stellingen.length - (overgeslagen.get(t.id)?.size ?? 0), 0);
           const klaar = aantal === totaal;
           return (
             <details key={as.id} open={geopend === as.id} onToggle={(e) => e.currentTarget.open && setGeopend(as.id)} className="group rounded-xl border border-slate-200 bg-card shadow-sm">
@@ -230,20 +247,46 @@ export default function Invullen({ token }) {
                 </span>
               </summary>
               <div className="border-t border-slate-100 px-5 py-4">
-                {as.themas.map((th) => (
-                  <div key={th.id} className="mb-5 last:mb-0">
-                    <h2 className="text-sm font-semibold text-indigo-700">{th.naam}</h2>
-                    <p className="mb-2 text-xs text-slate-500">{th.beschrijving}</p>
-                    <ul className="divide-y divide-slate-100">
-                      {th.stellingen.map((st) => (
-                        <li key={st.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                          <p className="text-sm text-slate-800">{st.tekst}</p>
-                          <Antwoordknoppen stelling={st} waarde={antwoorden[st.id] ?? null} onZet={zet} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+                {as.themas.map((th) => {
+                  const over = overgeslagen.get(th.id) ?? new Set();
+                  const toonAlles = alles.has(th.id);
+                  const zichtbaar = th.stellingen.filter((st) => toonAlles || !over.has(st.id));
+                  return (
+                    <div key={th.id} className="mb-5 last:mb-0">
+                      <h2 className="text-sm font-semibold text-indigo-700">{th.naam}</h2>
+                      <p className="mb-2 text-xs text-slate-500">{th.beschrijving}</p>
+                      <ul className="divide-y divide-slate-100">
+                        {zichtbaar.map((st) => (
+                          <li key={st.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                            <p className="text-sm text-slate-800">{st.tekst}</p>
+                            <Antwoordknoppen stelling={st} waarde={antwoorden[st.id] ?? null} onZet={zet} />
+                          </li>
+                        ))}
+                      </ul>
+                      {over.size > 0 && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          {toonAlles
+                            ? "De verdergaande stellingen van dit onderwerp zijn niet nodig voor de uitkomst; u mag ze leeg laten."
+                            : `Op basis van uw antwoord ${over.size === 1 ? "is de verdergaande stelling" : `zijn de ${over.size} verdergaande stellingen`} over dit onderwerp niet nodig.`}{" "}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAlles((s) => {
+                                const n = new Set(s);
+                                if (n.has(th.id)) n.delete(th.id);
+                                else n.add(th.id);
+                                return n;
+                              })
+                            }
+                            className="text-indigo-400 underline-offset-2 hover:underline"
+                          >
+                            {toonAlles ? "Verbergen" : "Toch tonen"}
+                          </button>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </details>
           );

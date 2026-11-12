@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import path from "node:path";
 import { getClientMeta, uploadRoster } from "@/lib/clientStore";
+import { logActie } from "@/lib/logboek";
 
 const ALLOWED_EXT = [".csv", ".xlsx", ".xls"];
 
@@ -20,5 +21,6 @@ export async function POST(request, { params }) {
   const buffer = Buffer.from(await file.arrayBuffer());
   const fileName = await uploadRoster(id, file.name, buffer);
 
+  await logActie(id, "functieoverzicht_geupload");
   return NextResponse.json({ ok: true, fileName });
 }

@@ -58,7 +58,7 @@ export default async function LandingPage() {
 
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-6 pt-24 pb-20 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/70 mb-7">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70 mb-7">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           {t.badge}
         </span>

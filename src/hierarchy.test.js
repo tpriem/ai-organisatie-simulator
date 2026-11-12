@@ -44,7 +44,7 @@ test("aansturing telt alles wat eronder hangt, nu en straks", () => {
 test("een verwijzing naar een onbekende rol wordt gemeld, niet genegeerd", () => {
   const h = buildHierarchy([rol("Medewerker", { rapporteertAan: "Bestaat Niet" })]);
   assert.equal(h.top.length, 1, "rol komt bovenaan te hangen");
-  assert.match(h.problemen.join(" "), /niet in het roster/);
+  assert.match(h.problemen.join(" "), /niet in het functieoverzicht/);
 });
 
 test("een kringverwijzing loopt niet vast en wordt gemeld", () => {

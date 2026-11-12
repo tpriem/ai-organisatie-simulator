@@ -8,6 +8,7 @@ import {
   writeResults,
 } from "@/lib/clientStore";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 import { neemHandmatigeWaardetypesOver } from "../../../../../../src/waardetype.js";
 import { neemAangepasteTakenOver } from "../../../../../../src/takenOvername.js";
 import { parseRoster } from "../../../../../../src/parseRoster.js";
@@ -23,6 +24,7 @@ import { analyzeCompetencies } from "../../../../../../src/analyzeCompetencies.j
 import { matchOccupations, buildSharedCandidateSkills } from "../../../../../../src/esco.js";
 import { calculateCompetentieTop5 } from "../../../../../../src/competencyTop5.js";
 import { calculateCompetentieProfiel } from "../../../../../../src/competencyProfile.js";
+import { invoerSleutel, hergebruikRol, analyseOngewijzigd } from "../../../../../../src/hergebruik.js";
 
 export const maxDuration = 60;
 
@@ -38,11 +40,14 @@ const COMPETENTIE_HERKANSING_LIMIET_MS = 40_000;
 export async function POST(request, { params }) {
   const competentieDeadline = Date.now() + COMPETENTIE_HERKANSING_LIMIET_MS;
   const { id } = await params;
+  // Standaard wordt de eerdere inschatting hergebruikt voor rollen waarvan het profiel niet is veranderd,
+  // zodat dezelfde invoer dezelfde uitkomst geeft. Met ?opnieuw=1 schat het model alles opnieuw in.
+  const allesOpnieuw = new URL(request.url).searchParams.get("opnieuw") === "1";
   const meta = await getClientMeta(id);
   if (!meta) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
 
   const roster = await getRosterBuffer(id);
-  if (!roster) return NextResponse.json({ error: "Geen roster geüpload voor deze klant" }, { status: 400 });
+  if (!roster) return NextResponse.json({ error: "Geen functieoverzicht geüpload voor deze klant" }, { status: 400 });
 
   let rosterRows, profiles;
   try {
@@ -56,7 +61,7 @@ export async function POST(request, { params }) {
   const { matched, missing } = matchRosterToProfiles(rosterRows, profiles);
   if (matched.length === 0) {
     return NextResponse.json(
-      { error: "Geen enkele rol uit het roster kon aan een functieprofiel gekoppeld worden." },
+      { error: "Geen enkele rol uit het functieoverzicht kon aan een functieprofiel gekoppeld worden." },
       { status: 400 }
     );
   }
@@ -70,12 +75,24 @@ export async function POST(request, { params }) {
     matched.map((row) => matchOccupations(row.rolnaam, 3).map((b) => b.id))
   );
 
+  const vorigeResultaten = await readResults(id).catch(() => null);
+  const vorigePerRol = new Map((vorigeResultaten?.rollen ?? []).map((r) => [r.roleId, r]));
+  let hergebruikt = 0;
+
   // Rollen falen onafhankelijk van elkaar. Eén mislukte rol mocht vroeger de hele
   // analyse omgooien, waardoor ook al het geslaagde werk verloren ging — bij een klant
   // met tientallen rollen betekende dat opnieuw beginnen om één rol.
   const uitkomsten = await Promise.all(
     matched.map(async (row) => {
       const label = roleLabel(row);
+      const sleutel = invoerSleutel({ rolLabel: label, profielTekst: row.profile.text });
+      if (!allesOpnieuw) {
+        const eerder = hergebruikRol(vorigePerRol.get(roleId(row)), row, sleutel);
+        if (eerder) {
+          hergebruikt++;
+          return { ok: true, roleResult: eerder };
+        }
+      }
       try {
         const { taken, waardetype, waardetypeToelichting } = await analyzeProfile(label, row.profile.text);
         const roleResult = calculateRole({ ...row, taken });
@@ -107,6 +124,8 @@ export async function POST(request, { params }) {
           roleResult.competentieMeta
         );
 
+        roleResult.invoerSleutel = sleutel;
+        roleResult.ingeschatOp = new Date().toISOString();
         return { ok: true, roleResult };
       } catch (err) {
         return {
@@ -119,7 +138,6 @@ export async function POST(request, { params }) {
 
   // Een aangepaste taakverdeling van de adviseur gaat mee naar de nieuwe analyse. Dat
   // verandert de capaciteit, dus het gebeurt vóór de organisatietotalen worden berekend.
-  const vorigeResultaten = await readResults(id).catch(() => null);
   const roleResults = neemAangepasteTakenOver(
     uitkomsten.filter((u) => u.ok).map((u) => u.roleResult),
     vorigeResultaten?.rollen
@@ -167,8 +185,17 @@ export async function POST(request, { params }) {
     subtotalenPerAfdeling,
     rollen: rollenMetKeuzes,
     aanbevelingen: null,
+    // Hoeveel rollen hun eerdere inschatting hebben behouden (zelfde profiel, zelfde categorieën).
+    hergebruikteRollen: hergebruikt,
   };
+  // Is er niets veranderd, dan blijven de aanbevelingen staan, met hun goedkeuring. Anders worden ze
+  // in de volgende stap opnieuw geschreven en zijn ze weer een concept.
+  if (analyseOngewijzigd(vorigeResultaten, results) && vorigeResultaten.aanbevelingen) {
+    results.aanbevelingen = vorigeResultaten.aanbevelingen;
+    results.ongewijzigd = true;
+  }
 
   await writeResults(id, results, { reden: "nieuwe rolanalyse gedraaid" });
+  await logActie(id, "analyse_gedraaid", { rollen: results.rollen.length, hergebruikt, allesOpnieuw });
   return NextResponse.json(results);
 }

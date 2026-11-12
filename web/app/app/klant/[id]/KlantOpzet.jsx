@@ -88,7 +88,7 @@ export default function KlantOpzet({ id, onSluit }) {
           <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-400">2. Vragenlijst voor invullers</h3>
           <p className="mt-1 text-xs text-slate-500">Eén link per invuller; de antwoorden komen per rol binnen.</p>
           <div className="mt-3 flex flex-wrap items-end gap-2">
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Rol
               <select value={rol} onChange={(e) => setRol(e.target.value)} className="mt-0.5 block rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700">
                 {ROLLEN.filter((r) => r.id !== "adviseur").map((r) => (
@@ -98,7 +98,7 @@ export default function KlantOpzet({ id, onSluit }) {
                 ))}
               </select>
             </label>
-            <label className="text-[11px] text-slate-500">
+            <label className="text-xs text-slate-500">
               Omschrijving (geen naam)
               <input
                 type="text"

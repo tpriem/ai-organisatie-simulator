@@ -1,6 +1,7 @@
 import { laadVolwassenheidsRapport, bestandsnaam } from "@/lib/volwassenheidRapport";
 import { generateVolwassenheidDocx } from "@/lib/generateVolwassenheidReport";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 
 // Word-versie van het volwassenheidsrapport. Los van het impactrapport: het zijn twee
 // onderzoeken met elk een eigen rapport.
@@ -29,6 +30,7 @@ export async function GET(request, { params }) {
     });
   }
 
+  await logActie(id, "rapport_gedownload", { soort: "volwassenheid", formaat: "Word" });
   return new Response(buffer, {
     status: 200,
     headers: {

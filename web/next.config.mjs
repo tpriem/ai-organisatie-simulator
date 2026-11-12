@@ -19,6 +19,24 @@ const nextConfig = {
   // in de output van de serverless functie — expliciet meenemen. Let op: "*" i.p.v.
   // het letterlijke "[id]" — vierkante haken worden door de glob-matcher gezien als
   // een bracket-expressie, niet als route-segment, dus "[id]" matcht nooit.
+  // Beveiligingsheaders voor elke pagina en elke API-aanroep. Geen volledige Content-Security-Policy:
+  // die vraagt per script een uitzondering en breekt snel iets; wel het verbod om de site in een frame
+  // te laden (clickjacking), geen gokken naar bestandstypes, en altijd https.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
   outputFileTracingIncludes: {
     "/api/clients/*/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
   },

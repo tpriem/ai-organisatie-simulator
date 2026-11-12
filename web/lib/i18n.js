@@ -31,7 +31,7 @@ const dictionaries = {
       resultsSub: "Concreet, per rol, en met een organisatiebreed beeld — geen algemene AI-praatjes.",
       card1Title: "Per rol, concreet",
       card1Text:
-        "Voor elke functie: welk deel van de taken automatiseerbaar is (realistisch en agressief scenario), en wat er aan menselijk werk overblijft.",
+        "Voor elke functie: welk deel van de taken automatiseerbaar is (realistisch en ambitieus scenario), en wat er aan menselijk werk overblijft.",
       card2Title: "Competentieverschuiving",
       card2Text:
         "Welke vaardigheden nu belangrijk zijn — en welke dat na de transformatie worden. Zo weet je waar om- en bijscholing het meeste verschil maakt.",
@@ -39,7 +39,7 @@ const dictionaries = {
       card3Text:
         "Krimpende en groeiende rollen, kansen voor samenvoeging, en concrete aanbevelingen — inclusief een organogram dat laat zien waar de capaciteit vrijkomt.",
       howHeading: "Hoe het werkt",
-      step1Title: "Roster & functieprofielen aanleveren",
+      step1Title: "Functieoverzicht & functieprofielen aanleveren",
       step1Text: "Jullie rollen met FTE, uren en kosten, plus de bijbehorende functieprofielen. Wij verzorgen de verwerking.",
       step2Title: "Volwassenheidsscan",
       step2Text:
@@ -56,7 +56,7 @@ const dictionaries = {
       subtitle: "Intern — inloggen voor bureau-accounts",
       email: "E-mailadres",
       password: "Wachtwoord",
-      error: "E-mailadres of wachtwoord onjuist.",
+      error: "E-mailadres of wachtwoord onjuist. Na meerdere mislukte pogingen moet je een kwartier wachten.",
       submit: "Inloggen",
       submitting: "Inloggen...",
       forgot: "Wachtwoord vergeten?",
@@ -117,7 +117,7 @@ const dictionaries = {
       subtitle: "Internal — login for agency accounts",
       email: "Email address",
       password: "Password",
-      error: "Incorrect email address or password.",
+      error: "Incorrect email address or password. After several failed attempts you have to wait fifteen minutes.",
       submit: "Log in",
       submitting: "Logging in...",
       forgot: "Forgot password?",

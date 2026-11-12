@@ -71,7 +71,7 @@ export default function LinkMailen({ klantId, url, soort, rol = "" }) {
   return (
     <div className="mt-2">
       {verstuurdNaar && !open && (
-        <p className="mb-1.5 text-[11px] text-emerald-700">
+        <p className="mb-1.5 text-xs text-emerald-700">
           Verstuurd naar {verstuurdNaar}.{info?.afzender && kopie ? ` Een kopie is naar ${info.afzender} gegaan.` : ""}
         </p>
       )}
@@ -92,22 +92,22 @@ export default function LinkMailen({ klantId, url, soort, rol = "" }) {
 
           {info && info.beschikbaar && (
             <>
-              <label className="block text-[11px] text-slate-500">
+              <label className="block text-xs text-slate-500">
                 Aan (één e-mailadres)
                 <input type="email" required value={aan} onChange={(e) => setAan(e.target.value)} placeholder="naam@klant.nl" maxLength={MAIL_LIMIETEN.email} className={veld} autoComplete="off" />
               </label>
-              <label className="mt-2 block text-[11px] text-slate-500">
+              <label className="mt-2 block text-xs text-slate-500">
                 Onderwerp
                 <input type="text" required value={onderwerp} onChange={(e) => setOnderwerp(e.target.value)} maxLength={MAIL_LIMIETEN.onderwerp} className={veld} />
               </label>
-              <label className="mt-2 block text-[11px] text-slate-500">
+              <label className="mt-2 block text-xs text-slate-500">
                 Bericht
                 <textarea required rows={10} value={tekst} onChange={(e) => setTekst(e.target.value)} maxLength={MAIL_LIMIETEN.tekst} className={`${veld} leading-relaxed`} />
               </label>
-              <p className="mt-1 text-[11px] text-slate-400">
+              <p className="mt-1 text-xs text-slate-400">
                 Onder het bericht komt automatisch een knop met de link, met de geldigheid. Antwoorden van de klant gaan naar {info.afzender ?? "jou"}.
               </p>
-              <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+              <label className="mt-2 flex items-center gap-2 text-xs text-slate-500">
                 <input type="checkbox" checked={kopie} onChange={(e) => setKopie(e.target.checked)} />
                 Stuur mij een kopie{info.afzender ? ` (${info.afzender})` : ""}
               </label>

@@ -3,6 +3,11 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import authConfig from "./auth.config";
 import { getUserByEmail } from "./lib/userStore";
+import { maakBegrenzer } from "../src/begrenzer.js";
+
+// Hooguit acht inlogpogingen per adres per kwartier, zodat een wachtwoord niet te raden is door het
+// eindeloos te proberen. Best-effort per serverinstantie; zie begrenzer.js.
+const inlogToegestaan = maakBegrenzer({ limiet: 8, tijdvakMs: 15 * 60 * 1000 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -15,6 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .toLowerCase();
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
+        if (!inlogToegestaan(email)) return null;
 
         const user = await getUserByEmail(email);
         if (!user || !user.password_hash) return null;

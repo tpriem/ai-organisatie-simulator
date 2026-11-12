@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClientMeta, listResultsVersions, restoreResultsVersion } from "@/lib/clientStore";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 
 // Bewaarde versies van de analyseresultaten, zodat een overschreven analyse terug te
 // halen is. Zonder deze terugweg was één druk op "Analyseer" genoeg om een goed rapport
@@ -29,6 +30,7 @@ export async function POST(request, { params }) {
   try {
     const results = await restoreResultsVersion(id, versieId);
     if (!results) return NextResponse.json({ error: "Versie niet gevonden" }, { status: 404 });
+    await logActie(id, "versie_teruggezet");
     return NextResponse.json(results);
   } catch (err) {
     meldStoring("Versie terugzetten mislukt", { klantId: id, versieId, fout: err.message });

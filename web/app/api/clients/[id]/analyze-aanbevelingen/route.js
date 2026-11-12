@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClientMeta, readAnswers, readResults, writeResults } from "@/lib/clientStore";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 import { generateAanbevelingen } from "../../../../../../src/generateAanbevelingen.js";
 
 export const maxDuration = 60;
@@ -40,5 +41,6 @@ export async function POST(request, { params }) {
   const { sectorAnalyse: _oudeSectorAnalyse, ...zonderSector } = results;
   const updated = { ...zonderSector, aanbevelingen };
   await writeResults(id, updated, { reden: "aanbevelingen gegenereerd" });
+  await logActie(id, "aanbevelingen_gegenereerd");
   return NextResponse.json(updated);
 }

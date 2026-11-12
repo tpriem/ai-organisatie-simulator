@@ -36,11 +36,14 @@ import {
   waardetypeHandmatigRegel,
   bevestigingZin,
   rolKop,
+  capaciteitKop,
+  waardeBereik,
   SUBTOTALEN_KOLOMMEN,
   subtotaalCellen,
   volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
+import { AANBEVELING_KOPPEN } from "../../src/aanbevelingen.js";
 
 const HEADER_FILL = "241B4B"; // slate-800
 const LIGHT_FILL = "F1F0F9"; // slate-100
@@ -107,9 +110,9 @@ function rolSummaryTable(rollen) {
       cell("FTE", { width: widths[1], header: true }),
       cell("Uren/wk", { width: widths[2], header: true }),
       cell("Kosten/uur", { width: widths[3], header: true }),
-      cell("Reductie (R–A)", { width: widths[4], header: true }),
+      cell("Tijd die vrijkomt (R–A)", { width: widths[4], header: true }),
       cell("Vrijkomend u/wk (R–A)", { width: widths[5], header: true }),
-      cell("Als besparing ingeboekt (R–A)", { width: widths[6], header: true }),
+      cell("Waarde van die tijd (R–A)", { width: widths[6], header: true }),
     ],
   });
 
@@ -220,11 +223,11 @@ function capaciteitSectie(organisatieTotaal, rollen) {
   const t = organisatieTotaal.realistisch;
   const bestemming = calculateCapaciteitBestemming(rollen, "realistisch");
   const heeftBestemming = bestemming.some((b) => b.waardetype !== "onbepaald");
-  const uren = t.totaalVrijgekomenUrenPerWeek ?? t.totaalFteWeg * 36;
+  const kopcijfer = capaciteitKop(organisatieTotaal);
 
   const out = [
     paragraph(
-      `Er komt ${nl(t.totaalFteWeg, 1)} FTE aan capaciteit vrij (${Math.round(uren)} uur per week, realistisch scenario).` +
+      `${kopcijfer.getal} ${kopcijfer.rest} De waarde van die tijd is ${waardeBereik(organisatieTotaal)} per jaar.` +
         (heeftBestemming ? " Per rol is ingeschat welke bestemming het meest voor de hand ligt:" : ""),
       { bold: true }
     ),
@@ -276,7 +279,7 @@ function financieelAlinea(organisatieTotaal) {
       organisatieTotaal.realistisch.totaalKostenBesparingPerJaar
     )} tot ${eur(
       organisatieTotaal.agressief.totaalKostenBesparingPerJaar
-    )} per jaar (realistisch tot agressief). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.`,
+    )} per jaar (realistisch tot ambitieus). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.`,
     { italics: true, size: 18, color: "6B6A8F" }
   );
 }
@@ -706,7 +709,7 @@ export async function generateReportDocx(results) {
     ...(missingProfiles?.length
       ? [
           paragraph(
-            `Let op: voor de volgende rollen uit het roster ontbrak een functieprofiel, en zijn daarom niet meegenomen in de analyse: ${missingProfiles.join(
+            `Let op: voor de volgende rollen uit het functieoverzicht ontbrak een functieprofiel, en zijn daarom niet meegenomen in de analyse: ${missingProfiles.join(
               ", "
             )}.`,
             { italics: true, color: "B45309" }
@@ -785,19 +788,19 @@ export async function generateReportDocx(results) {
 
     if (aanbevelingen.krimpendeRollen?.length) {
       children.push(
-        heading("Krimpende rollen", HeadingLevel.HEADING_2),
+        heading(AANBEVELING_KOPPEN.krimpendeRollen, HeadingLevel.HEADING_2),
         ...aanbevelingen.krimpendeRollen.map((r) => paragraph(`${r.rolnaam} — ${r.toelichting}`))
       );
     }
     if (aanbevelingen.groeiendeRollen?.length) {
       children.push(
-        heading("Groeiende rollen", HeadingLevel.HEADING_2),
+        heading(AANBEVELING_KOPPEN.groeiendeRollen, HeadingLevel.HEADING_2),
         ...aanbevelingen.groeiendeRollen.map((r) => paragraph(`${r.rolnaam} — ${r.toelichting}`))
       );
     }
     if (aanbevelingen.samenvoegKandidaten?.length) {
       children.push(
-        heading("Samenvoegkandidaten", HeadingLevel.HEADING_2),
+        heading(AANBEVELING_KOPPEN.samenvoegKandidaten, HeadingLevel.HEADING_2),
         ...aanbevelingen.samenvoegKandidaten.map((s) => paragraph(`${s.rollen.join(" + ")} — ${s.toelichting}`))
       );
     }

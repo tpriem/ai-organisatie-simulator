@@ -102,7 +102,7 @@ export function buildHierarchy(rollenIn) {
         problemen.push(`"${r.roleLabel ?? r.rolnaam}" verwijst naar "${r.rapporteertAan}", die in meerdere afdelingen voorkomt.`);
       }
     } else {
-      problemen.push(`"${r.roleLabel ?? r.rolnaam}" rapporteert aan "${r.rapporteertAan}", die niet in het roster staat.`);
+      problemen.push(`"${r.roleLabel ?? r.rolnaam}" rapporteert aan "${r.rapporteertAan}", die niet in het functieoverzicht staat.`);
     }
 
     if (leidinggevende && leidinggevende.roleId !== r.roleId) {
@@ -262,8 +262,8 @@ export function organogramTeksten(chart) {
   const uitleg = chart.hierarchie
     ? `Opgebouwd uit de rapportagelijnen in het roster (${chart.hierarchie.lagen} ${chart.hierarchie.lagen === 1 ? "laag" : "lagen"}). ${balkUitleg}`
     : chart.heeftAfdelingen
-      ? `Opgebouwd uit de afdelingen in het roster; het roster bevat geen rapportagelijnen. ${balkUitleg}`
-      : `Het roster bevat geen afdelingen of rapportagelijnen; dit toont per rol hoeveel capaciteit vrijkomt. ${balkUitleg}`;
+      ? `Opgebouwd uit de afdelingen in het functieoverzicht; dat bevat geen rapportagelijnen. ${balkUitleg}`
+      : `Het functieoverzicht bevat geen afdelingen of rapportagelijnen; dit toont per rol hoeveel capaciteit vrijkomt. ${balkUitleg}`;
 
   return {
     uitleg,

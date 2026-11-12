@@ -16,7 +16,8 @@ const TOOL_SCHEMA = {
       },
       krimpendeRollen: {
         type: "array",
-        description: "Rollen die sterk krimpen door automatisering.",
+        description:
+          "Functies waar naar verhouding de meeste tijd vrijkomt. Beschrijf in de toelichting welk werk AI overneemt en waar de vrijgekomen tijd naartoe kan (ander werk, meer huurders of woningen bedienen, hogere kwaliteit). Schrijf niet over krimp, ontslag of het schrappen van functies.",
         items: {
           type: "object",
           properties: {
@@ -42,7 +43,8 @@ const TOOL_SCHEMA = {
       },
       samenvoegKandidaten: {
         type: "array",
-        description: "Combinaties van rollen die door de afname aan taken samengevoegd zouden kunnen worden.",
+        description:
+          "Combinaties van functies waarvan het werk dat overblijft sterk overlapt, zodat het zinvol is ze samen te bekijken of anders in te delen. Alleen als het echt past.",
         items: {
           type: "object",
           properties: {
@@ -92,11 +94,11 @@ function summarizeRoles(roleResults) {
         .map((t) => t.categorieLabel)
         .join(", ");
       return (
-        `- ${r.roleLabel ?? r.rolnaam}: ${r.fte} FTE, reductie realistisch ${(r.scenarios.realistisch.reductiePercentage * 100).toFixed(
+        `- ${r.roleLabel ?? r.rolnaam}: ${r.fte} FTE; van de tijd komt realistisch ${(r.scenarios.realistisch.reductiePercentage * 100).toFixed(
           0
-        )}% (${r.fte} → ${r.scenarios.realistisch.fteOver.toFixed(2)} FTE), agressief ${(
+        )}% vrij (${r.scenarios.realistisch.fteWeg.toFixed(1)} FTE), ambitieus ${(
           r.scenarios.agressief.reductiePercentage * 100
-        ).toFixed(0)}%. Belangrijkste taakcategorieën: ${topCategorieen}.`
+        ).toFixed(0)}%. Bestemming van die tijd: ${r.waardetype ?? "nog niet bepaald"}. Belangrijkste taakcategorieën: ${topCategorieen}.`
       );
     })
     .join("\n");
@@ -116,17 +118,19 @@ export async function generateAanbevelingen(bedrijfsnaam, roleResults) {
     messages: [
       {
         role: "user",
-        content: `Je bent een organisatieadviseur die op basis van een AI-transformatie-analyse van "${bedrijfsnaam ?? "deze organisatie"}" bevindingen en aanbevelingen opstelt.
+        content: `Je bent een organisatieadviseur die voor woningcorporatie "${bedrijfsnaam ?? "deze organisatie"}" bevindingen en aanbevelingen opstelt, op basis van een analyse van wat AI in het werk kan overnemen.
 
-Rol-analyses (realistisch scenario, tenzij anders vermeld):
+Uitgangspunt: de analyse laat zien hoeveel tijd er per functie vrijkomt. Dat is capaciteit, geen bezuiniging. De vraag voor de organisatie is waar die tijd het meeste oplevert: meer aandacht voor huurders en wijken, achterstanden wegwerken, hogere kwaliteit, of groei opvangen zonder extra mensen. Schrijf daarom over tijd die vrijkomt en hoe die in te zetten, over ander werk, omscholing en herplaatsing. Schrijf niet over krimp, reductie van functies, ontslag of mensen die "weg kunnen". Het gaat om technisch potentieel, niet om een voorspelling.
+
+Analyse per functie (realistisch scenario, tenzij anders vermeld):
 ${summarizeRoles(roleResults)}
 
 Instructies:
-1. Schrijf een korte samenvatting van de belangrijkste bevindingen.
-2. Wijs rollen aan die sterk krimpen (>50% reductie is een sterk signaal, maar gebruik je eigen oordeel).
-3. Wijs rollen aan die kunnen groeien in waarde/output, of benoem nieuwe rollen/taken die nodig worden (bijv. toezicht op AI-kwaliteit, prompting-specialisten, verandermanagement).
-4. Stel voor welke rollen samengevoegd zouden kunnen worden als hun overgebleven taken sterk overlappen — alleen als dat er daadwerkelijk uitziet, verzin het niet als het niet past.
-5. Geef 4-6 concrete, uitvoerbare aanbevelingen voor het herontwerp van rollen en processen, geen algemeenheden.`,
+1. Schrijf een korte samenvatting van de belangrijkste bevindingen, in gewone taal voor een directie.
+2. Noem de functies waar naar verhouding de meeste tijd vrijkomt (meer dan de helft is een sterk signaal, maar gebruik je eigen oordeel), met wat AI daar overneemt en waar de tijd naartoe kan.
+3. Noem functies die in waarde kunnen groeien, of nieuw werk dat nodig wordt (bijvoorbeeld toezicht op de kwaliteit van AI, begeleiding van de verandering).
+4. Noem functies waarvan het werk dat overblijft sterk overlapt en die daarom samen bekeken kunnen worden. Alleen als dat er echt uitziet; verzin het niet.
+5. Geef 4 tot 6 concrete, uitvoerbare aanbevelingen voor het anders inrichten van werk en processen, geen algemeenheden. Houd rekening met de sector: betrek de ondernemingsraad en de huurdersorganisatie waar dat past, en begin waar huurders er het meeste van merken.`,
       },
     ],
   });

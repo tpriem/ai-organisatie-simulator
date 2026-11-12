@@ -34,7 +34,7 @@ export function conceptMail({ soort, organisatie, rol }) {
     onderwerp: `AI-volwassenheid van ${naam}: vragenlijst`,
     tekst:
       `Beste,\n\n` +
-      `Samen met u brengen wij in kaart hoe ver ${naam} is met het inzetten van AI. Daarvoor vragen wij u een vragenlijst in te vullen: 100 stellingen, ongeveer 30 tot 45 minuten. U kunt tussendoor stoppen en later verdergaan met dezelfde link.\n\n` +
+      `Samen met u brengen wij in kaart hoe ver ${naam} is met het inzetten van AI. Daarvoor vragen wij u een vragenlijst in te vullen: hooguit ${STELLINGEN.length} stellingen, die zich aanpassen aan uw antwoorden. Reken op 20 tot 45 minuten. U kunt tussendoor stoppen en later verdergaan met dezelfde link.\n\n` +
       rolRegel +
       `Uw antwoorden worden per rol verwerkt en niet per persoon getoond.\n\n` +
       GROET,
@@ -108,22 +108,5 @@ export function urlPastBijLink(url, origin) {
   return { soort: m[1] === "invullen" ? "invuller" : "aanlever", token: m[2], url: u.href };
 }
 
-/**
- * Een eenvoudige begrenzer: hoeveel mails één afzender per tijdvak mag versturen. Bewust in het geheugen:
- * op serverless is dat een best-effort rem per instantie, geen harde garantie, maar het houdt een
- * foutieve lus of een misbruikt account binnen de perken zonder extra opslag.
- */
-export function maakMailBegrenzer({ limiet = 10, tijdvakMs = 60 * 60 * 1000, nu = () => Date.now() } = {}) {
-  const per = new Map();
-  return function toegestaan(sleutel) {
-    const t = nu();
-    const recent = (per.get(sleutel) ?? []).filter((x) => t - x < tijdvakMs);
-    if (recent.length >= limiet) {
-      per.set(sleutel, recent);
-      return false;
-    }
-    recent.push(t);
-    per.set(sleutel, recent);
-    return true;
-  };
-}
+// De begrenzer staat in begrenzer.js; hij wordt ook bij het inloggen gebruikt.
+export { maakBegrenzer as maakMailBegrenzer } from "./begrenzer.js";

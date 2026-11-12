@@ -1,5 +1,6 @@
 import { getSupabase, FILES_BUCKET } from "./supabase";
 import { schoneBestandsnaam } from "../../src/links.js";
+import { parallel } from "../../src/parallel.js";
 
 function rowToClient(row) {
   return {
@@ -229,31 +230,6 @@ export async function getRosterInfo(id) {
   const { data } = await supabase.storage.from(FILES_BUCKET).list(id, { limit: 1000 });
   const rosterFile = (data ?? []).find((f) => f.id !== null && f.name.startsWith("roster."));
   return rosterFile ? { fileName: rosterFile.name } : null;
-}
-
-/**
- * Voert fn uit voor elk item, met hooguit `aantal` tegelijk, en geeft de uitkomsten in dezelfde volgorde
- * terug. Een voor een duurt bij tientallen profielen te lang: elke opslagaanroep kost een rondje naar
- * Supabase. Bij de eerste fout worden geen nieuwe items meer gestart.
- */
-async function parallel(items, aantal, fn) {
-  const uit = new Array(items.length);
-  let volgende = 0;
-  let gestopt = false;
-  async function werker() {
-    while (!gestopt) {
-      const i = volgende++;
-      if (i >= items.length) return;
-      try {
-        uit[i] = await fn(items[i], i);
-      } catch (err) {
-        gestopt = true;
-        throw err;
-      }
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(aantal, items.length) }, werker));
-  return uit;
 }
 
 const OPSLAG_PARALLEL = 8;

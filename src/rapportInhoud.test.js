@@ -13,7 +13,8 @@ import {
   bevestigingZin,
 } from "./rapportTeksten.js";
 import { stelWaardetypeIn, rollenDieBevestigingVragen } from "./waardetype.js";
-import { nl } from "./formatNl.js";
+import { nl, fteBereik, fteRond, urenRond } from "./formatNl.js";
+import { waardeBereik } from "./rapportTeksten.js";
 import { buildOrgChartData, organogramTeksten, aansturingRegels } from "../web/lib/orgChartData.js";
 import { calculateSubtotalenPerAfdeling } from "./calculate.js";
 import { SUBTOTALEN_KOLOMMEN, subtotaalCellen } from "./rapportTeksten.js";
@@ -148,8 +149,16 @@ async function rapporten(opties) {
 for (const formaat of ["pdf", "docx"]) {
   test(`${formaat}: het kopgetal is vrijgekomen capaciteit, niet besparing`, async () => {
     const { results, [formaat]: tekst } = await rapporten();
-    const fte = nl(results.organisatieTotaal.realistisch.totaalFteWeg, 1);
-    assert.ok(tekst.includes(`${fte} FTE aan capaciteit`), `kopzin "${fte} FTE aan capaciteit" ontbreekt`);
+    // Afgerond en als bandbreedte tussen de scenario's: het is een optelsom van inschattingen.
+    const t = results.organisatieTotaal;
+    const band = fteBereik(t.realistisch.totaalFteWeg, t.agressief.totaalFteWeg);
+    assert.ok(tekst.includes(`${band} aan capaciteit komt vrij`), `kopzin "${band} aan capaciteit komt vrij" ontbreekt`);
+    assert.ok(tekst.includes(waardeBereik(t)), "de waarde van die tijd staat bij de samenvatting");
+  });
+
+  test(`${formaat}: de koppen bij de bevindingen spreken niet over krimp`, async () => {
+    const { [formaat]: tekst } = await rapporten();
+    assert.ok(!/Krimpende rollen|Samenvoegkandidaten/.test(tekst));
   });
 
   test(`${formaat}: elke bestemming uit de berekening staat in het rapport`, async () => {
@@ -459,7 +468,7 @@ for (const formaat of ["pdf", "docx"]) {
     const { results, [formaat]: tekst } = await rapporten();
     for (const r of results.rollen) {
       const vrij = (s) => nl(r.scenarios[s].fteWeg, 1);
-      const kop = `${r.roleLabel ?? r.rolnaam} — ${nl(r.fte, 1)} FTE, waarvan ${vrij("realistisch")} FTE vrijkomt (realistisch) tot ${vrij("agressief")} FTE (agressief)`;
+      const kop = `${r.roleLabel ?? r.rolnaam} — ${nl(r.fte, 1)} FTE, waarvan ${vrij("realistisch")} FTE vrijkomt (realistisch) tot ${vrij("agressief")} FTE (ambitieus)`;
       assert.ok(tekst.includes(kop), `kop van ${r.rolnaam} ontbreekt of klopt niet: ${kop}`);
     }
   });
@@ -521,3 +530,17 @@ for (const formaat of ["pdf", "docx"]) {
     for (const k of chart.hierarchie.top) assert.ok(tekst.includes(`${k.rolnaam} — ${t.onderdeel(k)}`), `knoop ${k.rolnaam} ontbreekt`);
   });
 }
+
+// ── Kopcijfers: afgerond en als bandbreedte ───────────────────────────────────────────
+
+test("kopcijfers: vanaf 10 FTE op hele getallen, daaronder één decimaal, en een bandbreedte tussen de scenario's", () => {
+  assert.equal(fteRond(59.94), "60");
+  assert.equal(fteRond(9.44), "9,4");
+  assert.equal(fteRond(NaN), "—");
+  assert.equal(fteBereik(59.94, 85.6), "60–86 FTE");
+  assert.equal(fteBereik(3.21, 4.87), "3,2–4,9 FTE");
+  assert.equal(fteBereik(12.2, 12.4), "12 FTE", "afgerond gelijk: één getal");
+  assert.equal(fteBereik(12.2, undefined), "12 FTE");
+  assert.equal(urenRond(2157.4), "2.160");
+  assert.equal(urenRond(74.4), "74");
+});

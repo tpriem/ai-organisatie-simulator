@@ -1,8 +1,10 @@
 import { getClientMeta, readResults } from "@/lib/clientStore";
 import { generateReportDocx } from "@/lib/generateReport";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 import { readMaturiteit } from "@/lib/maturiteitStore";
 import { berekenProfiel } from "../../../../../../src/volwassenheid.js";
+import { resultatenVoorRapport } from "../../../../../../src/aanbevelingen.js";
 
 // Het rapport is door de nieuwe secties groter geworden en groeit mee met het aantal
 // rollen. Expliciet een ruime limiet, in plaats van te leunen op een platformstandaard
@@ -18,12 +20,12 @@ export async function GET(request, { params }) {
   const meta = await getClientMeta(id);
   if (!meta) return new Response(JSON.stringify({ error: "Klant niet gevonden" }), { status: 404 });
 
-  const results = await readResults(id);
+  const results = resultatenVoorRapport(await readResults(id));
   if (!results) {
     return new Response(JSON.stringify({ error: "Nog geen analyse uitgevoerd voor deze klant" }), { status: 400 });
   }
 
-  // Het impactrapport verwijst naar het volwassenheidsrapport als er een meting is. Lukt het
+  // Het capaciteitsrapport verwijst naar het volwassenheidsrapport als er een meting is. Lukt het
   // lezen niet, dan blijft het rapport gewoon werken zonder die verwijzing.
   try {
     const { huidig } = await readMaturiteit(id);
@@ -43,7 +45,8 @@ export async function GET(request, { params }) {
     });
   }
 
-  const fileName = `rapport_${safeFileSegment(meta.naam)}.docx`;
+  await logActie(id, "rapport_gedownload", { soort: "capaciteit", formaat: "Word" });
+  const fileName = `capaciteitsrapport_${safeFileSegment(meta.naam)}.docx`;
 
   return new Response(buffer, {
     status: 200,

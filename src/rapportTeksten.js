@@ -1,5 +1,5 @@
 import { calculateScanDekking, matchKwaliteit } from "./scanDekking.js";
-import { nl } from "./formatNl.js";
+import { nl, euroKort, fteBereik, urenRond } from "./formatNl.js";
 import { getWaardetype } from "./config.js";
 import { isHandmatig, waardetypeHerkomst, bevestigtInschatting, rollenDieBevestigingVragen } from "./waardetype.js";
 
@@ -140,7 +140,7 @@ export function bevestigingZin(rollen) {
 }
 
 /**
- * Verwijzing in het impactrapport naar het volwassenheidsrapport. De twee onderzoeken hebben elk
+ * Verwijzing in het capaciteitsrapport naar het volwassenheidsrapport. De twee onderzoeken hebben elk
  * een eigen rapport; deze zin legt het verband zonder de uitkomsten te vermengen.
  */
 export const volwassenheidVerwijzingZin =
@@ -152,14 +152,33 @@ export const volwassenheidVerwijzingZin =
  */
 export function rolKop(rol) {
   const vrij = (scenario) => rol.scenarios[scenario].fteWeg ?? Math.max(rol.fte - rol.scenarios[scenario].fteOver, 0);
-  return `${rol.roleLabel ?? rol.rolnaam} — ${nl(rol.fte, 1)} FTE, waarvan ${nl(vrij("realistisch"), 1)} FTE vrijkomt (realistisch) tot ${nl(vrij("agressief"), 1)} FTE (agressief)`;
+  return `${rol.roleLabel ?? rol.rolnaam} — ${nl(rol.fte, 1)} FTE, waarvan ${nl(vrij("realistisch"), 1)} FTE vrijkomt (realistisch) tot ${nl(vrij("agressief"), 1)} FTE (ambitieus)`;
+}
+
+/**
+ * Het kopcijfer van de capaciteitsanalyse: afgerond en als bandbreedte tussen de twee scenario's, want
+ * het is een optelsom van inschattingen. `getal` is het vetgedrukte deel, `rest` de zin erachter.
+ */
+export function capaciteitKop(organisatieTotaal) {
+  const r = organisatieTotaal.realistisch;
+  const a = organisatieTotaal.agressief;
+  const uren = r.totaalVrijgekomenUrenPerWeek ?? r.totaalFteWeg * 36;
+  return {
+    getal: fteBereik(r.totaalFteWeg, a?.totaalFteWeg),
+    rest: `aan capaciteit komt vrij (realistisch tot ambitieus scenario). In het realistische scenario is dat ongeveer ${urenRond(uren)} uur per week.`,
+  };
+}
+
+/** De waarde van die tijd per jaar, als bandbreedte: "€3,9 mln–€5,6 mln". */
+export function waardeBereik(organisatieTotaal) {
+  return `${euroKort(organisatieTotaal.realistisch.totaalKostenBesparingPerJaar)}–${euroKort(organisatieTotaal.agressief.totaalKostenBesparingPerJaar)}`;
 }
 
 /**
  * De kolommen van de subtotalen per afdeling in de rapporten. Capaciteit die vrijkomt, niet FTE die
  * overblijft; de laatste kolom is de waarde van die tijd, geen besparing.
  */
-export const SUBTOTALEN_KOLOMMEN = ["Afdeling", "Rollen", "FTE huidig", "Komt vrij (realistisch)", "Komt vrij (agressief)", "Waarde per jaar (R–A)"];
+export const SUBTOTALEN_KOLOMMEN = ["Afdeling", "Rollen", "FTE huidig", "Komt vrij (realistisch)", "Komt vrij (ambitieus)", "Waarde per jaar (R–A)"];
 
 /** De eerste vijf cellen van een afdelingsrij; de waarde per jaar zet elk formaat zelf op. */
 export function subtotaalCellen(s) {

@@ -21,11 +21,14 @@ import {
   waardetypeHandmatigRegel,
   bevestigingZin,
   rolKop,
+  capaciteitKop,
+  waardeBereik,
   SUBTOTALEN_KOLOMMEN,
   subtotaalCellen,
   volwassenheidVerwijzingZin,
 } from "../../src/rapportTeksten.js";
 import { nl } from "../../src/formatNl.js";
+import { AANBEVELING_KOPPEN } from "../../src/aanbevelingen.js";
 
 /**
  * Vercel's serverless functions kunnen geen volledige, lokaal-geïnstalleerde Chromium
@@ -101,10 +104,8 @@ function capaciteitBlock(organisatieTotaal, rollen) {
   const bestemming = calculateCapaciteitBestemming(rollen, "realistisch");
   const heeftBestemming = bestemming.some((b) => b.waardetype !== "onbepaald");
 
-  const uren = t.totaalVrijgekomenUrenPerWeek ?? t.totaalFteWeg * 36;
-  const kop = `<p><strong>${nl(t.totaalFteWeg, 1)} FTE</strong> aan capaciteit komt vrij (${Math.round(
-    uren
-  )} uur per week, realistisch scenario).`;
+  const kopcijfer = capaciteitKop(organisatieTotaal);
+  const kop = `<p><strong>${esc(kopcijfer.getal)}</strong> ${esc(kopcijfer.rest)}`;
 
   const rijen = heeftBestemming
     ? bestemming
@@ -145,7 +146,7 @@ function financieelBlock(organisatieTotaal) {
     organisatieTotaal.realistisch.totaalKostenBesparingPerJaar
   )}–${eur(
     organisatieTotaal.agressief.totaalKostenBesparingPerJaar
-  )} per jaar (realistisch–agressief). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.</p>`;
+  )} per jaar (realistisch–ambitieus). Dit bedrag geldt alleen als die uren daadwerkelijk uit de kosten verdwijnen; worden ze ingezet voor meer volume of hogere kwaliteit, dan is de opbrengst geen besparing maar extra output.</p>`;
 }
 
 // Uit welk soort werk de vrijkomende capaciteit komt, als tabel in uren.
@@ -460,7 +461,7 @@ export function buildReportHtml(results) {
   .disclaimer { font-style: italic; color: #6b6a8f; font-size: 9px; margin-bottom: 20px; }
   h2 { font-size: 15px; border-bottom: 2px solid #7b4feb; padding-bottom: 4px; margin: 24px 0 10px; page-break-after: avoid; }
   h3 { font-size: 12px; margin: 14px 0 6px; page-break-after: avoid; }
-  h3.krimp { color: #dc2626; } h3.groei { color: #059669; } h3.samenvoeg { color: #7b4feb; }
+  h3.vrij { color: #7b4feb; } h3.groei { color: #059669; } h3.samenvoeg { color: #7b4feb; }
   p { line-height: 1.5; margin: 0 0 8px; }
   .banner { background: #7b4feb; color: white; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 11px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10px; }
@@ -490,7 +491,7 @@ export function buildReportHtml(results) {
   .stat-grid { display: flex; gap: 10px; margin-bottom: 14px; }
   .stat-card { flex: 1; border: 1px solid #d2d0e6; border-radius: 8px; padding: 10px; }
   .stat-label { font-size: 9px; color: #9d9bbd; margin-bottom: 2px; }
-  .stat-value { font-size: 18px; font-weight: bold; }
+  .stat-value { font-size: 15px; font-weight: bold; white-space: nowrap; }
   .finding { font-size: 10px; margin-bottom: 8px; }
   .trend-up { color: #059669; font-weight: bold; } .trend-down { color: #dc2626; font-weight: bold; } .trend-flat { color: #9d9bbd; }
   .findings-cols { display: flex; gap: 16px; }
@@ -515,14 +516,15 @@ export function buildReportHtml(results) {
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-label">FTE totaal</div><div class="stat-value">${organisatieTotaal.realistisch.totaalFteHuidig}</div></div>
     <div class="stat-card"><div class="stat-label">Automatiseerbaar</div><div class="stat-value">${pct(organisatieTotaal.realistisch.reductiePercentageOrganisatie)}–${pct(organisatieTotaal.agressief.reductiePercentageOrganisatie)}</div></div>
-    <div class="stat-card"><div class="stat-label">Capaciteit die vrijkomt</div><div class="stat-value">${nl(organisatieTotaal.realistisch.totaalFteWeg, 1)} FTE</div></div>
+    <div class="stat-card"><div class="stat-label">Capaciteit die vrijkomt</div><div class="stat-value">${esc(capaciteitKop(organisatieTotaal).getal)}</div></div>
+    <div class="stat-card"><div class="stat-label">Waarde van die tijd per jaar</div><div class="stat-value">${esc(waardeBereik(organisatieTotaal))}</div></div>
   </div>
   ${capaciteitBlock(organisatieTotaal, rollen)}
   ${results.volwassenheidBeschikbaar ? `<p class="disclaimer">${esc(volwassenheidVerwijzingZin)}</p>` : ""}
   ${financieelBlock(organisatieTotaal)}
   <h2>Interne transformatie — overzicht per rol</h2>
   <table>
-    <thead><tr><th>Rol</th><th>FTE</th><th>Uren/wk</th><th>Kosten/uur</th><th>Reductie (R–A)</th><th>Vrijkomend u/wk (R–A)</th><th>Als besparing ingeboekt (R–A)</th></tr></thead>
+    <thead><tr><th>Rol</th><th>FTE</th><th>Uren/wk</th><th>Kosten/uur</th><th>Tijd die vrijkomt (R–A)</th><th>Vrijkomend u/wk (R–A)</th><th>Waarde van die tijd (R–A)</th></tr></thead>
     <tbody>
       ${rollen
         .map(
@@ -583,7 +585,7 @@ export function buildReportHtml(results) {
       ${waardetypeLine(r)}
       ${beroepsmatchRegel(r.beroepsmatch) ? `<p class="disclaimer">${esc(beroepsmatchRegel(r.beroepsmatch))}</p>` : ""}
       <table>
-        <thead><tr><th>Taak</th><th>Categorie</th><th>Aandeel</th><th>Realistisch %</th><th>Agressief %</th></tr></thead>
+        <thead><tr><th>Taak</th><th>Categorie</th><th>Aandeel</th><th>Realistisch %</th><th>Ambitieus %</th></tr></thead>
         <tbody>${taakRows(r)}</tbody>
       </table>
       ${
@@ -601,9 +603,9 @@ export function buildReportHtml(results) {
       ? `<h2>Bevindingen &amp; Aanbevelingen</h2>
     <p>${esc(aanbevelingen.bevindingenSamenvatting)}</p>
     <div class="findings-cols">
-      <div>${listBlock("Krimpende rollen", aanbevelingen.krimpendeRollen, "krimp")}</div>
-      <div>${listBlock("Groeiende rollen", aanbevelingen.groeiendeRollen, "groei")}</div>
-      <div>${listBlock("Samenvoegkandidaten", aanbevelingen.samenvoegKandidaten, "samenvoeg")}</div>
+      <div>${listBlock(AANBEVELING_KOPPEN.krimpendeRollen, aanbevelingen.krimpendeRollen, "vrij")}</div>
+      <div>${listBlock(AANBEVELING_KOPPEN.groeiendeRollen, aanbevelingen.groeiendeRollen, "groei")}</div>
+      <div>${listBlock(AANBEVELING_KOPPEN.samenvoegKandidaten, aanbevelingen.samenvoegKandidaten, "samenvoeg")}</div>
     </div>
     <h3>Aanbevelingen</h3>
     ${(aanbevelingen.aanbevelingen ?? [])

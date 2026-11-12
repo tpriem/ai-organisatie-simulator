@@ -1,6 +1,7 @@
 import { laadVolwassenheidsRapport, bestandsnaam } from "@/lib/volwassenheidRapport";
 import { generateVolwassenheidPdf } from "@/lib/generateVolwassenheidReport";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 
 // PDF-versie van het volwassenheidsrapport. De PDF leunt op dezelfde Chromium-opzet als het
 // impactrapport; faalt die, dan wijzen we op het Word-rapport.
@@ -29,6 +30,7 @@ export async function GET(request, { params }) {
     });
   }
 
+  await logActie(id, "rapport_gedownload", { soort: "volwassenheid", formaat: "PDF" });
   return new Response(buffer, {
     status: 200,
     headers: {

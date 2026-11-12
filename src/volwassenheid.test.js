@@ -11,6 +11,7 @@ import {
   maakSnapshot,
   effectieveAntwoorden,
   beoordeelThema,
+  nietNodig,
   berekenProfiel,
   volgordeVanAanpak,
   vaardigheidVersusBorging,
@@ -493,4 +494,52 @@ test("schoonInvoer bewaart bron, status en tijdstippen van een link-invuller en 
   assert.equal(s.invullers[1].status, "nieuw");
   assert.equal("bron" in s.invullers[2], false, "een gewone invuller heeft geen bron of status");
   assert.equal("status" in s.invullers[2], false);
+});
+
+// ---- Adaptieve vragenlijst ----
+
+test("na een nee of deels op een vaardigheidsstelling zijn de hogere stellingen niet meer nodig", () => {
+  // data_kwaliteit: vaardigheid op 1, 2 en 5; borging op 3 en 4.
+  const t = thema("data_kwaliteit");
+  assert.deepEqual([...nietNodig(t, {})], [], "zonder antwoorden is alles nodig");
+  assert.deepEqual([...nietNodig(t, { data_kwaliteit_1: "nee" })], ["data_kwaliteit_2", "data_kwaliteit_3", "data_kwaliteit_4", "data_kwaliteit_5"]);
+  assert.deepEqual([...nietNodig(t, { data_kwaliteit_1: "ja", data_kwaliteit_2: "deels" })], ["data_kwaliteit_3", "data_kwaliteit_4", "data_kwaliteit_5"]);
+  assert.deepEqual([...nietNodig(t, { data_kwaliteit_1: "ja", data_kwaliteit_2: "ja" })], []);
+});
+
+test("na een nee op een borgingsstelling blijven de hogere stellingen nodig, voor vaardigheid versus borging", () => {
+  const t = thema("data_kwaliteit");
+  const a = { data_kwaliteit_1: "ja", data_kwaliteit_2: "ja", data_kwaliteit_3: "nee" };
+  assert.deepEqual([...nietNodig(t, a)], [], "de ladder van de vaardigheden loopt nog door");
+});
+
+test("overslaan verandert geen enkel niveau: het strikte niveau en het niveau van de vaardigheden blijven gelijk", () => {
+  const waarden = ["ja", "deels", "nee"];
+  for (const t of THEMAS) {
+    // Alle combinaties van antwoorden op de vijf stellingen van het thema.
+    for (let code = 0; code < 3 ** 5; code++) {
+      const volledig = {};
+      t.stellingen.forEach((s, i) => (volledig[s.id] = waarden[Math.floor(code / 3 ** i) % 3]));
+      const ingekort = { ...volledig };
+      for (const id of nietNodig(t, volledig)) delete ingekort[id];
+      const a = beoordeelThema(t, volledig);
+      const b = beoordeelThema(t, ingekort);
+      assert.equal(b.niveau, a.niveau, `${t.id} ${code}: strikt niveau`);
+      assert.equal(b.losNiveau, a.losNiveau, `${t.id} ${code}: niveau van de vaardigheden`);
+      assert.equal(b.ingevuld, true, `${t.id} ${code}: zonder de overgeslagen stellingen is het thema af`);
+    }
+  }
+});
+
+test("overgeslagen stellingen tellen niet als nog te beantwoorden", () => {
+  const a = { data_kwaliteit_1: "nee" };
+  const b = beoordeelThema(thema("data_kwaliteit"), a);
+  assert.equal(b.totaal, 1);
+  assert.equal(b.overgeslagen, 4);
+  assert.equal(b.ingevuld, true);
+  assert.equal(b.onvolledig, false);
+  // Wie een overgeslagen stelling toch beantwoordt, ziet dat gewoon meegeteld.
+  const c = beoordeelThema(thema("data_kwaliteit"), { ...a, data_kwaliteit_4: "ja" });
+  assert.equal(c.totaal, 2);
+  assert.equal(c.beantwoord, 2);
 });

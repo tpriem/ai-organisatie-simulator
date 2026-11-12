@@ -147,7 +147,7 @@ export default function HomePage() {
                       <span className="flex items-center gap-2">
                         <span className="font-medium text-slate-900 truncate">{c.naam}</span>
                         {c.scope === "afdeling" && c.scopeLabel && (
-                          <span className="shrink-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium px-2 py-0.5">
+                          <span className="shrink-0 rounded-full bg-amber-50 text-amber-700 text-[11px] font-medium px-2 py-0.5">
                             {c.scopeLabel}
                           </span>
                         )}

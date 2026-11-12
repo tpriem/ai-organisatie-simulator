@@ -4,6 +4,7 @@ import { readLinks, maakLink, trekLinkIn } from "@/lib/linkStore";
 import { readMaturiteit, voegLinkInvullerToe, verwijderLinkInvuller } from "@/lib/maturiteitStore";
 import { siteOrigin } from "@/lib/siteOrigin";
 import { meldStoring } from "@/lib/alert";
+import { logActie } from "@/lib/logboek";
 import { publiekeWeergave } from "../../../../../../src/links.js";
 import { ROLLEN, MAX_INVULLERS } from "../../../../../../src/volwassenheid.js";
 
@@ -39,11 +40,13 @@ export async function POST(request, { params }) {
       if (!invuller) return NextResponse.json({ error: "Invuller niet gevonden" }, { status: 404 });
       for (const l of links.filter((x) => x.type === "invuller" && x.invullerId === invullerId && !x.ingetrokken)) await trekLinkIn(id, l.id);
       const { link, token } = await maakLink(id, { type: "invuller", rol: invuller.rol, label: invuller.label, invullerId });
+      await logActie(id, "link_gemaakt", { soort: "invuller" });
       return NextResponse.json({ link: publiekeWeergave(link), url: `${siteOrigin(request)}/${pad.invuller}/${token}` });
     }
 
     if (body.type === "aanlever") {
       const { link, token } = await maakLink(id, { type: "aanlever" });
+      await logActie(id, "link_gemaakt", { soort: "aanleveren" });
       return NextResponse.json({ link: publiekeWeergave(link), url: `${siteOrigin(request)}/${pad.aanlever}/${token}` });
     }
 
@@ -66,6 +69,7 @@ export async function POST(request, { params }) {
         await trekLinkIn(id, link.id).catch(() => {});
         throw err;
       }
+      await logActie(id, "link_gemaakt", { soort: "invuller" });
       return NextResponse.json({ link: publiekeWeergave(link), invullerId, url: `${siteOrigin(request)}/${pad.invuller}/${token}` });
     }
 
