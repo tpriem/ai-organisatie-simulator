@@ -90,12 +90,17 @@ export const BESTAND_SOORTEN = {
   profiel: { extensies: [".docx", ".pdf", ".txt", ".md"], max: 60, omschrijving: "functieprofiel (Word, PDF of tekst)" },
 };
 
-/** Een veilige bestandsnaam: geen pad, geen vreemde tekens, begrensde lengte. Null als er niets over blijft. */
+/**
+ * Een veilige bestandsnaam: geen pad, geen vreemde tekens, begrensde lengte. Null als er niets over blijft.
+ * Het resultaat is ook een geldige sleutel in Supabase Storage, dat accenten en tekens als "&" weigert
+ * ("Invalid key"). Accenten worden daarom weggehaald (ë wordt e). De koppeling aan een rol blijft werken,
+ * want die vergelijkt via slugify, dat dezelfde accenten ook weglaat.
+ */
 export function schoneBestandsnaam(naam) {
   if (typeof naam !== "string") return null;
-  const basis = naam.split(/[\\/]/).pop().normalize("NFKC");
+  const basis = naam.split(/[\\/]/).pop().normalize("NFKD").replace(/[̀-ͯ]/g, "");
   const punt = basis.lastIndexOf(".");
-  const stam = (punt > 0 ? basis.slice(0, punt) : basis).replace(/[^\p{L}\p{N} _.()-]+/gu, "_").replace(/\.+/g, ".").trim().slice(0, 80);
+  const stam = (punt > 0 ? basis.slice(0, punt) : basis).replace(/[^A-Za-z0-9 _.()-]+/g, "_").replace(/\.+/g, ".").trim().slice(0, 80);
   const ext = punt > 0 ? basis.slice(punt).toLowerCase().replace(/[^a-z0-9.]/g, "").slice(0, 8) : "";
   if (!stam || stam === "." || !ext) return null;
   return `${stam}${ext}`;

@@ -44,6 +44,22 @@ export async function parseProfileFiles(files) {
 }
 
 /**
+ * De profielen op bestandsnaam, zonder de bestanden te lezen. De koppeling aan een rol gaat alleen op naam
+ * (zie matchRosterToProfiles); de inhoud is pas nodig bij de analyse. Zo hoeft het overzicht van een klant
+ * niet tientallen bestanden te downloaden. Of een bestand leesbaar is, blijkt dus pas bij de analyse.
+ * @param {string[]} fileNames
+ */
+export function profielenOpNaam(fileNames) {
+  const profielen = {};
+  for (const fileName of fileNames) {
+    if (!SUPPORTED_EXT.includes(path.extname(fileName).toLowerCase())) continue;
+    const baseName = path.basename(fileName, path.extname(fileName));
+    profielen[slugify(baseName)] = { fileName, roleNameGuess: baseName, text: "" };
+  }
+  return profielen;
+}
+
+/**
  * Matcht roster-rollen aan functieprofielen.
  *
  * Zonder afdeling: matcht op geslugificeerde rolnaam (ongewijzigd gedrag).

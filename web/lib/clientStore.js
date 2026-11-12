@@ -1,4 +1,5 @@
 import { getSupabase, FILES_BUCKET } from "./supabase";
+import { schoneBestandsnaam } from "../../src/links.js";
 
 function rowToClient(row) {
   return {
@@ -230,8 +231,36 @@ export async function getRosterInfo(id) {
   return rosterFile ? { fileName: rosterFile.name } : null;
 }
 
-export async function getRosterBuffer(id) {
-  const info = await getRosterInfo(id);
+/**
+ * Voert fn uit voor elk item, met hooguit `aantal` tegelijk, en geeft de uitkomsten in dezelfde volgorde
+ * terug. Een voor een duurt bij tientallen profielen te lang: elke opslagaanroep kost een rondje naar
+ * Supabase. Bij de eerste fout worden geen nieuwe items meer gestart.
+ */
+async function parallel(items, aantal, fn) {
+  const uit = new Array(items.length);
+  let volgende = 0;
+  let gestopt = false;
+  async function werker() {
+    while (!gestopt) {
+      const i = volgende++;
+      if (i >= items.length) return;
+      try {
+        uit[i] = await fn(items[i], i);
+      } catch (err) {
+        gestopt = true;
+        throw err;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(aantal, items.length) }, werker));
+  return uit;
+}
+
+const OPSLAG_PARALLEL = 8;
+
+/** `info` is het resultaat van getRosterInfo, voor wie dat al heeft en de lijst niet nog eens wil ophalen. */
+export async function getRosterBuffer(id, info = undefined) {
+  info = info === undefined ? await getRosterInfo(id) : info;
   if (!info) return null;
   const supabase = getSupabase();
   const { data, error } = await supabase.storage.from(FILES_BUCKET).download(`${id}/${info.fileName}`);
@@ -242,15 +271,15 @@ export async function getRosterBuffer(id) {
 
 export async function uploadProfiles(id, files) {
   const supabase = getSupabase();
-  const saved = [];
-  for (const { fileName, buffer } of files) {
+  return parallel(files, OPSLAG_PARALLEL, async ({ fileName, buffer }) => {
+    // Storage weigt accenten en tekens als "&" in een sleutel; zie schoneBestandsnaam.
+    const opslagNaam = schoneBestandsnaam(fileName) ?? fileName.replace(/[^A-Za-z0-9._-]+/g, "_");
     const { error } = await supabase.storage
       .from(FILES_BUCKET)
-      .upload(`${id}/profiles/${fileName}`, buffer, { contentType: contentTypeFor(fileName), upsert: true });
+      .upload(`${id}/profiles/${opslagNaam}`, buffer, { contentType: contentTypeFor(opslagNaam), upsert: true });
     if (error) throw error;
-    saved.push(fileName);
-  }
-  return saved;
+    return opslagNaam;
+  });
 }
 
 export async function listProfileFiles(id) {
@@ -265,14 +294,13 @@ export async function deleteProfileFile(id, fileName) {
   if (error) throw error;
 }
 
-export async function getProfileBuffers(id) {
-  const fileNames = await listProfileFiles(id);
+/** `fileNames` is het resultaat van listProfileFiles, voor wie de lijst al heeft. */
+export async function getProfileBuffers(id, fileNames = null) {
+  const namen = fileNames ?? (await listProfileFiles(id));
   const supabase = getSupabase();
-  const files = [];
-  for (const fileName of fileNames) {
+  return parallel(namen, OPSLAG_PARALLEL, async (fileName) => {
     const { data, error } = await supabase.storage.from(FILES_BUCKET).download(`${id}/profiles/${fileName}`);
     if (error) throw error;
-    files.push({ fileName, buffer: Buffer.from(await data.arrayBuffer()) });
-  }
-  return files;
+    return { fileName, buffer: Buffer.from(await data.arrayBuffer()) };
+  });
 }

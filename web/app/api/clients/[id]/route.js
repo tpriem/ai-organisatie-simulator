@@ -6,15 +6,14 @@ import {
   readAnswers,
   getRosterBuffer,
   getRosterInfo,
-  getProfileBuffers,
   listProfileFiles,
   readResults,
 } from "@/lib/clientStore";
 import { parseRoster } from "../../../../../src/parseRoster.js";
-import { parseProfileFiles, matchRosterToProfiles, roleId, roleLabel } from "../../../../../src/parseProfiles.js";
+import { profielenOpNaam, matchRosterToProfiles, roleId, roleLabel } from "../../../../../src/parseProfiles.js";
 
-async function buildRosterCheck(id) {
-  const roster = await getRosterBuffer(id);
+async function buildRosterCheck(id, rosterInfo, profileFiles) {
+  const roster = await getRosterBuffer(id, rosterInfo);
   if (!roster) return null;
 
   let rosterRows;
@@ -24,13 +23,12 @@ async function buildRosterCheck(id) {
     return { error: err.message };
   }
 
-  // Matching met functieprofielen is optioneel op dit punt — nog geen (leesbare)
-  // profielen geüpload mag de roster-tabel zelf niet blokkeren.
+  // De koppeling aan functieprofielen gaat op bestandsnaam: de bestanden zelf hoeven hier niet gelezen te
+  // worden (bij 50 profielen scheelde dat ruim tien seconden per keer dat de pagina opent). Of een profiel
+  // leesbaar is, blijkt bij de analyse.
   let matchedIds = new Set();
   try {
-    const profileFiles = await getProfileBuffers(id);
-    const profiles = await parseProfileFiles(profileFiles);
-    const { matched } = matchRosterToProfiles(rosterRows, profiles);
+    const { matched } = matchRosterToProfiles(rosterRows, profielenOpNaam(profileFiles));
     matchedIds = new Set(matched.map((r) => roleId(r)));
   } catch {
     // stil negeren — rollen tonen dan als "nog niet gekoppeld"
@@ -95,15 +93,23 @@ export async function GET(request, { params }) {
   const meta = await getClientMeta(id);
   if (!meta) return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
 
-  const rosterInfo = await getRosterInfo(id);
+  // Alles wat niet van elkaar afhangt tegelijk ophalen: elke aanroep naar de opslag of database kost een
+  // rondje naar Supabase, en achter elkaar werd dat opgeteld.
+  const [rosterInfo, answers, profileFiles, results] = await Promise.all([
+    getRosterInfo(id),
+    readAnswers(id),
+    listProfileFiles(id),
+    readResults(id),
+  ]);
+  const rosterCheck = await buildRosterCheck(id, rosterInfo, profileFiles);
 
   return NextResponse.json({
     ...meta,
-    answers: await readAnswers(id),
+    answers,
     rosterFileName: rosterInfo?.fileName ?? null,
-    profileFiles: await listProfileFiles(id),
-    results: await readResults(id),
-    rosterCheck: await buildRosterCheck(id),
+    profileFiles,
+    results,
+    rosterCheck,
   });
 }
 

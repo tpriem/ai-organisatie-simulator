@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { slugify } from "./roleIdentity.js";
 import {
   maakToken,
   splitsToken,
@@ -101,6 +102,19 @@ test("bestandsnamen: geen paden, geen vreemde tekens, en de extensie blijft", ()
   assert.equal(schoneBestandsnaam(".csv"), null);
   assert.equal(schoneBestandsnaam(""), null);
   assert.equal(schoneBestandsnaam(null), null);
+});
+
+test("bestandsnamen zijn geldige opslagsleutels: accenten en & vallen weg, de koppeling aan een rol blijft", () => {
+  // Supabase Storage weigert zulke tekens met "Invalid key"; Nederlandse functienamen hebben ze vaak.
+  assert.equal(schoneBestandsnaam("coördinator onderhoud.txt"), "coordinator onderhoud.txt");
+  assert.equal(schoneBestandsnaam("manager financiën.txt"), "manager financien.txt");
+  assert.equal(schoneBestandsnaam("medewerker financial planning & control.txt"), "medewerker financial planning _ control.txt");
+  for (const naam of ["coördinator onderhoud.txt", "hoofd financiële administratie.txt", "a & b.txt", "mutatie-/klachtenopzichter.txt"]) {
+    assert.match(schoneBestandsnaam(naam), /^[A-Za-z0-9 _.()-]+$/, `${naam} moet een geldige sleutel worden`);
+  }
+  // Dezelfde slug als de rolnaam, dus het profiel blijft aan de rol gekoppeld.
+  assert.equal(slugify(schoneBestandsnaam("coördinator onderhoud.txt").replace(/\.txt$/, "")), slugify("coördinator onderhoud"));
+  assert.equal(slugify(schoneBestandsnaam("medewerker financial planning & control.txt").replace(/\.txt$/, "")), slugify("medewerker financial planning & control"));
 });
 
 test("bestandscontrole: soort, extensie, leeg en te groot", () => {
