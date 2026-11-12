@@ -37,7 +37,7 @@ export function InHetKort({ analyse, klantNaam }) {
   const beeld = totaalbeeld(analyse.profiel);
   const punten = conclusies(analyse);
   return (
-    <div className="mb-4 rounded-r-xl border-l-4 border-flow-lime bg-slate-50 px-4 py-3">
+    <div className="mb-4 rounded-r-xl border-l-4 border-hod-violet bg-slate-50 px-4 py-3">
       <p className="mb-2 text-sm font-semibold leading-snug text-slate-800">{standZin(beeld, klantNaam || "De organisatie")}</p>
       <ol className="list-decimal space-y-1 pl-5 text-xs leading-relaxed text-slate-700">
         {punten.map((p, i) => (
