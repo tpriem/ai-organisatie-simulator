@@ -1394,18 +1394,19 @@ export default function ClientWorkspace({ id, nieuw = false }) {
       <MaturiteitProvider key={id} id={id}>
       <main className="max-w-7xl mx-auto w-full px-4 py-6 sm:px-6 sm:py-10">
         {/* Klant-switcher */}
-        <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-3 mb-6">
           <a href="/app" aria-label="Naar alle klanten" className="shrink-0">
             <HodLogo className="h-6" />
           </a>
-          <span className="h-4 w-px bg-slate-200" />
-          <a href="/app" className="text-sm text-slate-400 hover:text-indigo-400 transition-colors">
+          <span className="hidden h-4 w-px bg-slate-200 sm:block" />
+          <div className="order-3 flex w-full min-w-0 items-center gap-3 sm:order-none sm:w-auto">
+          <a href="/app" className="shrink-0 text-sm text-slate-400 hover:text-indigo-400 transition-colors">
             ← Alle klanten
           </a>
           <select
             value={id}
             onChange={(e) => router.push(`/app/klant/${e.target.value}`)}
-            className="rounded-lg border border-slate-300 bg-card px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-card px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:flex-none"
           >
             {allClients.map((c) => (
               <option key={c.id} value={c.id}>
@@ -1413,13 +1414,14 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               </option>
             ))}
           </select>
-          <form onSubmit={handleCreateClient} className="flex gap-1.5 ml-auto">
+          </div>
+          <form onSubmit={handleCreateClient} className="order-4 flex w-full gap-1.5 sm:order-none sm:ml-auto sm:w-auto">
             <input
               type="text"
               value={newClientNaam}
               onChange={(e) => setNewClientNaam(e.target.value)}
               placeholder="+ nieuwe klant"
-              className="rounded-lg border border-slate-300 bg-card px-2.5 py-1.5 text-sm shadow-sm w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-card px-2.5 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-36 sm:flex-none"
             />
             <button
               type="submit"
@@ -1428,7 +1430,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               Aanmaken
             </button>
           </form>
-          <div className="flex items-center gap-3">
+          <div className="order-2 ml-auto flex items-center gap-3 sm:order-none sm:ml-0">
             <a href="/app/gebruikers" className="text-xs text-slate-400 hover:text-indigo-400 transition-colors">
               Gebruikers
             </a>

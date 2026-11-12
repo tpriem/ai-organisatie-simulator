@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import HodLogo from "@/components/HodLogo";
+import WachtwoordVeld from "@/components/WachtwoordVeld";
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -58,25 +59,11 @@ function ResetPasswordForm() {
     <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 space-y-4">
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Nieuw wachtwoord</label>
-        <input
-          type="password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
+        <WachtwoordVeld required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Herhaal wachtwoord</label>
-        <input
-          type="password"
-          required
-          minLength={8}
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
+        <WachtwoordVeld required minLength={8} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
       <button

@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import HodLogo from "@/components/HodLogo";
+import WachtwoordVeld from "@/components/WachtwoordVeld";
 
 function LoginFormInner({ t }) {
   const router = useRouter();
@@ -43,13 +44,7 @@ function LoginFormInner({ t }) {
       </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">{t.password}</label>
-        <input
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-        />
+        <WachtwoordVeld required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
       <button
