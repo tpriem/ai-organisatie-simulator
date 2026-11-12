@@ -36,6 +36,7 @@ import { MaturiteitProvider, MaturiteitVragen, MaturiteitResultaten, MaturiteitI
 import Aanbevelingen from "./Aanbevelingen";
 import Logboek from "./Logboek";
 import HodLogo from "@/components/HodLogo";
+import DownloadKnop from "@/components/DownloadKnop";
 
 /** De kern op één scherm: waar de meeste tijd vrijkomt, en of dat haalbaar is volgens de scan. */
 function KernSamenvatting({ results, onOpenScan }) {
@@ -1874,18 +1875,18 @@ export default function ClientWorkspace({ id, nieuw = false }) {
             icon="📊"
             right={
               <div className="flex flex-wrap gap-2">
-                <a
+                <DownloadKnop
                   href={`/api/clients/${id}/report`}
-                  className="text-xs rounded-lg bg-indigo-600 text-white px-3 py-1.5 shadow-sm hover:bg-indigo-500 transition-colors"
+                  className="text-xs rounded-lg border border-indigo-600 bg-indigo-600 text-white px-3 py-1.5 shadow-sm hover:bg-indigo-500 transition-colors"
                 >
                   ⬇ Capaciteitsrapport (Word)
-                </a>
-                <a
+                </DownloadKnop>
+                <DownloadKnop
                   href={`/api/clients/${id}/report-pdf`}
                   className="text-xs rounded-lg bg-card text-indigo-400 border border-indigo-200 px-3 py-1.5 shadow-sm hover:bg-indigo-50 transition-colors"
                 >
                   ⬇ Capaciteitsrapport (PDF)
-                </a>
+                </DownloadKnop>
                 <VersieHistorie id={id} onHersteld={(updated) => setClient((c) => ({ ...c, results: updated }))} />
               </div>
             }

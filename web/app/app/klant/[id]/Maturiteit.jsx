@@ -1117,18 +1117,18 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
             <OpslagStatus status={status} />
             {profiel.gemeten > 0 && (
               <>
-                <a
+                <DownloadKnop
                   href={`/api/clients/${id}/report-volwassenheid`}
-                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white shadow-sm hover:bg-indigo-500"
+                  className="rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs text-white shadow-sm transition-colors hover:bg-indigo-500"
                 >
                   ⬇ Volwassenheidsrapport (Word)
-                </a>
-                <a
+                </DownloadKnop>
+                <DownloadKnop
                   href={`/api/clients/${id}/report-volwassenheid-pdf`}
-                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white shadow-sm hover:bg-indigo-500"
+                  className="rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs text-white shadow-sm transition-colors hover:bg-indigo-500"
                 >
                   ⬇ Volwassenheidsrapport (PDF)
-                </a>
+                </DownloadKnop>
               </>
             )}
             <button type="button" onClick={onNaarVragen} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50">
