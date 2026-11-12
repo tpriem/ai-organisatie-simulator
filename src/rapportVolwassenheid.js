@@ -1,4 +1,5 @@
 import { NIVEAUS, RAAMWERK, ROLLEN, analyseer, berekenProfiel, vergelijkMetingen } from "./volwassenheid.js";
+import { totaalbeeld, organisatieEnSystemen, sterkePunten, bijnaZover, rolBeeld, sectorBeeld, stappenplan, onderdeelBeeld } from "./scanInzichten.js";
 import { nl } from "./formatNl.js";
 
 /**
@@ -9,22 +10,47 @@ import { nl } from "./formatNl.js";
  * zelfbeoordeling en zegt dat ook; een niveau zonder bewijs heet indicatief. Secties zonder
  * inhoud (geen signalen, geen eerdere meting, geen rolanalyse) komen er niet in.
  *
+ * De opbouw volgt de vragen van de lezer, in deze volgorde:
+ *   1. In het kort           de conclusie, het profiel en waar te beginnen, op één pagina
+ *   2. Wat het beeld laat zien   patronen: wat er al staat, wat bijna af is, waar het kwetsbaar is
+ *   3. Wat dit betekent          de voorwaarden om de vrijkomende tijd te benutten
+ *   4. Wat nu                    de aanpak in drie stappen
+ *   5. Per onderdeel             de verdieping, met een vaste opbouw per onderdeel
+ *   6. Bijlagen                  hoe de scan werkt, de volledige volgorde, wat het rapport niet zegt
+ * De inzichten zelf komen uit scanInzichten.js; hier worden het zinnen.
+ *
+ * In de tekst heet een as een "onderdeel": zo noemt de lezer het.
+ *
  * Blokken:
- *   { soort: "kop", niveau: 1|2, tekst }
- *   { soort: "alinea", tekst, stijl?: "normaal" | "noot" | "waarschuwing" }
+ *   { soort: "kop", niveau: 1|2, tekst, nieuwePagina? }
+ *   { soort: "alinea", tekst, stijl?: "normaal" | "noot" | "waarschuwing" | "lead", label? }
  *   { soort: "lijst", items: [tekst] }
  *   { soort: "genummerd", items: [tekst] }
  *   { soort: "tabel", kolommen: [tekst], rijen: [[tekst]] }
+ *   { soort: "kader", titel, items: [tekst] }        uitgelichte, genummerde punten
+ *   { soort: "profiel", kolommen, rijen: [{ naam, groep, niveau, doel, niveauTekst, doelTekst, gatTekst, onderbouwing? }] }
  */
 
 const rolNaam = (id) => ROLLEN.find((r) => r.id === id)?.naam ?? id;
-const kop = (tekst, niveau = 1) => ({ soort: "kop", niveau, tekst });
+// Met `nieuwePagina` begint het hoofdstuk bovenaan een pagina.
+const kop = (tekst, niveau = 1, nieuwePagina = false) => ({ soort: "kop", niveau, tekst, ...(nieuwePagina ? { nieuwePagina: true } : {}) });
 const alinea = (tekst, stijl = "normaal") => ({ soort: "alinea", tekst, stijl });
+const metLabel = (label, tekst) => ({ soort: "alinea", tekst, stijl: "normaal", label });
 const lijst = (items) => ({ soort: "lijst", items });
 const genummerd = (items) => ({ soort: "genummerd", items });
 const tabel = (kolommen, rijen) => ({ soort: "tabel", kolommen, rijen });
+const kader = (titel, items) => ({ soort: "kader", titel, items });
 
 const meervoud = (n, een, meer) => `${n} ${n === 1 ? een : meer}`;
+const zijn = (n) => (n === 1 ? "is" : "zijn");
+const klein = (s) => String(s ?? "").toLowerCase();
+const eindpunt = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
+
+/** "a", "a en b", "a, b en c". */
+function opsomming(delen) {
+  if (delen.length <= 1) return delen[0] ?? "";
+  return `${delen.slice(0, -1).join(", ")} en ${delen[delen.length - 1]}`;
+}
 
 function niveauTekst(a) {
   if (!a.gemeten) return "niet gemeten";
@@ -32,9 +58,45 @@ function niveauTekst(a) {
 }
 
 function onderbouwingTekst(a) {
-  if (!a.gemeten) return "—";
-  if (a.niveau === 0) return "—";
+  if (!a.gemeten) return "geen";
+  if (a.niveau === 0) return "geen";
   return a.onderbouwd ? "onderbouwd" : "indicatief";
+}
+
+const naamVanNiveau = (n) => (n === 0 ? "nog niet begonnen" : klein(NIVEAUS.find((x) => x.niveau === n)?.naam));
+
+/** Eén zin over waar de organisatie staat: de verdeling over de niveaus, en het doel. */
+function standZin(beeld, klantNaam) {
+  const groep = (g) => `niveau ${g.niveau} (${klein(g.naam)})`;
+  let stand;
+  if (beeld.perNiveau.length === 1) {
+    stand = `${klantNaam} staat op ${beeld.gemeten === 1 ? "het gemeten onderdeel" : `alle ${beeld.gemeten} gemeten onderdelen`} op ${groep(beeld.meest)}.`;
+  } else {
+    const overig = beeld.perNiveau.filter((g) => g !== beeld.meest);
+    const aantalOverig = overig.reduce((n, g) => n + g.assen.length, 0);
+    // Weinig uitzonderingen worden bij naam genoemd; bij veel volstaat het bereik.
+    const rest =
+      aantalOverig <= 3
+        ? overig.map((g) => `${opsomming(g.assen)} ${g.assen.length === 1 ? "staat" : "staan"} op ${groep(g)}`).join("; ")
+        : `de overige ${aantalOverig} lopen van niveau ${overig[0].niveau} tot ${overig[overig.length - 1].niveau}`;
+    stand = `${klantNaam} staat op ${beeld.meest.assen.length} van de ${beeld.gemeten} gemeten onderdelen op ${groep(beeld.meest)}; ${rest}.`;
+  }
+  const doel = beeld.doel ? ` Het doel is niveau ${beeld.doel} (${naamVanNiveau(beeld.doel)}) op alle onderdelen.` : " De doelen verschillen per onderdeel.";
+  return stand + doel;
+}
+
+/** Dezelfde reden in een paar woorden, voor de samenvatting. */
+function waaromKort(w) {
+  if (w.soort === "voorwaarde") return "voorwaarde om de vrijkomende tijd te benutten";
+  if (w.soort === "afhankelijkheid") return `eerst nodig voor ${opsomming(w.voorNaam)}`;
+  return "een van de grootste afstanden tot het doel";
+}
+
+/** Waarom een thema op zijn plek in de aanpak staat, als zin. */
+function waaromZin(w) {
+  if (w.soort === "voorwaarde") return `Voorwaarde om de vrijkomende tijd te benutten: ${klein(w.reden.charAt(0))}${w.reden.slice(1)}`;
+  if (w.soort === "afhankelijkheid") return `Eerst nodig voor ${opsomming(w.voorNaam)}: ${w.reden}`;
+  return "Een van de grootste afstanden tot het doel.";
 }
 
 export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = null, klantNaam, scope = "bedrijf", scopeLabel = "", datum }) {
@@ -43,143 +105,344 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
   const gemeten = profiel.assen.filter((a) => a.gemeten);
   const blokken = [];
 
-  // ---- Samenvatting -------------------------------------------------------------------------
-  blokken.push(kop("Managementsamenvatting"));
+  // ---- 1. In het kort -----------------------------------------------------------------------
+  blokken.push(kop("In het kort"));
   if (gemeten.length === 0) {
     blokken.push(alinea("Er zijn nog geen antwoorden vastgelegd; dit rapport bevat daarom nog geen uitkomsten.", "waarschuwing"));
-  } else {
-    const spreiding =
-      profiel.laagste.niveau === profiel.hoogste.niveau
-        ? `Op alle gemeten assen is het niveau ${profiel.laagste.niveau} (${profiel.laagste.niveauNaam.toLowerCase()}).`
-        : `Het hoogst scoort ${profiel.hoogste.naam} (niveau ${profiel.hoogste.niveau}, ${profiel.hoogste.niveauNaam.toLowerCase()}), het laagst ${profiel.laagste.naam} (niveau ${profiel.laagste.niveau}, ${profiel.laagste.niveauNaam.toLowerCase()}).`;
-    blokken.push(
-      alinea(
-        `Voor ${gemeten.length} van de ${profiel.assen.length} assen is vastgesteld hoe ver de organisatie is met het inzetten van AI, op een schaal van 0 (nog niet begonnen) tot 5 (zelfvernieuwend). ${spreiding} Er is geen totaalscore: een gemiddelde zou verbergen wat een directie moet weten.`
-      )
-    );
-    // De kolom met onderbouwing hoort bij de verdiepingsfase: alleen als er bewijs is vastgelegd.
-    const metBewijs = profiel.bewijsGebruikt;
-    blokken.push(
-      tabel(
-        ["As", "Niveau", "Doel", "Nog te gaan", ...(metBewijs ? ["Onderbouwing"] : [])],
-        profiel.assen.map((a) => [
-          a.naam,
-          niveauTekst(a) + (a.gemeten && a.onvolledig ? " (onvolledig)" : ""),
-          String(a.doel),
-          a.gat === null ? "—" : a.gat === 0 ? "doel gehaald" : String(a.gat),
-          ...(metBewijs ? [onderbouwingTekst(a)] : []),
-        ])
-      )
-    );
-    if (analyse.volgorde.length > 0) {
-      const eerste = analyse.volgorde[0];
-      const asNaam = profiel.assen.find((a) => a.id === eerste.asId)?.naam;
-      blokken.push(alinea(`Het eerste aandachtspunt is ${eerste.naam} (${asNaam}): niveau ${eerste.niveau}, doel ${eerste.doel}.`));
-    }
-    if (profiel.telling.beantwoord < profiel.telling.totaal) {
-      blokken.push(
-        alinea(
-          `Van de ${profiel.telling.totaal} stellingen zijn er ${profiel.telling.beantwoord} beantwoord. Wat niet is beantwoord telt als niet voldaan, dus de niveaus zijn een ondergrens.`,
-          "waarschuwing"
-        )
-      );
-    }
-    if (!profiel.bewijsGebruikt) {
-      blokken.push(
-        alinea(
-          "Dit rapport geeft een eerste beeld op basis van zelfbeoordeling. Een verdiepend onderzoek, met gesprekken en bewijs, volgt in het vervolgtraject.",
-          "noot"
-        )
-      );
-    } else if (gemeten.some((a) => a.niveau > 0 && !a.onderbouwd)) {
-      blokken.push(
-        alinea(
-          "Dit is een zelfbeoordeling. Een as is pas onderbouwd als bij elke voldane stelling het bewijs is gezien; de overige assen zijn indicatief.",
-          "noot"
-        )
-      );
-    }
+    return maakModel();
   }
 
-  if (gemeten.length === 0) return maakModel();
+  const beeld = totaalbeeld(profiel);
+  const os = organisatieEnSystemen(profiel);
+  const sterk = sterkePunten(profiel);
+  const bijna = bijnaZover(profiel);
+  const borging = analyse.vaardigheidVersusBorging.filter((r) => r.signaal);
+  const rollen = rolBeeld(analyse.verschillen);
+  const sector = sectorBeeld(profiel);
+  const plan = stappenplan(analyse);
+  const r = analyse.realisatie;
+  const nietVoldaan = r ? r.voorwaarden.filter((v) => v.scenario === "realistisch" && v.status === "niet voldaan") : [];
 
-  // ---- Hoe te lezen -------------------------------------------------------------------------
-  blokken.push(kop("Hoe dit te lezen"));
-  blokken.push(tabel(["Niveau", "Naam", "Betekenis"], [["0", "Nog niet begonnen", "De stelling van het eerste niveau is nog niet voldaan."], ...NIVEAUS.map((n) => [String(n.niveau), n.naam, n.beschrijving])]));
+  blokken.push(alinea(standZin(beeld, klantNaam), "lead"));
+
+  // De conclusies: eerst de afstand tot het doel, dan wat de lezer er het meest aan heeft.
+  const conclusies = [];
+  conclusies.push(
+    beeld.onderDoel === 0
+      ? "Op alle gemeten onderdelen is het doel gehaald."
+      : `Op ${beeld.onderDoel} van de ${beeld.gemeten} gemeten onderdelen is het doel nog niet gehaald. ${
+          beeld.verst.length <= 3
+            ? `De afstand is het grootst bij ${opsomming(beeld.verst)}: ${meervoud(beeld.grootsteGat, "niveau", "niveaus")}.`
+            : `Bij ${beeld.verst.length} daarvan is de afstand ${meervoud(beeld.grootsteGat, "niveau", "niveaus")}.`
+        }`
+  );
+  const kandidaten = [];
+  if (r && r.realistisch.totaal > 0) {
+    kandidaten.push(
+      nietVoldaan.length === 0
+        ? `Aan alle ${r.realistisch.totaal} voorwaarden om de vrijkomende tijd uit de capaciteitsanalyse te benutten is voldaan (realistisch scenario).`
+        : `Van de ${r.realistisch.totaal} voorwaarden om de vrijkomende tijd uit de capaciteitsanalyse te benutten ${zijn(r.realistisch.voldaan)} er ${r.realistisch.voldaan} voldaan (realistisch scenario). Nog niet op orde: ${opsomming(nietVoldaan.map((v) => v.naam))}.`
+    );
+  }
+  if (os?.voorop === "systemen") kandidaten.push("De systemen lopen voor op de organisatie: de techniek is verder dan de afspraken, de vaardigheden en de werkprocessen.");
+  if (os?.voorop === "organisatie") kandidaten.push("De organisatie loopt voor op de systemen: er is richting en er zijn afspraken, maar data en techniek zijn nog niet zover.");
+  if (bijna.length > 0) {
+    kandidaten.push(`Bij ${meervoud(bijna.length, "thema", "thema's")} is de eerstvolgende stap al deels gezet. Afmaken levert daar het snelst resultaat op.`);
+  }
+  if (borging.length > 0) {
+    kandidaten.push(`Bij ${meervoud(borging.length, "thema", "thema's")} kan de organisatie meer dan zij heeft vastgelegd. Dat werkt, maar is kwetsbaar.`);
+  }
+  if (rollen?.meestPositief) {
+    const aantal = rollen.rollen.find((x) => x.rol === rollen.meestPositief).hoogst;
+    kandidaten.push(`${rolNaam(rollen.meestPositief)} schat de organisatie in ${meervoud(aantal, "thema", "thema's")} hoger in dan de andere rollen.`);
+  }
+  conclusies.push(...kandidaten.slice(0, 3));
+  blokken.push(kader("De belangrijkste conclusies", conclusies));
+
+  // Het profiel. De kolom met onderbouwing hoort bij de verdiepingsfase: alleen als er bewijs is vastgelegd.
+  const metBewijs = profiel.bewijsGebruikt;
+  blokken.push({
+    soort: "profiel",
+    kolommen: ["Onderdeel", "Niveau", "Doel", "Nog te gaan", ...(metBewijs ? ["Onderbouwing"] : [])],
+    rijen: profiel.assen.map((a) => ({
+      naam: a.naam,
+      groep: a.kant === "systeem" ? "Systemen" : "Organisatie",
+      niveau: a.gemeten ? a.niveau : null,
+      doel: a.doel,
+      niveauTekst: niveauTekst(a) + (a.gemeten && a.onvolledig ? " (onvolledig)" : ""),
+      doelTekst: String(a.doel),
+      gatTekst: a.gat === null ? "niet gemeten" : a.gat === 0 ? "doel gehaald" : String(a.gat),
+      ...(metBewijs ? { onderbouwing: onderbouwingTekst(a) } : {}),
+    })),
+  });
   blokken.push(
-    lijst([
-      "Elke as bestaat uit thema's, en elk thema heeft een ladder van vijf stellingen. Een niveau geldt pas als de stelling van dat niveau én van alle lagere niveaus voldaan is.",
-      "Het niveau van een as is het niveau van het zwakste thema. Een sterk thema compenseert een zwak thema niet.",
-      "Het doelniveau per as is de ambitie van deze organisatie of dit onderdeel; een lager doel dan het hoogste niveau is een legitieme keuze.",
-    ])
+    alinea(
+      `Het profiel laat per onderdeel het niveau en het doel zien, op een schaal van 0 (nog niet begonnen) tot 5 (zelfvernieuwend). Er is geen totaalscore: een gemiddelde zou verbergen wat een directie moet weten.${
+        profiel.bewijsGebruikt ? "" : " Dit rapport geeft een eerste beeld op basis van zelfbeoordeling; een verdiepend onderzoek, met gesprekken en bewijs, volgt in het vervolgtraject."
+      }`,
+      "noot"
+    )
   );
 
-  // ---- Per as -------------------------------------------------------------------------------
-  blokken.push(kop("Per as: waar staat de organisatie en wat is de volgende stap"));
-  for (const a of gemeten) {
-    blokken.push(kop(`${a.naam} — niveau ${a.niveau} (${a.niveauNaam.toLowerCase()})`, 2));
-    const regels = a.zwakksteThemas.map((t) =>
-      t.volgendeStap
-        ? `${t.naam}: volgende stap (niveau ${t.volgendeStap.niveau}): ${t.volgendeStap.tekst}`
-        : `${t.naam}: alle niveaus zijn voldaan.`
-    );
-    blokken.push(alinea(`Het niveau wordt bepaald door ${a.zwakksteThemas.map((t) => t.naam).join(", ")}.`));
-    blokken.push(lijst(regels));
-  }
-  const ongemeten = profiel.assen.filter((a) => !a.gemeten);
-  if (ongemeten.length > 0) {
-    blokken.push(alinea(`Niet gemeten: ${ongemeten.map((a) => a.naam).join(", ")}.`, "noot"));
+  if (plan.nu.length > 0) {
+    blokken.push(metLabel("Waar te beginnen", "De uitwerking staat in het hoofdstuk Wat nu."));
+    blokken.push(genummerd(plan.nu.map((i) => `${i.naam} (${i.asNaam}): ${waaromKort(i.waarom)}.`)));
   }
 
-  // ---- Volgorde van aanpak ------------------------------------------------------------------
-  if (analyse.volgorde.length > 0) {
-    blokken.push(kop("Volgorde van aanpak"));
-    blokken.push(alinea("Grootste kloof eerst. Waar een thema eerst op orde moet zijn voordat een ander thema zin heeft, staat het vooraan en is de reden vermeld."));
-    blokken.push(
-      genummerd(
-        analyse.volgorde.map((i) => {
-          const as = profiel.assen.find((a) => a.id === i.asId)?.naam;
-          const afh = i.redenen.filter((r) => r.soort === "afhankelijkheid").map((r) => ` Eerst nodig voor ${r.voorNaam}: ${r.reden}`);
-          return `${i.naam} (${as}): niveau ${i.niveau}, doel ${i.doel}.${afh.join("")}`;
-        })
-      )
-    );
-  }
-
-  // ---- Vaardigheid versus borging -----------------------------------------------------------
-  const borging = analyse.vaardigheidVersusBorging.filter((r) => r.signaal);
-  if (borging.length > 0) {
-    blokken.push(kop("Vaardigheid versus borging"));
-    blokken.push(alinea("Bij deze thema's kan de organisatie meer dan zij heeft geborgd (eigenaar, afspraken, middelen, herhaalbaar). Dat werkt, maar is kwetsbaar."));
-    blokken.push(lijst(borging.map((r) => `${r.naam}: kan het op niveau ${r.kanHet}, geborgd op niveau ${r.geborgd} — ${r.signaal}.`)));
-  }
-
-  // ---- Signalen -----------------------------------------------------------------------------
-  if (analyse.tegenstrijdigheden.length > 0) {
-    blokken.push(kop("Signalen om te bespreken"));
-    blokken.push(alinea("Combinaties die in de praktijk zelden kloppen. Ze zijn bedoeld voor het gesprek, niet als oordeel."));
-    blokken.push(lijst(analyse.tegenstrijdigheden.map((s) => `${s.plek}. ${s.uitleg}`)));
-  }
-
-  // ---- Verschil tussen invullers ------------------------------------------------------------
-  if (analyse.verschillen) {
-    blokken.push(kop("Verschil tussen invullers"));
+  if (profiel.telling.beantwoord < profiel.telling.totaal) {
     blokken.push(
       alinea(
-        `De vragenlijst is ingevuld door ${analyse.verschillen.rollen.map(rolNaam).join(", ")}. Hieronder staat per rol, nooit per persoon, waar het beeld uiteenloopt.`
+        `Van de ${profiel.telling.totaal} stellingen zijn er ${profiel.telling.beantwoord} beantwoord. Wat niet is beantwoord telt als niet voldaan, dus de niveaus zijn een ondergrens.`,
+        "waarschuwing"
       )
     );
+  }
+  if (profiel.bewijsGebruikt && gemeten.some((a) => a.niveau > 0 && !a.onderbouwd)) {
+    blokken.push(
+      alinea(
+        "Dit is een zelfbeoordeling. Een onderdeel is pas onderbouwd als bij elke voldane stelling het bewijs is gezien; de overige onderdelen zijn indicatief.",
+        "noot"
+      )
+    );
+  }
+
+  // "In het kort" staat op zichzelf: het eerste hoofdstuk erna begint op een nieuwe pagina.
+  let eersteHoofdstuk = true;
+  const hoofdstuk = (tekst) => {
+    const blok = kop(tekst, 1, eersteHoofdstuk);
+    eersteHoofdstuk = false;
+    return blok;
+  };
+
+  // ---- 2. Wat het beeld laat zien -----------------------------------------------------------
+  const patronen = [];
+
+  if (os) {
+    const bereik = (k) => (k.laagste === k.hoogste ? `is het niveau overal ${k.laagste}` : `loopt het niveau van ${k.laagste} tot ${k.hoogste}`);
+    const duiding =
+      os.voorop === "systemen"
+        ? "De systemen lopen voor op de organisatie. Dat is een bekend patroon: de techniek is er eerder dan de afspraken, de vaardigheden en de aangepaste werkprocessen. De tijdwinst komt pas als de organisatie volgt."
+        : os.voorop === "organisatie"
+          ? "De organisatie loopt voor op de systemen. Er is richting en er zijn afspraken, maar data en techniek kunnen het nog niet dragen. Plannen blijven dan op papier tot de systeemkant volgt."
+          : "Organisatie en systemen lopen ongeveer gelijk op. Dat is gunstig: geen van beide houdt de andere op.";
+    patronen.push(kop("Organisatie en systemen", 2));
+    patronen.push(
+      alinea(
+        `Aan de organisatiekant (${klein(opsomming(os.organisatie.assen.map((a) => a.naam)))}) ${bereik(os.organisatie)}. Aan de systeemkant (${klein(opsomming(os.systemen.assen.map((a) => a.naam)))}) ${bereik(os.systemen)}. ${duiding}`
+      )
+    );
+  }
+
+  if (sterk.length > 0) {
+    patronen.push(kop("Wat er al staat", 2));
+    patronen.push(alinea("De thema's waar de organisatie het verst is, met wat daar is bereikt. Hier kan op worden voortgebouwd."));
+    patronen.push(lijst(sterk.map((s) => `${s.naam} (${s.asNaam}, niveau ${s.niveau}): ${s.tekst}`)));
+  }
+
+  if (bijna.length > 0) {
+    const MAX = 8;
+    patronen.push(kop("Bijna zover", 2));
+    patronen.push(
+      alinea(
+        `Bij ${bijna.length === 1 ? "dit thema" : `deze ${bijna.length} thema's`} is de eerstvolgende stap al deels gezet. Afmaken brengt het thema een niveau hoger en kost de minste inspanning.`
+      )
+    );
+    patronen.push(lijst(bijna.slice(0, MAX).map((b) => `${b.naam} (${b.asNaam}), naar niveau ${b.naarNiveau}: ${b.tekst}`)));
+    if (bijna.length > MAX) patronen.push(alinea(`En nog ${bijna.length - MAX}: ${opsomming(bijna.slice(MAX).map((b) => b.naam))}.`, "noot"));
+  }
+
+  if (borging.length > 0) {
+    patronen.push(kop("Kunnen en borgen", 2));
+    patronen.push(
+      alinea(
+        "Bij deze thema's kan de organisatie meer dan zij heeft geborgd (een eigenaar, afspraken, middelen, herhaalbaar). Dat werkt, maar is kwetsbaar: het hangt aan de mensen die het nu doen."
+      )
+    );
+    patronen.push(lijst(borging.map((b) => `${b.naam}: kan het op niveau ${b.kanHet}, geborgd op niveau ${b.geborgd}; ${b.signaal}.`)));
+  }
+
+  if (analyse.verschillen) {
+    patronen.push(kop("Verschil tussen rollen", 2));
+    patronen.push(
+      alinea(
+        `De vragenlijst is ingevuld door ${opsomming(analyse.verschillen.rollen.map(rolNaam))}. Hieronder staat per rol, nooit per persoon, waar het beeld uiteenloopt. Voor het niveau telt het strengste antwoord; het verschil zelf is een onderwerp voor het gesprek.`
+      )
+    );
+    if (rollen && rollen.themasMetVerschil > 0) {
+      const delen = [`In ${rollen.themasMetVerschil} van de ${meervoud(rollen.themasVergeleken, "vergeleken thema", "vergeleken thema's")} schatten de rollen het niveau verschillend in.`];
+      if (rollen.meestPositief) delen.push(`${rolNaam(rollen.meestPositief)} schat het vaakst het hoogst in.`);
+      if (rollen.meestKritisch) delen.push(`${rolNaam(rollen.meestKritisch)} schat het vaakst het laagst in.`);
+      patronen.push(alinea(delen.join(" ")));
+    }
     if (analyse.verschillen.signalen.length === 0) {
-      blokken.push(alinea("De rollen zijn het in alle thema's ongeveer eens: het verschil is nergens twee niveaus of meer."));
+      patronen.push(alinea("De rollen zijn het in alle thema's ongeveer eens: het verschil is nergens twee niveaus of meer."));
     } else {
-      blokken.push(
+      patronen.push(
         lijst(
           analyse.verschillen.signalen.map(
-            (t) => `${t.naam}: ${Object.entries(t.niveausPerRol).map(([r, n]) => `${rolNaam(r)} niveau ${n}`).join(", ")}.`
+            (t) => `${t.naam}: ${Object.entries(t.niveausPerRol).map(([rol, n]) => `${rolNaam(rol)} niveau ${n}`).join(", ")}.`
           )
         )
       );
     }
+  }
+
+  if (sector.length > 0) {
+    patronen.push(kop("Specifiek voor corporaties", 2));
+    patronen.push(
+      alinea(
+        "Drie thema's gaan over wat een corporatie anders maakt dan een willekeurig bedrijf: de gegevens van huurders, het toezicht en de maatschappelijke opdracht."
+      )
+    );
+    patronen.push(
+      tabel(
+        ["Thema", "Niveau", "Doel", "Eerstvolgende stap"],
+        sector.map((s) => [s.naam, String(s.niveau), String(s.doel), s.stap ? `${s.stap.tekst}${s.stap.deels ? " (deels gedaan)" : ""}` : "Alle niveaus zijn gehaald."])
+      )
+    );
+  }
+
+  if (analyse.tegenstrijdigheden.length > 0) {
+    patronen.push(kop("Signalen om te bespreken", 2));
+    patronen.push(alinea("Combinaties die in de praktijk zelden kloppen. Ze zijn bedoeld voor het gesprek, niet als oordeel."));
+    patronen.push(lijst(analyse.tegenstrijdigheden.map((s) => `${s.plek}. ${s.uitleg}`)));
+  }
+
+  if (patronen.length > 0) blokken.push(hoofdstuk("Wat het beeld laat zien"), ...patronen);
+
+  // ---- 3. Wat dit betekent voor de vrijkomende tijd -----------------------------------------
+  if (r) {
+    blokken.push(hoofdstuk("Wat dit betekent voor de vrijkomende tijd"));
+    blokken.push(
+      alinea(
+        `De capaciteitsanalyse laat zien dat ${nl(r.fteRealistisch, 1)} FTE aan capaciteit kan vrijkomen in het realistische scenario${
+          r.fteAgressief != null ? ` en ${nl(r.fteAgressief, 1)} FTE in het ambitieuze scenario` : ""
+        }. Of de organisatie die capaciteit ook kan benutten, hangt af van onderstaande voorwaarden. Het zijn voorwaarden en geen gecorrigeerd getal: de uitgangspunten komen uit adviespraktijk en worden met ervaring bijgesteld.`
+      )
+    );
+    if (r.realistisch.totaal > 0) {
+      blokken.push(
+        alinea(
+          nietVoldaan.length === 0
+            ? "Aan alle voorwaarden voor het realistische scenario is voldaan. De organisatie kan beginnen met het benutten van de vrijkomende tijd."
+            : `Voor het realistische scenario ${zijn(r.realistisch.voldaan)} ${r.realistisch.voldaan} van de ${r.realistisch.totaal} voorwaarden voldaan. Zolang ${opsomming(nietVoldaan.map((v) => v.naam))} niet op orde ${zijn(nietVoldaan.length)}, komt de tijd uit de capaciteitsanalyse niet vanzelf vrij.`,
+          "lead"
+        )
+      );
+    }
+    const groep = (sleutel, titel, telling) => {
+      const l = r.voorwaarden.filter((v) => v.scenario === sleutel);
+      if (l.length === 0) return;
+      blokken.push(kop(telling ? `${titel}: ${telling.voldaan} van ${telling.totaal} voorwaarden voldaan` : titel, 2));
+      blokken.push(
+        tabel(
+          ["Thema", "Nodig", "Nu", "Status", "Waarom"],
+          l.map((v) => [v.naam, `niveau ${v.vereist}`, v.huidig === null ? "niet gemeten" : `niveau ${v.huidig}`, v.status, v.reden])
+        )
+      );
+    };
+    groep("realistisch", "Realistisch scenario", r.realistisch);
+    groep("agressief", "Ambitieus scenario", r.agressief);
+    groep("kwaliteitsverbetering", "Rollen met bestemming kwaliteitsverbetering", null);
+    if (r.knelpuntVaardigheden) {
+      blokken.push(
+        alinea(
+          `De capaciteitsanalyse noemt ${r.agendaLengte} competenties die straks extra nodig zijn, terwijl het niveau van vaardigheden laag is. Dat is een concreet knelpunt voor de realisatie.`,
+          "waarschuwing"
+        )
+      );
+    }
+  }
+
+  // ---- 4. Wat nu: de aanpak in drie stappen -------------------------------------------------
+  if (plan.totaal > 0) {
+    blokken.push(hoofdstuk("Wat nu: de aanpak in drie stappen"));
+    blokken.push(
+      alinea(
+        "De aanpak begint bij wat iets anders tegenhoudt: een voorwaarde om de vrijkomende tijd te benutten, of een thema dat eerst op orde moet zijn voordat een ander thema zin heeft. Daarna volgen de grootste afstanden tot het doel."
+      )
+    );
+
+    blokken.push(kop("Stap 1: nu beginnen", 2));
+    plan.nu.forEach((i, n) => {
+      blokken.push(metLabel(`${n + 1}. ${i.naam} (${i.asNaam})`, `Van niveau ${i.niveau} naar niveau ${i.doel}. ${eindpunt(waaromZin(i.waarom))}`));
+      if (i.stap) {
+        blokken.push(
+          lijst([
+            `De eerste stap is gezet als geldt: ${i.stap.tekst}`,
+            ...(i.stap.voorbeelden.length > 0 ? [`Dat is te zien aan: ${opsomming(i.stap.voorbeelden)}.`] : []),
+            ...(i.stap.deels ? ["Hier is al een begin mee gemaakt."] : []),
+          ])
+        );
+      }
+    });
+
+    if (plan.daarna.length > 0) {
+      blokken.push(kop("Stap 2: daarna", 2));
+      blokken.push(alinea("De overige thema's met een afstand van twee niveaus of meer tot het doel."));
+      blokken.push(
+        lijst(plan.daarna.map((i) => `${i.naam} (${i.asNaam}): van niveau ${i.niveau} naar niveau ${i.doel}.${i.stap ? ` Eerst te bereiken: ${i.stap.tekst}` : ""}`))
+      );
+    }
+
+    if (plan.later.length > 0) {
+      blokken.push(kop("Stap 3: later", 2));
+      blokken.push(
+        alinea(`${meervoud(plan.later.length, "thema", "thema's")} met een kleinere afstand tot het doel of een latere plek in de volgorde: ${opsomming(plan.later.map((i) => i.naam))}.`)
+      );
+    }
+  }
+
+  // ---- 5. Per onderdeel ---------------------------------------------------------------------
+  blokken.push(kop("Per onderdeel", 1, true));
+  blokken.push(alinea("Per onderdeel: waar het over gaat, wat er al is, wat het niveau bepaalt en wat de eerstvolgende stap per thema is."));
+  for (const a of gemeten) {
+    const o = onderdeelBeeld(a, analyse);
+    blokken.push(kop(`${a.naam}: niveau ${a.niveau} (${klein(a.niveauNaam)}), doel ${a.doel}`, 2));
+    blokken.push(metLabel("Waar het over gaat", a.beschrijving));
+
+    if (o.watErAlIs.length > 0) {
+      blokken.push(metLabel("Wat er al is", "De verst gevorderde stap per thema."));
+      blokken.push(lijst(o.watErAlIs.map((w) => `${w.naam} (niveau ${w.niveau}): ${w.tekst}`)));
+    } else {
+      blokken.push(metLabel("Wat er al is", "Op dit onderdeel is nog geen thema voorbij de start."));
+    }
+
+    blokken.push(
+      metLabel(
+        "Wat het niveau bepaalt",
+        a.gat === 0
+          ? `Het doel is gehaald. Het niveau van een onderdeel is dat van het zwakste thema; hier ${zijn(o.bepalend.length)} dat ${opsomming(o.bepalend)}.`
+          : `Het niveau van een onderdeel is dat van het zwakste thema. Hier ${zijn(o.bepalend.length)} dat ${opsomming(o.bepalend)}. Een sterk thema maakt een zwak thema niet goed.`
+      )
+    );
+    blokken.push(
+      tabel(
+        ["Thema", "Niveau", "Eerstvolgende stap", "Stand"],
+        o.themas.map((t) => [t.naam, t.gemeten ? String(t.niveau) : "niet gemeten", t.stap ? `Niveau ${t.stap.niveau}: ${t.stap.tekst}` : "Geen: alle niveaus zijn gehaald.", t.stand])
+      )
+    );
+
+    if (o.tegenspraken.length > 0) {
+      const vb = o.tegenspraken[0];
+      blokken.push(
+        metLabel(
+          "Waar rollen het anders zien",
+          `Over ${meervoud(o.tegenspraken.length, "stelling", "stellingen")} zegt de ene rol ja en de andere nee. Bijvoorbeeld bij ${vb.thema}: "${vb.tekst}" ${opsomming(vb.rollenJa.map(rolNaam))} zegt ja, ${opsomming(vb.rollenNee.map(rolNaam))} zegt nee.`
+        )
+      );
+    }
+
+    const redenen = [];
+    for (const v of o.voorwaarden.filter((x) => x.scenario === "realistisch")) {
+      redenen.push(`${v.naam} is een voorwaarde om de vrijkomende tijd te benutten (nodig: niveau ${v.vereist}, nu: ${v.huidig === null ? "niet gemeten" : `niveau ${v.huidig}`}).`);
+    }
+    for (const n of o.nodigVoor) redenen.push(`${n.naam} moet eerst op orde zijn voor ${n.voorNaam}: ${klein(n.reden.charAt(0))}${n.reden.slice(1)}`);
+    if (redenen.length > 0) blokken.push(metLabel("Waarom dit telt", [...new Set(redenen)].slice(0, 3).join(" ")));
+  }
+  const ongemeten = profiel.assen.filter((a) => !a.gemeten);
+  if (ongemeten.length > 0) {
+    blokken.push(alinea(`Niet gemeten: ${ongemeten.map((a) => a.naam).join(", ")}.`, "noot"));
   }
 
   // ---- Onderbouwing -------------------------------------------------------------------------
@@ -209,41 +472,6 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
     }
   }
 
-  // ---- Koppeling met de rolanalyse ----------------------------------------------------------
-  const r = analyse.realisatie;
-  if (r) {
-    blokken.push(kop("Koppeling met de analyse van functies"));
-    blokken.push(
-      alinea(
-        `De analyse van functies laat zien dat ${nl(r.fteRealistisch, 1)} FTE aan capaciteit kan vrijkomen in het realistische scenario${
-          r.fteAgressief != null ? ` en ${nl(r.fteAgressief, 1)} FTE in het ambitieuze scenario` : ""
-        }. Of de organisatie die capaciteit ook kan realiseren, hangt af van onderstaande voorwaarden. Het zijn voorwaarden en geen gecorrigeerd getal: de uitgangspunten komen uit adviespraktijk en worden met ervaring bijgesteld.`
-      )
-    );
-    const groep = (sleutel, titel, telling) => {
-      const l = r.voorwaarden.filter((v) => v.scenario === sleutel);
-      if (l.length === 0) return;
-      blokken.push(kop(telling ? `${titel}: ${telling.voldaan} van ${telling.totaal} voorwaarden voldaan` : titel, 2));
-      blokken.push(
-        tabel(
-          ["Thema", "Nodig", "Nu", "Status", "Waarom"],
-          l.map((v) => [v.naam, `niveau ${v.vereist}`, v.huidig === null ? "—" : `niveau ${v.huidig}`, v.status, v.reden])
-        )
-      );
-    };
-    groep("realistisch", "Realistisch scenario", r.realistisch);
-    groep("agressief", "Ambitieus scenario", r.agressief);
-    groep("kwaliteitsverbetering", "Rollen met bestemming kwaliteitsverbetering", null);
-    if (r.knelpuntVaardigheden) {
-      blokken.push(
-        alinea(
-          `De analyse van functies noemt ${r.agendaLengte} competenties die straks extra nodig zijn, terwijl het niveau van vaardigheden laag is. Dat is een concreet knelpunt voor de realisatie.`,
-          "waarschuwing"
-        )
-      );
-    }
-  }
-
   // ---- Waar verdieping het meest oplevert ---------------------------------------------------
   // Dit rapport is een kwantitatief eerste beeld. De scan wijst zelf aan waar gesprekken en bewijs
   // in een vervolgtraject de meeste toegevoegde waarde hebben.
@@ -258,8 +486,8 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
     const asNaam = profiel.assen.find((a) => a.id === i.asId)?.naam;
     voeg(`thema:${i.thema}`, `${i.naam} (${asNaam}): groot verschil tussen niveau ${i.niveau} en doel ${i.doel}. Gesprekken maken duidelijk wat er concreet ontbreekt.`);
   }
-  for (const r of borging) {
-    voeg(`thema:${r.thema}`, `${r.naam}: de organisatie kan het, maar heeft het niet geborgd. Verdieping toetst hoe kwetsbaar dat is.`);
+  for (const b of borging) {
+    voeg(`thema:${b.thema}`, `${b.naam}: de organisatie kan het, maar heeft het niet geborgd. Verdieping toetst hoe kwetsbaar dat is.`);
   }
   for (const s of analyse.tegenstrijdigheden) {
     voeg(`signaal:${s.id}:${s.plek}`, `${s.plek}: een combinatie die zelden klopt. Controleer in een gesprek wat erachter zit.`);
@@ -277,14 +505,41 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
     blokken.push(lijst(verdieping));
   }
 
+  // ---- 6. Bijlagen --------------------------------------------------------------------------
+  if (analyse.volgorde.length > 0) {
+    blokken.push(kop("Bijlage: alle thema's in volgorde van aanpak", 1, true));
+    blokken.push(alinea("Grootste afstand tot het doel eerst. Waar een thema eerst op orde moet zijn voordat een ander thema zin heeft, staat het vooraan en is de reden vermeld."));
+    blokken.push(
+      genummerd(
+        analyse.volgorde.map((i) => {
+          const as = profiel.assen.find((a) => a.id === i.asId)?.naam;
+          const afh = i.redenen.filter((x) => x.soort === "afhankelijkheid").map((x) => ` Eerst nodig voor ${x.voorNaam}: ${x.reden}`);
+          return `${i.naam} (${as}): niveau ${i.niveau}, doel ${i.doel}.${afh.join("")}`;
+        })
+      )
+    );
+  }
+
+  blokken.push(kop("Bijlage: hoe de scan werkt", 1, analyse.volgorde.length === 0));
+  blokken.push(tabel(["Niveau", "Naam", "Betekenis"], [["0", "Nog niet begonnen", "De stelling van het eerste niveau is nog niet voldaan."], ...NIVEAUS.map((n) => [String(n.niveau), n.naam, n.beschrijving])]));
+  blokken.push(
+    lijst([
+      "De scan kent acht onderdelen: vier over de organisatie en vier over de systemen. Elk onderdeel bestaat uit thema's, en elk thema heeft een ladder van vijf stellingen.",
+      "Een niveau geldt pas als de stelling van dat niveau én van alle lagere niveaus voldaan is. \"Ja\" en \"niet van toepassing\" tellen als voldaan, \"deels\" niet.",
+      "Het niveau van een onderdeel is het niveau van het zwakste thema. Een sterk thema compenseert een zwak thema niet.",
+      "Vullen meerdere mensen de lijst in, dan telt per stelling het strengste antwoord.",
+      "Het doelniveau per onderdeel is de ambitie van deze organisatie of dit onderdeel; een lager doel dan het hoogste niveau is een legitieme keuze.",
+    ])
+  );
+
   // ---- Beperkingen --------------------------------------------------------------------------
   blokken.push(kop("Wat dit rapport wel en niet zegt"));
   blokken.push(
     lijst([
       "Het is een zelfbeoordeling. Ook met bewijsvragen is de score een oordeel van mensen over hun eigen organisatie, en mensen overschatten zichzelf het meest op gebieden waar ze het minst van weten. Daarom kent de scan meerdere invullers en signalen, en voegt een verdiepend onderzoek gesprekken en bewijs toe.",
       "Er is geen vergelijking met andere organisaties. Dat kan pas met eigen metingen van veel organisaties, en dan alleen per sector en omvang.",
-      "De afhankelijkheden, signalen en realisatievoorwaarden zijn uitgangspunten uit adviespraktijk, geen meetresultaten. Ze worden met ervaring bijgesteld.",
-      "De koppeling met de analyse van functies is een eerste uitwerking en geeft voorwaarden, geen exacte voorspelling.",
+      "De afhankelijkheden, signalen, de indeling in stappen en de voorwaarden voor de vrijkomende tijd zijn uitgangspunten uit adviespraktijk, geen meetresultaten. Ze worden met ervaring bijgesteld.",
+      "De koppeling met de capaciteitsanalyse is een eerste uitwerking en geeft voorwaarden, geen exacte voorspelling.",
     ])
   );
 
@@ -311,9 +566,15 @@ export function bouwVolwassenheidsRapport({ invoer, metingen = [], results = nul
 export function modelTeksten(model) {
   const t = [model.titel, model.ondertitel, ...model.meta, model.disclaimer];
   for (const b of model.blokken) {
-    if (b.soort === "kop" || b.soort === "alinea") t.push(b.tekst);
+    if (b.soort === "kop") t.push(b.tekst);
+    else if (b.soort === "alinea") t.push(...(b.label ? [b.label] : []), b.tekst);
     else if (b.soort === "lijst" || b.soort === "genummerd") t.push(...b.items);
     else if (b.soort === "tabel") t.push(...b.kolommen, ...b.rijen.flat());
+    else if (b.soort === "kader") t.push(b.titel, ...b.items);
+    else if (b.soort === "profiel") {
+      t.push(...b.kolommen);
+      for (const r of b.rijen) t.push(r.groep, r.naam, r.niveauTekst, r.doelTekst, r.gatTekst, ...(r.onderbouwing ? [r.onderbouwing] : []));
+    }
   }
   return t;
 }
