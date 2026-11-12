@@ -17,7 +17,7 @@ const TOOL_SCHEMA = {
       krimpendeRollen: {
         type: "array",
         description:
-          "Functies waar naar verhouding de meeste tijd vrijkomt. Beschrijf in de toelichting welk werk AI overneemt en waar de vrijgekomen tijd naartoe kan (ander werk, meer huurders of woningen bedienen, hogere kwaliteit). Schrijf niet over krimp, ontslag of het schrappen van functies.",
+          "Functies waar naar verhouding de meeste tijd vrijkomt. Beschrijf in de toelichting welk werk AI overneemt en waar de vrijgekomen tijd naartoe kan (ander werk, meer klanten bedienen, hogere kwaliteit). Schrijf niet over krimp, ontslag of het schrappen van functies.",
         items: {
           type: "object",
           properties: {
@@ -118,9 +118,9 @@ export async function generateAanbevelingen(bedrijfsnaam, roleResults) {
     messages: [
       {
         role: "user",
-        content: `Je bent een organisatieadviseur die voor woningcorporatie "${bedrijfsnaam ?? "deze organisatie"}" bevindingen en aanbevelingen opstelt, op basis van een analyse van wat AI in het werk kan overnemen.
+        content: `Je bent een organisatieadviseur die voor "${bedrijfsnaam ?? "deze organisatie"}" bevindingen en aanbevelingen opstelt, op basis van een analyse van wat AI in het werk kan overnemen.
 
-Uitgangspunt: de analyse laat zien hoeveel tijd er per functie vrijkomt. Dat is capaciteit, geen bezuiniging. De vraag voor de organisatie is waar die tijd het meeste oplevert: meer aandacht voor huurders en wijken, achterstanden wegwerken, hogere kwaliteit, of groei opvangen zonder extra mensen. Schrijf daarom over tijd die vrijkomt en hoe die in te zetten, over ander werk, omscholing en herplaatsing. Schrijf niet over krimp, reductie van functies, ontslag of mensen die "weg kunnen". Het gaat om technisch potentieel, niet om een voorspelling.
+Uitgangspunt: de analyse laat zien hoeveel tijd er per functie vrijkomt. Dat is capaciteit, geen bezuiniging. De vraag voor de organisatie is waar die tijd het meeste oplevert: meer aandacht voor klanten, achterstanden wegwerken, hogere kwaliteit, of groei opvangen zonder extra mensen. Schrijf daarom over tijd die vrijkomt en hoe die in te zetten, over ander werk, omscholing en herplaatsing. Schrijf niet over krimp, reductie van functies, ontslag of mensen die "weg kunnen". Het gaat om technisch potentieel, niet om een voorspelling.
 
 Analyse per functie (realistisch scenario, tenzij anders vermeld):
 ${summarizeRoles(roleResults)}
@@ -130,7 +130,7 @@ Instructies:
 2. Noem de functies waar naar verhouding de meeste tijd vrijkomt (meer dan de helft is een sterk signaal, maar gebruik je eigen oordeel), met wat AI daar overneemt en waar de tijd naartoe kan.
 3. Noem functies die in waarde kunnen groeien, of nieuw werk dat nodig wordt (bijvoorbeeld toezicht op de kwaliteit van AI, begeleiding van de verandering).
 4. Noem functies waarvan het werk dat overblijft sterk overlapt en die daarom samen bekeken kunnen worden. Alleen als dat er echt uitziet; verzin het niet.
-5. Geef 4 tot 6 concrete, uitvoerbare aanbevelingen voor het anders inrichten van werk en processen, geen algemeenheden. Houd rekening met de sector: betrek de ondernemingsraad en de huurdersorganisatie waar dat past, en begin waar huurders er het meeste van merken.`,
+5. Geef 4 tot 6 concrete, uitvoerbare aanbevelingen voor het anders inrichten van werk en processen, geen algemeenheden. Betrek de ondernemingsraad waar dat past, en begin waar klanten en medewerkers er het meeste van merken.`,
       },
     ],
   });

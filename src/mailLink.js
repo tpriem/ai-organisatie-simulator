@@ -4,6 +4,8 @@
 // controleert dat hij bij deze klant hoort en nog geldt. Zo kan deze route niet misbruikt worden om
 // willekeurige tekst of links vanuit ons domein te versturen.
 
+import { STELLINGEN } from "./volwassenheid.js";
+
 export const MAIL_LIMIETEN = { onderwerp: 150, tekst: 4000, email: 254 };
 
 const EMAIL = /^[^\s@<>"',;()]+@[^\s@<>"',;()]+\.[^\s@<>"',;()]{2,}$/;

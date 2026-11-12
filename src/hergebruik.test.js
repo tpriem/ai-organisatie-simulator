@@ -7,7 +7,7 @@ import { stelWaardetypeIn } from "./waardetype.js";
 const PROFIEL = "Functieprofiel: woonconsulent\n\nKerntaken:\n- verhuren van woningen\n- huuradministratie";
 const row = (extra = {}) => ({ rolnaam: "woonconsulent", afdeling: "Wonen", fte: 12, urenPerWeek: 36, kostenPerUur: 31, ...extra });
 const taken = [
-  { omschrijving: "Verhuren", categorie: "verhuur", aandeel: 0.6 },
+  { omschrijving: "Klanten helpen", categorie: "klantcontact", aandeel: 0.6 },
   { omschrijving: "Administratie", categorie: "data_entry", aandeel: 0.4 },
 ];
 
@@ -48,7 +48,7 @@ test("zonder eerdere inschatting, of bij andere invoer, wordt niets hergebruikt"
   assert.equal(hergebruikRol(v, row(), "andere-sleutel"), null);
   assert.equal(hergebruikRol({ ...v, invoerSleutel: undefined }, row(), v.invoerSleutel), null, "oude resultaten zonder sleutel");
   assert.equal(hergebruikRol({ ...v, taken: [] }, row(), v.invoerSleutel), null);
-  const onbekend = { ...v, taken: [{ omschrijving: "x", categorie: "accountmanagement", aandeel: 1 }] };
+  const onbekend = { ...v, taken: [{ omschrijving: "x", categorie: "bestaat_niet_meer", aandeel: 1 }] };
   assert.equal(hergebruikRol(onbekend, row(), v.invoerSleutel), null, "een categorie die niet meer bestaat");
 });
 
