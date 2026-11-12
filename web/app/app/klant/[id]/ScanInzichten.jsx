@@ -27,6 +27,9 @@ function Deel({ titel, uitleg, children }) {
   );
 }
 
+// Zoveel thema's toont "Bijna zover" voluit; de rest staat er bij naam onder.
+const MAX_BIJNA = 8;
+
 const Deels = () => <span className="ml-1.5 whitespace-nowrap rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700">al deels gedaan</span>;
 
 /** De openingszin en de belangrijkste conclusies, boven het profiel. */
@@ -82,7 +85,7 @@ export function Beeld({ analyse }) {
             uitleg="Bij deze thema's is de eerstvolgende stap al deels gezet. Afmaken brengt het thema een niveau hoger en kost de minste inspanning."
           >
             <ul className="space-y-1.5">
-              {bijna.map((b) => (
+              {bijna.slice(0, MAX_BIJNA).map((b) => (
                 <li key={b.thema} className="text-xs leading-relaxed text-slate-700">
                   <span className="font-medium text-slate-800">{b.naam}</span>{" "}
                   <span className="text-slate-500">
@@ -92,6 +95,11 @@ export function Beeld({ analyse }) {
                 </li>
               ))}
             </ul>
+            {bijna.length > MAX_BIJNA && (
+              <p className="mt-1.5 text-xs text-slate-500">
+                En nog {bijna.length - MAX_BIJNA}: {opsomming(bijna.slice(MAX_BIJNA).map((b) => b.naam))}.
+              </p>
+            )}
           </Deel>
         )}
         {sector.length > 0 && (

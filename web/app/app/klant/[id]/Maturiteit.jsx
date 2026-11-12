@@ -933,7 +933,7 @@ const fte = (n) => (typeof n === "number" ? n.toFixed(1).replace(".", ",") : "")
 function Realisatie({ realisatie, heeftAnalyse }) {
   if (!heeftAnalyse) {
     return (
-      <Kaart titel="Koppeling met de analyse van functies">
+      <Kaart titel="Wat dit betekent voor de vrijkomende tijd">
         <p className="text-xs text-slate-400">
           Beschikbaar zodra de analyse van functies is uitgevoerd: dan wordt getoond wat nodig is om de vrijgekomen capaciteit te realiseren.
         </p>
@@ -970,7 +970,7 @@ function Realisatie({ realisatie, heeftAnalyse }) {
   };
   return (
     <Kaart
-      titel="Koppeling met de analyse van functies"
+      titel="Wat dit betekent voor de vrijkomende tijd"
       uitleg="Of de organisatie de vrijgekomen capaciteit ook kan realiseren. Voorwaarden, geen gecorrigeerd FTE-getal: de uitgangspunten komen uit adviespraktijk en moeten met ervaring worden bijgesteld."
     >
       <p className="mb-3 text-sm text-slate-800">
