@@ -1149,6 +1149,22 @@ export default function ClientWorkspace({ id, nieuw = false }) {
   const [resultatenSub, setResultatenSub] = useState("functies"); // functies | maturity
   const [opzetGesloten, setOpzetGesloten] = useState(false);
 
+  // Twee losse onderzoeken, elk met invoer en uitkomst: de capaciteitsanalyse (functieoverzicht en
+  // functieprofielen) en de AI-volwassenheidsscan (vragenlijst). Welk van de twee je ziet volgt uit het
+  // tabblad: de vragenlijst en de volwassenheidsuitkomsten horen bij de scan, de rest bij de analyse.
+  const onderzoek =
+    activeTab === "maturiteit" || (activeTab === "resultaten" && resultatenSub === "maturity") ? "volwassenheid" : "capaciteit";
+  const kiesOnderzoek = (nieuw) => {
+    if (nieuw === onderzoek) return;
+    const opResultaten = activeTab === "resultaten"; // wie bij de uitkomsten zit, blijft bij de uitkomsten
+    setResultatenSub(nieuw === "capaciteit" ? "functies" : "maturity");
+    setActiveTab(opResultaten ? "resultaten" : nieuw === "capaciteit" ? "input" : "maturiteit");
+  };
+  const naarUitkomsten = (soort) => {
+    setResultatenSub(soort);
+    setActiveTab("resultaten");
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     const [clientRes, listRes] = await Promise.all([
@@ -1417,12 +1433,42 @@ export default function ClientWorkspace({ id, nieuw = false }) {
           )}
         </div>
 
-        {/* Voortgang */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <StepChip done={!!client.rosterFileName} label="Roster" />
-          <StepChip done={client.profileFiles?.length > 0} label="Functieprofielen" />
-          <MaturiteitIngevuld>{(klaar) => <StepChip done={klaar} label="AI-volwassenheid" />}</MaturiteitIngevuld>
-          <StepChip done={!!results} label="Analyse" />
+        {/* Twee onderzoeken, elk met de eigen voortgang. Kies er een; daaronder staan zijn invoer en uitkomsten. */}
+        <div className="mb-6 grid gap-3 sm:grid-cols-2" role="tablist" aria-label="Onderzoek">
+          {[
+            ["capaciteit", "📊", "Capaciteitsanalyse", "Hoeveel tijd komt er vrij als AI taken overneemt, en waar blijft die tijd? Op basis van functieoverzicht en functieprofielen."],
+            ["volwassenheid", "🧭", "AI-volwassenheidsscan", "Hoe ver is de organisatie met AI, en wat is de volgende stap? Vragenlijst voor directie, management, IT, HR en werkvloer."],
+          ].map(([sleutel, icoon, titel, uitleg]) => (
+            <button
+              key={sleutel}
+              type="button"
+              role="tab"
+              aria-selected={onderzoek === sleutel}
+              onClick={() => kiesOnderzoek(sleutel)}
+              className={`rounded-xl border p-4 text-left transition-colors ${
+                onderzoek === sleutel
+                  ? "border-indigo-500 bg-card shadow-sm ring-1 ring-indigo-500"
+                  : "border-slate-200 bg-card/60 hover:border-indigo-300"
+              }`}
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <span className="text-base">{icoon}</span>
+                {titel}
+              </span>
+              <span className="mt-1 block text-xs leading-relaxed text-slate-500">{uitleg}</span>
+              <span className="mt-3 flex flex-wrap gap-1.5">
+                {sleutel === "capaciteit" ? (
+                  <>
+                    <StepChip done={!!client.rosterFileName} label="Functieoverzicht" />
+                    <StepChip done={client.profileFiles?.length > 0} label="Functieprofielen" />
+                    <StepChip done={!!results} label="Analyse" />
+                  </>
+                ) : (
+                  <MaturiteitIngevuld>{(klaar) => <StepChip done={klaar} label="Vragenlijst" />}</MaturiteitIngevuld>
+                )}
+              </span>
+            </button>
+          ))}
         </div>
 
         {nieuw && !opzetGesloten && <KlantOpzet id={id} onSluit={() => setOpzetGesloten(true)} />}
@@ -1435,52 +1481,69 @@ export default function ClientWorkspace({ id, nieuw = false }) {
           </div>
         )}
 
-        <button
-          onClick={handleAnalyze}
-          disabled={analyzing || !client.rosterFileName || client.profileFiles?.length === 0}
-          className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:hover:bg-indigo-600 mb-6"
-        >
-          {analyzing
-            ? analyzeStage === "aanbevelingen"
-              ? "Aanbevelingen genereren... (kan even duren)"
-              : "Rollen analyseren... (kan even duren)"
-            : "⚡ Analyseer"}
-        </button>
+        {/* De analyse hoort alleen bij de capaciteitsanalyse; de scan rekent zelf mee bij elke wijziging. */}
+        {onderzoek === "capaciteit" && (
+          <button
+            onClick={handleAnalyze}
+            disabled={analyzing || !client.rosterFileName || client.profileFiles?.length === 0}
+            className="w-full rounded-xl bg-indigo-600 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:hover:bg-indigo-600 mb-6"
+          >
+            {analyzing
+              ? analyzeStage === "aanbevelingen"
+                ? "Aanbevelingen genereren... (kan even duren)"
+                : "Rollen analyseren... (kan even duren)"
+              : "⚡ Analyseer de capaciteit"}
+          </button>
+        )}
 
-        {/* Tabs */}
+        {/* Tabbladen van het gekozen onderzoek: eerst de invoer, dan de uitkomsten. */}
         <div className="flex gap-1 border-b border-slate-200 mb-6">
-          <TabButton
-            active={activeTab === "input"}
-            onClick={() => setActiveTab("input")}
-            icon="📁"
-            label="Input"
-            done={!!client.rosterFileName && client.profileFiles?.length > 0}
-          />
-          <MaturiteitIngevuld>
-            {(klaar) => (
+          {onderzoek === "capaciteit" ? (
+            <>
               <TabButton
-                active={activeTab === "maturiteit"}
-                onClick={() => setActiveTab("maturiteit")}
-                icon="🧭"
-                label="AI-volwassenheid"
-                done={klaar}
+                active={activeTab === "input"}
+                onClick={() => setActiveTab("input")}
+                icon="📁"
+                label="Invoer"
+                done={!!client.rosterFileName && client.profileFiles?.length > 0}
               />
-            )}
-          </MaturiteitIngevuld>
-          <TabButton
-            active={activeTab === "resultaten"}
-            onClick={() => setActiveTab("resultaten")}
-            icon="📊"
-            label="Resultaten"
-            done={!!results}
-          />
+              <TabButton
+                active={activeTab === "resultaten"}
+                onClick={() => naarUitkomsten("functies")}
+                icon="📊"
+                label="Resultaten"
+                done={!!results}
+              />
+            </>
+          ) : (
+            <MaturiteitIngevuld>
+              {(klaar) => (
+                <>
+                  <TabButton
+                    active={activeTab === "maturiteit"}
+                    onClick={() => setActiveTab("maturiteit")}
+                    icon="📝"
+                    label="Vragenlijst"
+                    done={klaar}
+                  />
+                  <TabButton
+                    active={activeTab === "resultaten"}
+                    onClick={() => naarUitkomsten("maturity")}
+                    icon="🧭"
+                    label="Resultaten"
+                    done={klaar}
+                  />
+                </>
+              )}
+            </MaturiteitIngevuld>
+          )}
         </div>
 
         {/* Tab: Input */}
         {activeTab === "input" && (
         <>
         <Aanlevering id={id} onOvergenomen={verversKlant} />
-        <Section title="Deel 1 — Organisatie-input" icon="📁">
+        <Section title="Invoer — functieoverzicht en functieprofielen" icon="📁">
           <div className="grid sm:grid-cols-2 gap-4 mb-1">
             <div>
               <input
@@ -1694,35 +1757,14 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         {/* Tab: Resultaten */}
         {activeTab === "resultaten" && (
         <>
-        {/* Submenu: de uitkomsten van de functie-analyse en die van de AI-maturitybeoordeling zijn
-            twee losse scores. */}
-        <div className="mb-5 flex gap-2" role="tablist" aria-label="Soort resultaat">
-          {[
-            ["functies", "📊", "Functies & capaciteit"],
-            ["maturity", "🧭", "AI-volwassenheid"],
-          ].map(([sleutel, icoon, label]) => (
-            <button
-              key={sleutel}
-              type="button"
-              role="tab"
-              aria-selected={resultatenSub === sleutel}
-              onClick={() => setResultatenSub(sleutel)}
-              className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
-                resultatenSub === sleutel
-                  ? "border-indigo-600 bg-indigo-600 text-white shadow-sm"
-                  : "border-slate-300 bg-card text-slate-600 hover:border-indigo-300 hover:text-indigo-400"
-              }`}
-            >
-              {icoon} {label}
-            </button>
-          ))}
-        </div>
+        {/* Welke uitkomsten je ziet volgt uit het gekozen onderzoek (bovenaan): de capaciteitsanalyse en de
+            AI-volwassenheidsscan hebben elk hun eigen uitkomsten. */}
         {resultatenSub === "maturity" ? (
           <MaturiteitResultaten results={results} onNaarVragen={() => setActiveTab("maturiteit")} />
         ) : !results ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-6 py-16 text-center">
               <p className="text-sm text-slate-500 mb-1">Nog geen analyse uitgevoerd.</p>
-              <p className="text-xs text-slate-400">Vul Input in en klik bovenaan op "Analyseer".</p>
+              <p className="text-xs text-slate-400">Vul bij Invoer het functieoverzicht en de functieprofielen in en klik op "Analyseer de capaciteit".</p>
             </div>
           ) : (
           <>

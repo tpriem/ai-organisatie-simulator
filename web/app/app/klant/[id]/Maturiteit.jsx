@@ -17,7 +17,7 @@ import {
 import LinkMailen from "./LinkMailen";
 
 // Tabbladen voor het AI-volwassenheidsraamwerk van House of Digital. De vragenlijst (invoer)
-// staat onder "AI-volwassenheid", de uitkomsten onder Resultaten → AI-volwassenheid. Het
+// en de uitkomsten horen bij het onderzoek "AI-volwassenheidsscan" op de klantpagina. Het
 // ontwerp en de redenering staan in docs/volwassenheidsraamwerk-ontwerp.md. De score staat los
 // van de analyse van functies, op één plek na: de realisatievoorwaarden (analyse I) lezen de
 // vrijgekomen capaciteit uit die analyse.
@@ -724,8 +724,8 @@ export function MaturiteitVragen({ onNaarResultaten }) {
           <OpslagStatus status={status} />
         </div>
         <p className="mb-3 text-xs text-slate-500">
-          Acht assen, twintig thema&apos;s, honderd stellingen. Per thema een ladder van vijf niveaus: een niveau geldt pas als de stelling van dat niveau
-          én van alle lagere niveaus voldaan is. De uitkomst staat bij <span className="font-medium">Resultaten → AI-volwassenheid</span>.
+          {ASSEN.length} assen, {ASSEN.reduce((s, a) => s + a.themas.length, 0)} thema&apos;s, {ASSEN.reduce((s, a) => s + a.themas.reduce((t, th) => t + th.stellingen.length, 0), 0)} stellingen. Per thema een ladder van vijf niveaus: een niveau geldt pas als de stelling van dat niveau
+          én van alle lagere niveaus voldaan is. De uitkomst staat bij het tabblad <span className="font-medium">Resultaten</span> van deze scan.
         </p>
         <label className="mb-4 block text-xs text-slate-500">
           Scope van de beoordeling (organisatieonderdeel)
