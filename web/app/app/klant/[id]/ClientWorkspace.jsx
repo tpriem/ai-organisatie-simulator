@@ -1861,7 +1861,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         {/* Welke uitkomsten je ziet volgt uit het gekozen onderzoek (bovenaan): de capaciteitsanalyse en de
             AI-volwassenheidsscan hebben elk hun eigen uitkomsten. */}
         {resultatenSub === "maturity" ? (
-          <MaturiteitResultaten results={results} onNaarVragen={() => setActiveTab("maturiteit")} />
+          <MaturiteitResultaten results={results} klantNaam={client.naam} onNaarVragen={() => setActiveTab("maturiteit")} />
         ) : !results ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-card/60 px-6 py-16 text-center">
               <p className="text-sm text-slate-500 mb-1">Nog geen analyse uitgevoerd.</p>

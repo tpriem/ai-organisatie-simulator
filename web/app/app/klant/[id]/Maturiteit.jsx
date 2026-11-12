@@ -15,6 +15,8 @@ import {
   vergelijkMetingen,
 } from "../../../../../src/volwassenheid.js";
 import LinkMailen from "./LinkMailen";
+import DownloadKnop from "@/components/DownloadKnop";
+import { InHetKort, Beeld, Aanpak, PerOnderdeel } from "./ScanInzichten";
 
 // Tabbladen voor het AI-volwassenheidsraamwerk van House of Digital. De vragenlijst (invoer)
 // en de uitkomsten horen bij het onderzoek "AI-volwassenheidsscan" op de klantpagina. Het
@@ -732,7 +734,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
           <OpslagStatus status={status} />
         </div>
         <p className="mb-3 text-xs text-slate-500">
-          {ASSEN.length} assen, {ASSEN.reduce((s, a) => s + a.themas.length, 0)} thema&apos;s, {ASSEN.reduce((s, a) => s + a.themas.reduce((t, th) => t + th.stellingen.length, 0), 0)} stellingen. Per thema een ladder van vijf niveaus: een niveau geldt pas als de stelling van dat niveau
+          {ASSEN.length} onderdelen, {ASSEN.reduce((s, a) => s + a.themas.length, 0)} thema&apos;s, {ASSEN.reduce((s, a) => s + a.themas.reduce((t, th) => t + th.stellingen.length, 0), 0)} stellingen. Per thema een ladder van vijf niveaus: een niveau geldt pas als de stelling van dat niveau
           én van alle lagere niveaus voldaan is. De uitkomst staat bij het tabblad <span className="font-medium">Resultaten</span> van deze scan.
         </p>
         <label className="mb-4 block text-xs text-slate-500">
@@ -767,7 +769,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
 
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h2 className="text-sm font-semibold text-slate-800">Vragenlijst</h2>
-        <p className="text-xs text-slate-500">Klik op een as om de thema&apos;s en stellingen te openen.</p>
+        <p className="text-xs text-slate-500">Klik op een onderdeel om de thema&apos;s en stellingen te openen.</p>
       </div>
       <div className="mb-5 space-y-3">
         {profiel.assen.map((a, i) => (
@@ -796,7 +798,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
             </summary>
             <div className="space-y-2 px-4 pb-4">
               <label className="flex items-center gap-2 text-xs text-slate-500">
-                Doelniveau voor deze as
+                Doelniveau voor dit onderdeel
                 <select value={a.doel} onChange={(e) => zetDoel(a.id, Number(e.target.value))} className="rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700">
                   {NIVEAUS.map((n) => (
                     <option key={n.niveau} value={n.niveau}>
@@ -835,69 +837,12 @@ function Waarschuwing({ children }) {
   return <p className="mt-2 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-800">{children}</p>;
 }
 
-function ZwaksteSchakel({ profiel }) {
-  const rijen = profiel.assen.filter((a) => a.gemeten);
-  if (rijen.length === 0) return null;
-  return (
-    <Kaart
-      titel="Zwakste schakel per as"
-      uitleg="Het niveau van een as wordt bepaald door het thema dat het laagst scoort; er is geen gemiddelde. De volgende stap is de eerste stelling die nog niet voldaan is."
-    >
-      <div className="space-y-2.5">
-        {rijen.map((a) => (
-          <div key={a.id}>
-            <p className="text-xs font-semibold text-slate-700">
-              {a.naam} <span className="font-normal text-slate-500">niveau {a.niveau}</span>
-            </p>
-            {a.zwakksteThemas.map((t) => (
-              <p key={t.id} className="text-xs text-slate-600">
-                <span className="font-medium">{t.naam}</span>
-                {t.volgendeStap ? `: volgende stap (niveau ${t.volgendeStap.niveau}): ${t.volgendeStap.tekst}` : ": alle niveaus voldaan"}
-              </p>
-            ))}
-          </div>
-        ))}
-      </div>
-    </Kaart>
-  );
-}
-
-function Volgorde({ volgorde }) {
-  if (volgorde.length === 0) return null;
-  return (
-    <Kaart titel="Volgorde van aanpak" uitleg="Grootste kloof eerst, met afhankelijkheden: wat op orde moet zijn voordat iets anders zin heeft, komt vooraan.">
-      <ol className="space-y-3">
-        {volgorde.map((i) => (
-          <li key={i.thema} className="flex gap-3">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-semibold text-indigo-400">{i.volgorde}</span>
-            <div className="min-w-0">
-              <p className="text-sm text-slate-800">
-                <span className="font-medium">{i.naam}</span>
-                <span className="ml-2 text-xs text-slate-500">
-                  niveau {i.niveau} → {i.doel} ({i.kloof} te gaan)
-                </span>
-              </p>
-              {i.redenen
-                .filter((r) => r.soort === "afhankelijkheid")
-                .map((r, n) => (
-                  <p key={n} className="text-xs text-amber-800">
-                    Eerst nodig voor {r.voorNaam}: {r.reden}
-                  </p>
-                ))}
-            </div>
-          </li>
-        ))}
-      </ol>
-    </Kaart>
-  );
-}
-
 function VaardigheidBorging({ rijen }) {
   if (rijen.length === 0) return null;
   const met = rijen.filter((r) => r.signaal);
   return (
     <Kaart
-      titel="Vaardigheid versus borging"
+      titel="Kunnen en borgen"
       uitleg="Per thema: wat de organisatie kan, tegenover wat geborgd is (eigenaar, afspraken, middelen, herhaalbaar). Een verschil betekent dat het werkt maar kwetsbaar is."
     >
       {met.length === 0 ? (
@@ -906,7 +851,7 @@ function VaardigheidBorging({ rijen }) {
         <ul className="space-y-1.5">
           {met.map((r) => (
             <li key={r.thema} className="text-xs text-slate-700">
-              <span className="font-medium">{r.naam}</span>: kan het op niveau {r.kanHet}, geborgd op niveau {r.geborgd} —{" "}
+              <span className="font-medium">{r.naam}</span>: kan het op niveau {r.kanHet}, geborgd op niveau {r.geborgd};{" "}
               <span className={r.verschil >= 2 ? "font-medium text-red-400" : "text-amber-700"}>{r.signaal}</span>
             </li>
           ))}
@@ -936,7 +881,7 @@ function Verschillen({ verschillen }) {
   if (!verschillen) return null;
   return (
     <Kaart
-      titel="Verschil tussen invullers"
+      titel="Verschil tussen rollen"
       uitleg={`Per rol: ${verschillen.rollen.map(rolNaam).join(", ")}. Een verschil van twee niveaus of meer is een signaal; antwoorden worden nooit per persoon getoond.`}
     >
       {verschillen.signalen.length === 0 ? (
@@ -1045,7 +990,7 @@ function Realisatie({ realisatie, heeftAnalyse }) {
   );
 }
 
-export function MaturiteitResultaten({ results, onNaarVragen }) {
+export function MaturiteitResultaten({ results, onNaarVragen, klantNaam }) {
   const { id, huidig, profiel, metingen, setMetingen, status, setStatus, spoelLeeg, setGevraagdeAs } = useMaturiteit();
   const [vastleggen, setVastleggen] = useState(false);
   const [melding, setMelding] = useState(null);
@@ -1137,7 +1082,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           </div>
         </div>
         <p className="mb-3 text-xs text-slate-500">
-          Een niveau per as op een schaal van 0 tot 5; de streep is het doelniveau. Er is geen totaalscore: een gemiddelde zou verbergen wat een directie moet
+          Een niveau per onderdeel op een schaal van 0 tot 5; de streep is het doelniveau. Er is geen totaalscore: een gemiddelde zou verbergen wat een directie moet
           weten.
           {huidig.scope ? ` Scope: ${huidig.scope}.` : ""}
         </p>
@@ -1151,6 +1096,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
           </p>
         ) : (
           <>
+            <InHetKort analyse={volledig} klantNaam={klantNaam} />
             {["organisatie", "systeem"].map((kant) => (
               <div key={kant} className="mb-2">
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-400">{kant}kant</p>
@@ -1161,7 +1107,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
                   ))}
               </div>
             ))}
-            <p className="mt-1 text-xs text-slate-400">Klik op een as om de bijbehorende vragen te openen.</p>
+            <p className="mt-1 text-xs text-slate-400">Klik op een onderdeel om de bijbehorende vragen te openen.</p>
           </>
         )}
 
@@ -1178,20 +1124,21 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
         )}
         {profiel.gemeten > 0 && profiel.bewijsGebruikt && profiel.assen.some((a) => a.gemeten && a.niveau > 0 && !a.onderbouwd) && (
           <Waarschuwing>
-            Een as is pas onderbouwd als de adviseur het bewijs achter elke voldane stelling heeft gezien; de overige assen zijn indicatief.
+            Een onderdeel is pas onderbouwd als de adviseur het bewijs achter elke voldane stelling heeft gezien; de overige onderdelen zijn indicatief.
           </Waarschuwing>
         )}
       </div>
 
       {profiel.gemeten > 0 && (
         <>
-          <ZwaksteSchakel profiel={profiel} />
-          <Volgorde volgorde={volledig.volgorde} />
+          <Beeld analyse={volledig} />
           <VaardigheidBorging rijen={volledig.vaardigheidVersusBorging} />
-          <Signalen signalen={volledig.tegenstrijdigheden} />
           <Verschillen verschillen={volledig.verschillen} />
-          {profiel.bewijsGebruikt && <Onderbouwing profiel={profiel} />}
+          <Signalen signalen={volledig.tegenstrijdigheden} />
           <Realisatie realisatie={volledig.realisatie} heeftAnalyse={heeftAnalyse} />
+          <Aanpak analyse={volledig} />
+          <PerOnderdeel analyse={volledig} onOpen={naarAs} />
+          {profiel.bewijsGebruikt && <Onderbouwing profiel={profiel} />}
         </>
       )}
 
@@ -1237,7 +1184,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
                   </span>
                   <span className="flex items-center gap-3 text-slate-500">
                     <span>
-                      {p.gemeten} van 8 assen · niveaus {p.assen.map((a) => (a.niveau === null ? "–" : a.niveau)).join(" ")}
+                      {p.gemeten} van 8 onderdelen · niveaus {p.assen.map((a) => (a.niveau === null ? "–" : a.niveau)).join(" ")}
                     </span>
                     {verwijderOp === m.op ? (
                       <span className="flex items-center gap-1.5">
