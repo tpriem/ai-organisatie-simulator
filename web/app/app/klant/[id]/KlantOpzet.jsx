@@ -58,8 +58,8 @@ export default function KlantOpzet({ id, onSluit }) {
   const alles = links.map((l) => `${l.wie}\n${l.url}`).join("\n\n");
 
   return (
-    <section className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50/50 p-6 shadow-sm">
-      <div className="mb-1 flex items-start justify-between gap-3">
+    <section className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm sm:p-6">
+      <div className="mb-1 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <h2 className="text-sm font-semibold text-slate-800">Klant aangemaakt: maak de links voor de klant</h2>
         <button type="button" onClick={onSluit} className="text-xs text-slate-500 hover:text-slate-700 hover:underline">
           Klaar, sluiten
@@ -106,7 +106,7 @@ export default function KlantOpzet({ id, onSluit }) {
                 onChange={(e) => setLabel(e.target.value)}
                 maxLength={60}
                 placeholder="bijvoorbeeld teamleider klantenservice"
-                className="mt-0.5 block w-56 rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700"
+                className="mt-0.5 block w-56 max-w-full rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700"
               />
             </label>
             <button type="button" onClick={maakInvuller} disabled={bezig} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50">
@@ -120,7 +120,7 @@ export default function KlantOpzet({ id, onSluit }) {
 
       {links.length > 0 && (
         <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-          <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <p className="text-xs font-semibold text-emerald-800">Te versturen ({links.length})</p>
             <button type="button" onClick={() => kopieer(alles, "alles")} className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500">
               {gekopieerd === "alles" ? "Gekopieerd" : "Kopieer alle links"}

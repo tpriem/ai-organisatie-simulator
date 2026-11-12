@@ -120,8 +120,8 @@ export default function Aanlevering({ id, onOvergenomen }) {
   }
 
   return (
-    <section className="mb-6 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
-      <div className="mb-1 flex items-center justify-between gap-3">
+    <section className="mb-6 rounded-xl border border-slate-200 bg-card p-4 shadow-sm sm:p-6">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">🔗</span>
           Klant laten aanleveren
@@ -175,7 +175,7 @@ export default function Aanlevering({ id, onOvergenomen }) {
       ) : (
         <ul className="divide-y divide-slate-100">
           {bestanden.map((b) => (
-            <li key={`${b.soort}/${b.naam}`} className="flex items-center justify-between gap-3 py-1.5 text-xs">
+            <li key={`${b.soort}/${b.naam}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1.5 text-xs">
               <span className="min-w-0 truncate text-slate-700">
                 <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">{b.soort === "roster" ? "functieoverzicht" : "functieprofiel"}</span>
                 {b.naam}

@@ -73,15 +73,15 @@ export default function HomePage() {
 
   return (
     <div className="flex-1 bg-gradient-to-b from-indigo-50/60 via-page to-page">
-      <main className="mx-auto max-w-2xl w-full px-6 py-16">
+      <main className="mx-auto max-w-2xl w-full px-4 py-10 sm:px-6 sm:py-16">
         <div className="mb-10">
           <HodLogo className="h-7 mb-8" />
           <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/20 px-3 py-1 text-xs font-medium text-indigo-700 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
             Intern tool
           </span>
-          <div className="flex items-start justify-between">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+            <h1 className="min-w-0 text-2xl font-bold tracking-tight text-slate-900 mb-2 sm:text-3xl">
               AI Organisatie Transformatie Simulator
             </h1>
             <div className="shrink-0 flex items-center gap-3 mt-1.5">

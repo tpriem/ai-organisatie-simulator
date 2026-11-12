@@ -56,9 +56,9 @@ export default function GebruikersPage() {
 
   return (
     <div className="flex-1">
-      <main className="max-w-2xl mx-auto w-full px-6 py-10">
+      <main className="max-w-2xl mx-auto w-full px-4 py-8 sm:px-6 sm:py-10">
         <HodLogo className="h-6 mb-6" />
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <a href="/app" className="text-sm text-slate-400 hover:text-indigo-400 transition-colors">
             ← Alle klanten
           </a>
@@ -73,7 +73,7 @@ export default function GebruikersPage() {
         <p className="text-slate-500 mb-8">Beheer wie kan inloggen op de interne tool.</p>
 
         <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-card shadow-sm p-5 mb-8 space-y-3">
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input
               type="text"
               value={name}
@@ -121,7 +121,7 @@ export default function GebruikersPage() {
             {users.map((u) => (
               <li
                 key={u.id}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-card px-4 py-3 shadow-sm"
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-slate-200 bg-card px-4 py-3 shadow-sm"
               >
                 <div>
                   <p className="text-sm font-medium text-slate-900">{u.name || u.email}</p>

@@ -314,7 +314,7 @@ function ProfielRegel({ a, onOpen, toonOnderbouwing = false }) {
     <button
       type="button"
       onClick={onOpen}
-      className="grid w-full grid-cols-[minmax(0,13rem)_1fr_auto] items-center gap-3 rounded-md py-1.5 text-left hover:bg-slate-50"
+      className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-md py-1.5 text-left hover:bg-slate-50 sm:grid-cols-[minmax(0,13rem)_1fr_auto]"
     >
       <div className="min-w-0">
         <p className="truncate text-sm text-slate-700">{a.naam}</p>
@@ -322,11 +322,11 @@ function ProfielRegel({ a, onOpen, toonOnderbouwing = false }) {
           {a.beantwoord}/{a.totaal} beantwoord
         </p>
       </div>
-      <div className="relative h-3 rounded-full bg-slate-100" role="img" aria-label={`${a.naam}: niveau ${a.niveau ?? "niet gemeten"} van 5, doel ${a.doel}`}>
+      <div className="relative order-3 col-span-2 h-3 rounded-full bg-slate-100 sm:order-none sm:col-span-1" role="img" aria-label={`${a.naam}: niveau ${a.niveau ?? "niet gemeten"} van 5, doel ${a.doel}`}>
         {gemeten && <div className={`h-3 rounded-full ${NIVEAU_KLEUR[a.niveau]}`} style={{ width: `${Math.max(a.niveau, 0.15) * 20}%` }} />}
         <div className="absolute -top-1 h-5 w-0.5 bg-slate-800/70" style={{ left: `calc(${a.doel * 20}% - 1px)` }} title={`Doelniveau ${a.doel}`} />
       </div>
-      <div className="w-56 text-right text-xs">
+      <div className="text-right text-xs sm:w-56">
         {gemeten ? (
           <>
             <span className="font-semibold text-slate-800">
@@ -408,7 +408,7 @@ function InvullerKeuze() {
 
   return (
     <div className="mb-4 rounded-lg bg-slate-50 px-3 py-2.5">
-      <div className="mb-1.5 flex items-center justify-between">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="text-xs font-medium text-slate-700">Wie vult in?</p>
         <button type="button" onClick={ververs} className="text-xs text-slate-500 hover:text-indigo-400 hover:underline">
           ↻ Antwoorden van invullers verversen
@@ -455,7 +455,7 @@ function InvullerKeuze() {
             </label>
             <label className="text-xs text-slate-500">
               Omschrijving (geen naam), bijvoorbeeld &quot;teamleider klantenservice&quot;
-              <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className="mt-0.5 block w-64 rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700" />
+              <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={60} className="mt-0.5 block w-64 max-w-full rounded-md border border-slate-200 bg-card px-2 py-1 text-xs text-slate-700" />
             </label>
             <button type="button" onClick={voegToe} disabled={bezig} className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
               {bezig ? "Bezig…" : viaLink ? "Link maken" : "Toevoegen"}
@@ -723,8 +723,8 @@ export function MaturiteitVragen({ onNaarResultaten }) {
   const { telling } = profiel;
   return (
     <div>
-      <div className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
-        <div className="mb-1 flex items-center justify-between">
+      <div className="mb-5 rounded-xl border border-slate-200 bg-card p-4 shadow-sm sm:p-6">
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">🧭</span>
             AI-volwassenheid — vragenlijst
@@ -765,7 +765,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
         </div>
       </div>
 
-      <div className="mb-2 flex items-baseline justify-between gap-3">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h2 className="text-sm font-semibold text-slate-800">Vragenlijst</h2>
         <p className="text-xs text-slate-500">Klik op een as om de thema&apos;s en stellingen te openen.</p>
       </div>
@@ -778,8 +778,8 @@ export function MaturiteitVragen({ onNaarResultaten }) {
             onToggle={(e) => e.currentTarget.open && setGeopend(a.id)}
             className="group rounded-xl border border-slate-200 bg-slate-50/60"
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3">
-              <div>
+            <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 sm:px-5">
+              <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-800">
                   {a.naam}
                   <span className="ml-2 rounded bg-card px-1.5 py-0.5 text-[11px] font-normal text-slate-500">{a.kant}kant</span>
@@ -823,7 +823,7 @@ export function MaturiteitVragen({ onNaarResultaten }) {
 
 function Kaart({ titel, uitleg, children }) {
   return (
-    <div className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
+    <div className="mb-5 rounded-xl border border-slate-200 bg-card p-4 shadow-sm sm:p-6">
       <h2 className="mb-1 text-sm font-semibold text-slate-800">{titel}</h2>
       {uitleg && <p className="mb-3 text-xs text-slate-500">{uitleg}</p>}
       {children}
@@ -968,12 +968,12 @@ function Onderbouwing({ profiel }) {
     <Kaart titel="Onderbouwing" uitleg="Hoeveel van de voldane stellingen heeft de adviseur met bewijs gezien. Een niveau zonder bewijs heet indicatief.">
       <div className="space-y-1.5">
         {rijen.map((a) => (
-          <div key={a.id} className="grid grid-cols-[minmax(0,13rem)_1fr_auto] items-center gap-3 text-xs">
+          <div key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-xs sm:grid-cols-[minmax(0,13rem)_1fr_auto]">
             <span className="truncate text-slate-700">{a.naam}</span>
-            <div className="h-2 rounded-full bg-slate-100">
+            <div className="order-3 col-span-2 h-2 rounded-full bg-slate-100 sm:order-none sm:col-span-1">
               <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${(a.onderbouwing.aandeel ?? 0) * 100}%` }} />
             </div>
-            <span className="w-40 text-right text-slate-500">
+            <span className="text-right text-slate-500 sm:w-40">
               {a.onderbouwing.gezien} van {a.onderbouwing.voldaan} gezien
             </span>
           </div>
@@ -1107,13 +1107,13 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
 
   return (
     <div>
-      <div className="mb-5 rounded-xl border border-slate-200 bg-card p-6 shadow-sm">
-        <div className="mb-1 flex items-center justify-between">
+      <div className="mb-5 rounded-xl border border-slate-200 bg-card p-4 shadow-sm sm:p-6">
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">🧭</span>
             AI-volwassenheid — profiel
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <OpslagStatus status={status} />
             {profiel.gemeten > 0 && (
               <>
@@ -1230,7 +1230,7 @@ export function MaturiteitResultaten({ results, onNaarVragen }) {
             {metingen.map((m) => {
               const p = berekenProfiel(m);
               return (
-                <li key={m.op} className="flex items-center justify-between gap-3 py-2 text-xs">
+                <li key={m.op} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-xs">
                   <span className="text-slate-700">
                     {datum(m.op)}
                     {m.scope ? ` · ${m.scope}` : ""}

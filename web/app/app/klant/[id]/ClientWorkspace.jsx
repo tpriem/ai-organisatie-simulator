@@ -98,12 +98,12 @@ export function CapaciteitBestemming({ results }) {
           const gebruikt = b.rollen > 0;
           return (
             <div key={b.waardetype} className={gebruikt ? "" : "opacity-60"}>
-              <div className="flex items-baseline justify-between gap-3 mb-1">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-1">
                 <span className={`text-xs font-medium ${stijl.tekst}`}>
                   {type ? `${type.icon} ${type.label}` : "Nog niet bepaald"}
                   {UITLEG[b.waardetype] && <span className="ml-2 font-normal text-slate-400">{UITLEG[b.waardetype]}</span>}
                 </span>
-                <span className="text-xs text-slate-500 shrink-0">
+                <span className="text-xs text-slate-500 sm:shrink-0">
                   {gebruikt ? (
                     <>
                       {nl(b.fte, 1)} FTE · {Math.round(b.urenPerWeek)} u/week · {b.rollen} {b.rollen === 1 ? "functie" : "functies"} ·{" "}
@@ -206,7 +206,7 @@ export function CapaciteitHerkomst({ results }) {
     <Section title="Waar komt de capaciteit vandaan?" icon="🧭">
       <p className="mb-4 text-sm text-slate-700">{herkomstZin(herkomst)}</p>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200">
+      <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-400">
@@ -276,7 +276,7 @@ export function CompetentieAgenda({ results }) {
         />
       </div>
 
-      <div className="rounded-lg border border-slate-200 overflow-hidden">
+      <div className="rounded-lg border border-slate-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-slate-400">
@@ -325,8 +325,8 @@ export function CompetentieAgenda({ results }) {
 
 function Section({ title, icon, children, right }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-card shadow-sm p-6 mb-6">
-      <div className="flex items-center justify-between mb-4">
+    <section className="rounded-xl border border-slate-200 bg-card shadow-sm p-4 sm:p-6 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-800">
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-base">
             {icon}
@@ -863,7 +863,7 @@ function VersieHistorie({ id, onHersteld }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-80 rounded-lg border border-slate-200 bg-card p-3 shadow-lg">
+        <div className="absolute right-0 z-20 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-card p-3 shadow-lg">
           <p className="text-xs font-semibold text-slate-700 mb-1">Eerdere versies</p>
           <p className="text-xs text-slate-400 mb-2">
             Elke analyse bewaart de vorige uitkomst. De huidige versie wordt bewaard voordat je terugzet.
@@ -1391,7 +1391,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
           leesbaar, niet slechter. Wel een bovengrens, zodat regels op een breed scherm
           niet over de volle breedte uitlopen. */}
       <MaturiteitProvider key={id} id={id}>
-      <main className="max-w-7xl mx-auto w-full px-6 py-10">
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 sm:px-6 sm:py-10">
         {/* Klant-switcher */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           <a href="/app" aria-label="Naar alle klanten" className="shrink-0">
@@ -1441,9 +1441,9 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-2">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{client.naam}</h1>
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold text-slate-900 break-words">{client.naam}</h1>
           </div>
           <button
             onClick={handleDeleteClient}
@@ -1485,13 +1485,13 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               value={scopeLabel}
               onChange={(e) => handleScopeLabelChange(e.target.value)}
               placeholder="Naam van de afdeling/unit (bijv. Klantenservice)"
-              className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs w-64 max-w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           )}
         </div>
 
         {/* Twee onderzoeken, elk met de eigen voortgang. Kies er een; daaronder staan zijn invoer en uitkomsten. */}
-        <div className="mb-6 grid gap-3 sm:grid-cols-2" role="tablist" aria-label="Onderzoek">
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2" role="tablist" aria-label="Onderzoek">
           {[
             ["capaciteit", "📊", "Capaciteitsanalyse", "Hoeveel tijd komt er vrij als AI taken overneemt, en waar blijft die tijd? Op basis van functieoverzicht en functieprofielen."],
             ["volwassenheid", "🧭", "AI-volwassenheidsscan", "Hoe ver is de organisatie met AI, en wat is de volgende stap? Vragenlijst voor directie, management, IT, HR en werkvloer."],
@@ -1644,7 +1644,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
         <>
         <Aanlevering id={id} onOvergenomen={verversKlant} />
         <Section title="Invoer — functieoverzicht en functieprofielen" icon="📁">
-          <div className="grid sm:grid-cols-2 gap-4 mb-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-1">
             <div>
               <input
                 id="roster-upload"
@@ -1725,7 +1725,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
                 </span>{" "}
                 rollen uit het functieoverzicht gekoppeld aan een functieprofiel
               </p>
-              <div className="rounded-lg border border-slate-200 overflow-hidden">
+              <div className="rounded-lg border border-slate-200 overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-left text-slate-400 bg-slate-50 border-b border-slate-200">
@@ -1873,7 +1873,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
             title="Resultaten"
             icon="📊"
             right={
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <a
                   href={`/api/clients/${id}/report`}
                   className="text-xs rounded-lg bg-indigo-600 text-white px-3 py-1.5 shadow-sm hover:bg-indigo-500 transition-colors"
@@ -1932,7 +1932,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
               </div>
             )}
 
-            <div className="grid gap-3 mb-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label="FTE totaal"
                 value={results.organisatieTotaal.realistisch.totaalFteHuidig}
@@ -1968,7 +1968,7 @@ export default function ClientWorkspace({ id, nieuw = false }) {
 
             <CapaciteitBestemming results={results} />
 
-            <div className="rounded-lg border border-slate-200 overflow-hidden">
+            <div className="rounded-lg border border-slate-200 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-slate-400 bg-slate-50 border-b border-slate-200">

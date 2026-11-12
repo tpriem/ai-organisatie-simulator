@@ -29,10 +29,10 @@ export default function Logboek({ id }) {
 
   return (
     <details className="mb-6 rounded-xl border border-slate-200 bg-card shadow-sm" onToggle={(e) => laad(e.currentTarget.open)}>
-      <summary className="cursor-pointer list-none px-6 py-4 text-sm font-semibold text-slate-800">
+      <summary className="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-slate-800 sm:px-6">
         🗒 Logboek <span className="ml-1 text-xs font-normal text-slate-500">wie deed wat en wanneer</span>
       </summary>
-      <div className="border-t border-slate-200 px-6 py-4">
+      <div className="border-t border-slate-200 px-4 py-4 sm:px-6">
         {fout && <p className="text-xs text-red-400">{fout}</p>}
         {!fout && regels === null && <p className="text-xs text-slate-500">Laden…</p>}
         {regels?.length === 0 && <p className="text-xs text-slate-500">Nog niets vastgelegd. Het logboek begint bij de eerstvolgende handeling.</p>}
@@ -40,7 +40,7 @@ export default function Logboek({ id }) {
           <ul className="max-h-80 space-y-1.5 overflow-y-auto">
             {regels.map((r, i) => (
               <li key={`${r.op}-${i}`} className="flex flex-wrap gap-x-3 text-xs text-slate-600">
-                <span className="w-40 shrink-0 text-slate-500">{moment(r.op)}</span>
+                <span className="shrink-0 text-slate-500 sm:w-40">{moment(r.op)}</span>
                 <span className="min-w-0 flex-1 text-slate-700">{regelTekst(r)}</span>
                 <span className="text-slate-500">{r.door ?? "onbekend"}</span>
               </li>
