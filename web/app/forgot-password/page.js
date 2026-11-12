@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import HodLogo from "@/components/HodLogo";
+import HomeLink from "@/components/HomeLink";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -19,7 +20,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center px-6 py-16">
+    <div className="relative flex-1 flex items-center justify-center px-6 py-16">
+      <HomeLink>Home</HomeLink>
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <HodLogo className="h-8 mx-auto mb-6" />

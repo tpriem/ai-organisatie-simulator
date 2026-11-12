@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getLocale, getDictionary } from "@/lib/i18n";
-import LocaleToggle from "@/components/LocaleToggle";
+import SiteKop from "@/components/SiteKop";
 import ContactForm from "./ContactForm";
 
 export default async function ContactPage() {
@@ -9,33 +9,16 @@ export default async function ContactPage() {
 
   return (
     <div className={`flex-1 bg-page text-slate-900 font-display`}>
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-page/70 backdrop-blur">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
-            <Image src="/hod-logo-white.png" alt="House of Digital" width={800} height={400} className="h-6 w-auto" />
-            <span className="hidden sm:block h-4 w-px bg-white/15" />
-            <span className="hidden sm:block text-sm font-bold tracking-tight text-white">
-              AI Organisatie Transformatie Simulator
-            </span>
-          </a>
-          <div className="flex items-center gap-4">
-            <LocaleToggle locale={locale} path="/contact" dark />
-            <a
-              href="/login"
-              className="text-xs rounded-full border border-white/15 px-4 py-2 text-white/80 hover:border-white/30 hover:text-white transition-colors"
-            >
-              {nav.login}
-            </a>
-          </div>
-        </div>
-      </header>
+      <SiteKop locale={locale} path="/contact" nav={nav} />
 
       <ContactForm t={t} />
 
       <footer className="border-t border-white/10">
-        <div className="mx-auto max-w-5xl px-6 py-8 flex flex-col items-center gap-3 text-center text-xs text-white/30">
-          <Image src="/hod-logo-white.png" alt="House of Digital" width={800} height={400} className="h-5 w-auto opacity-60" />
-          AI Organisatie Transformatie Simulator — House of Digital
+        <div className="mx-auto max-w-5xl px-6 py-8 flex flex-col items-center gap-3 text-center text-xs text-white/40">
+          <a href="https://www.houseofdigital.nl" target="_blank" rel="noopener noreferrer" aria-label="Naar de website van House of Digital" className="transition-opacity hover:opacity-80">
+            <Image src="/hod-logo-white.png" alt="House of Digital" width={800} height={400} className="h-5 w-auto opacity-70" />
+          </a>
+          AI Organisatie Transformatie Simulator · House of Digital
         </div>
       </footer>
     </div>
