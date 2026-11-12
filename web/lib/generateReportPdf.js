@@ -644,8 +644,12 @@ export async function generateReportPdf(results) {
   return renderHtmlToPdf(buildReportHtml(results));
 }
 
-/** Rendert een HTML-document naar PDF. Gedeeld door alle rapporten die een PDF leveren. */
-export async function renderHtmlToPdf(html) {
+/**
+ * Rendert een HTML-document naar PDF. Gedeeld door alle rapporten die een PDF leveren.
+ * Met `voet` (html) komt er onderaan elke pagina een regel; de klassen pageNumber en totalPages
+ * vult Chromium zelf in.
+ */
+export async function renderHtmlToPdf(html, { voet = null } = {}) {
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
@@ -654,6 +658,7 @@ export async function renderHtmlToPdf(html) {
       format: "A4",
       printBackground: true,
       margin: { top: "18mm", bottom: "18mm", left: "16mm", right: "16mm" },
+      ...(voet ? { displayHeaderFooter: true, headerTemplate: "<span></span>", footerTemplate: voet } : {}),
     });
     return pdfBuffer;
   } finally {

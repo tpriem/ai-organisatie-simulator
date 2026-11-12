@@ -39,6 +39,7 @@ const nextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/clients/*/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/onderbouwing/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
 };
 

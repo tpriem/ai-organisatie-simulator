@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getLocale, getDictionary } from "@/lib/i18n";
 import SiteKop from "@/components/SiteKop";
+import DownloadKnop from "@/components/DownloadKnop";
 
 // De landingspagina, in de stijl van House of Digital: donkerpaars, met violet en cyaan als accent.
 // De opbouw volgt de vragen van een bezoeker: wat is het, wat levert het op, hoe werkt het.
@@ -74,15 +75,26 @@ export default async function LandingPage() {
             >
               {t.cta}
             </a>
-            <a href="#hoe-het-werkt" className="rounded-full border border-white/20 px-6 py-3 text-base font-medium text-white/85 transition-colors hover:border-white/40 hover:text-white">
+            <a href="/onderbouwing" className="rounded-full border border-white/20 px-6 py-3 text-base font-medium text-white/85 transition-colors hover:border-white/40 hover:text-white">
               {t.cta2}
             </a>
           </div>
         </div>
         <div className="self-center rounded-3xl border border-white/10 bg-white/[0.03] p-6">
           <p className="mb-2 font-medium text-white">{t.directNaar}</p>
-          <DirectLink href="#onderzoeken">{t.linkOnderzoeken}</DirectLink>
-          <DirectLink href="#hoe-het-werkt">{t.linkHoe}</DirectLink>
+          <DirectLink href="/onderbouwing">{t.linkDoc}</DirectLink>
+          <DownloadKnop
+            href="/onderbouwing/pdf"
+            bezigTekst={t.bezig}
+            klaarTekst={t.klaar}
+            foutTekst={t.fout}
+            className="flex items-center justify-between gap-6 rounded-md border-b border-white/10 px-1 py-3 font-medium text-white/80 transition-colors hover:text-white"
+          >
+            {t.linkPdf}
+            <span aria-hidden className="text-hod-cyan">
+              →
+            </span>
+          </DownloadKnop>
           <DirectLink href="/contact">{t.linkContact}</DirectLink>
           <DirectLink href="/login">{t.linkLogin}</DirectLink>
         </div>
@@ -122,6 +134,34 @@ export default async function LandingPage() {
             <StepRow nr="3" title={t.step3Title}>
               {t.step3Text}
             </StepRow>
+          </div>
+        </div>
+      </section>
+
+      {/* Het document voor directies */}
+      <section id="document" className="mx-auto max-w-5xl scroll-mt-24 px-6 pt-20">
+        <div className="grid items-center gap-8 rounded-3xl border border-white/10 bg-white/[0.04] p-8 sm:p-12 md:grid-cols-[1.6fr_1fr]">
+          <div>
+            <span className="mb-4 inline-block rounded-full border border-hod-cyan/40 bg-hod-cyan/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-hod-cyan">{t.docLabel}</span>
+            <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl">{t.docTitle}</h2>
+            <p className="leading-relaxed text-white/70">{t.docText}</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <a
+              href="/onderbouwing"
+              className="rounded-full bg-gradient-to-r from-hod-violet to-hod-cyan px-6 py-3 text-center text-base font-semibold text-white shadow-lg shadow-hod-violet/20 transition-opacity hover:opacity-90"
+            >
+              {t.docRead}
+            </a>
+            <DownloadKnop
+              href="/onderbouwing/pdf"
+              bezigTekst={t.bezig}
+              klaarTekst={t.klaar}
+              foutTekst={t.fout}
+              className="rounded-full border border-white/30 px-6 py-3 text-center text-base font-medium text-white transition-colors hover:border-white/60"
+            >
+              {t.docDownload}
+            </DownloadKnop>
           </div>
         </div>
       </section>

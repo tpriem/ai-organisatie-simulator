@@ -20,6 +20,11 @@ export default function SiteKop({ locale, path, nav }) {
               {nav.home}
             </a>
           )}
+          {path !== "/onderbouwing" && (
+            <a href="/onderbouwing" className="hidden text-sm font-medium text-white/70 transition-colors hover:text-white sm:block">
+              {nav.onderbouwing}
+            </a>
+          )}
           {path !== "/contact" && (
             <a href="/contact" className="hidden text-sm font-medium text-white/70 transition-colors hover:text-white sm:block">
               {nav.contact}
